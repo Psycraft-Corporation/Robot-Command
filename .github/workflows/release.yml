@@ -99,7 +99,7 @@ jobs:
         run: ./build/smoke-test-packages.ps1 -ApplicationPath artifacts/publish/win-x64/RobotCommand.exe -CliPath artifacts/publish-cli/win-x64/RobotCommand.Cli.exe
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: robot-command-${{ needs.validate.outputs.version }}-win-x64
           path: artifacts/packages/*
