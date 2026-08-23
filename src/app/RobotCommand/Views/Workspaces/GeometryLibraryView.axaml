@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:RobotCommand.Localization"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:core="using:RobotCommand.Core"
+             x:Class="RobotCommand.Views.Workspaces.GeometryLibraryView"
+             x:DataType="vm:GeometryLibraryViewModel">
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <StackPanel Spacing="3">
+        <TextBlock Classes="workspaceTitle" Text="{loc:Loc Key=Geometry}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{loc:Loc Key=GeometryLibraryDescription}" />
+      </StackPanel>
+      <Border Grid.Column="1" Classes="statusPill" VerticalAlignment="Top"><TextBlock Text="{Binding TotalCount}" /></Border>
+    </Grid>
+    <Grid Grid.Row="1" ColumnDefinitions="2*,*" ColumnSpacing="12">
+      <Border Classes="panel" Padding="12">
+        <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+          <Grid ColumnDefinitions="*,130,150" ColumnSpacing="8">
+            <TextBox PlaceholderText="{loc:Loc Key=GeometrySearch}" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding KindFilters}" SelectedItem="{Binding KindFilter}" />
+            <TextBox Grid.Column="2" PlaceholderText="{loc:Loc Key=GeometryGroupFilter}" Text="{Binding GroupFilter, UpdateSourceTrigger=PropertyChanged}" />
+          </Grid>
+          <ListBox Grid.Row="1" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" Classes="compactList">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:GeometryLibraryRowViewModel">
+                <StackPanel Margin="4,6" Spacing="2">
+                  <Grid ColumnDefinitions="*,Auto"><TextBlock FontWeight="SemiBold" Text="{Binding Name}" /><TextBlock Grid.Column="1" Classes="muted" Text="{Binding Kind}" /></Grid>
+                  <TextBlock Classes="muted" Text="{Binding Id}" />
+                  <TextBlock Classes="muted" Text="{Binding GroupSummary}" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Validation}" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+            <TextBox PlaceholderText="{loc:Loc Key=GeometryFilePath}" Text="{Binding ExportPath}" />
+            <Button Grid.Column="1" Content="{loc:Loc Key=GeometryExport}" Command="{Binding ExportCommand}" />
+            <Button Grid.Column="2" Classes="danger" Content="{loc:Loc Key=GeometryDelete}" Command="{Binding DeleteCommand}" />
+            <Button Grid.Column="3" Classes="danger" Content="{loc:Loc Key=GeometryConfirmDelete}" IsVisible="{Binding DeleteConfirmationPending}" Command="{Binding ConfirmDeleteCommand}" />
+          </Grid>
+        </Grid>
+      </Border>
+      <ScrollViewer Grid.Column="1"><StackPanel Spacing="12">
+        <Border Classes="panel" Padding="12"><StackPanel Spacing="8"><TextBlock Classes="sectionTitle" Text="{loc:Loc Key=GeometryImportExport}" /><TextBox PlaceholderText="{loc:Loc Key=GeometryFilePath}" Text="{Binding ImportPath}" /><Button Content="{loc:Loc Key=GeometryImport}" Command="{Binding ImportCommand}" /><TextBox PlaceholderText="{loc:Loc Key=GeometrySetFilePath}" Text="{Binding SetPath}" /><WrapPanel><Button Margin="0,0,8,0" Content="{loc:Loc Key=GeometryImportSet}" Command="{Binding ImportSetCommand}" /><Button Content="{loc:Loc Key=GeometryExportSet}" Command="{Binding ExportSetCommand}" /></WrapPanel></StackPanel></Border>
+        <Border Classes="panel" Padding="12"><StackPanel Spacing="8"><TextBlock Classes="sectionTitle" Text="{loc:Loc Key=GeometryGroups}" /><TextBox PlaceholderText="{loc:Loc Key=GeometryNewGroup}" Text="{Binding NewGroupName}" /><Button Content="{loc:Loc Key=GeometryCreateGroup}" Command="{Binding CreateGroupCommand}" /><ComboBox ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}"><ComboBox.ItemTemplate><DataTemplate x:DataType="core:GeometryGroupWorkflowSnapshot"><TextBlock Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox><WrapPanel><Button Margin="0,0,8,6" Content="{loc:Loc Key=GeometryAddSelected}" Command="{Binding AssignGroupCommand}" /><Button Margin="0,0,8,6" Content="{loc:Loc Key=GeometryRemoveSelected}" Command="{Binding RemoveFromGroupCommand}" /><Button Classes="danger" Content="{loc:Loc Key=GeometryDeleteGroup}" Command="{Binding DeleteGroupCommand}" /></WrapPanel></StackPanel></Border>
+        <Border Classes="panel" Padding="12"><StackPanel Spacing="8"><TextBlock Classes="sectionTitle" Text="Fences" /><ComboBox ItemsSource="{Binding Fences}" SelectedItem="{Binding SelectedFence}"><ComboBox.ItemTemplate><DataTemplate x:DataType="core:FenceSnapshot"><TextBlock Text="{Binding Document.DisplayName}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox><ComboBox ItemsSource="{Binding FenceKinds}" SelectedItem="{Binding SelectedFenceKind}" /><ComboBox ItemsSource="{Binding FenceTargets}" SelectedItem="{Binding SelectedFenceTarget}"><ComboBox.ItemTemplate><DataTemplate x:DataType="core:FenceTargetSnapshot"><TextBlock Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox><WrapPanel><Button Margin="0,0,8,6" Content="Create fence" Command="{Binding CreateFenceCommand}" /><Button Margin="0,0,8,6" Content="{loc:Loc Key=GeometryImport}" Click="ImportFence_Click" /><Button Margin="0,0,8,6" Content="{loc:Loc Key=GeometryExport}" Click="ExportFence_Click" /><Button Classes="danger" Content="Delete fence" Command="{Binding DeleteFenceCommand}" /></WrapPanel><WrapPanel><Button Margin="0,0,8,6" Content="Upload" Command="{Binding UploadFenceCommand}" /><Button Margin="0,0,8,6" Content="Download" Command="{Binding DownloadFenceCommand}" /><Button Classes="danger" Content="Clear" Command="{Binding ClearFenceCommand}" /></WrapPanel></StackPanel></Border>
+        <Border Classes="panel" Padding="12" IsVisible="{Binding HasPendingFenceOperation}"><StackPanel Spacing="6"><TextBlock FontWeight="SemiBold" Text="{Binding PendingFenceOperation.Title}" /><TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding PendingFenceOperation.Summary}" /><ItemsControl ItemsSource="{Binding PendingFenceOperation.Findings}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="core:WorkflowFinding"><TextBlock TextWrapping="Wrap" Text="{Binding Message}" /></DataTemplate></ItemsControl.ItemTemplate></ItemsControl><WrapPanel><Button Classes="confirm" Content="{loc:Loc Key=FlightMissionExecute}" Command="{Binding ExecuteFenceCommand}" /><Button Margin="8,0,0,0" Content="{loc:Loc Key=FlightMissionCancel}" Command="{Binding CancelFenceCommand}" /></WrapPanel></StackPanel></Border>
+      </StackPanel></ScrollViewer>
+    </Grid>
+    <TextBlock Grid.Row="2" Classes="muted" TextWrapping="Wrap" Text="{Binding StatusMessage}" />
+  </Grid>
+</UserControl>

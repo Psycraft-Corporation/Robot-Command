@@ -1,0 +1,329 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:models="using:RobotCommand.Models"
+             x:Class="RobotCommand.Views.Workspaces.BehaviourLibraryView"
+             x:DataType="vm:BehaviourLibraryViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="12">
+    <Border Classes="noticePanel">
+      <Grid ColumnDefinitions="*,280,Auto" ColumnSpacing="12">
+        <StackPanel Spacing="3">
+          <TextBlock Classes="workspaceTitle" Text="Behaviours" />
+          <TextBlock Classes="muted"
+                     TextWrapping="Wrap"
+                     Text="Import complete package folders, compare them with the selected Logos runtime, validate and deploy through Logos, and manage declared geometry bindings." />
+          <TextBlock Classes="muted" Text="{Binding LocalLibraryPath}" />
+        </StackPanel>
+
+        <StackPanel Grid.Column="1" Spacing="4">
+          <TextBlock Classes="eyebrow" Text="LOGOS CONNECTION" />
+          <ComboBox ItemsSource="{Binding Connections}"
+                    SelectedItem="{Binding SelectedConnection}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding State}" />
+                </Grid>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding RemoteInventorySummary}" />
+        </StackPanel>
+
+        <Button Grid.Column="2"
+                Classes="primary"
+                VerticalAlignment="Center"
+                Content="Refresh library"
+                Command="{Binding RefreshCommand}" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="340,*,380" ColumnSpacing="12">
+      <Border Classes="panel">
+        <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <StackPanel>
+              <TextBlock Classes="sectionTitle" Text="Package library" />
+              <TextBlock Classes="muted" Text="{Binding EntryCount, StringFormat='{}{0} visible package(s)'}" />
+            </StackPanel>
+            <Border Grid.Column="1" Classes="smallPill" VerticalAlignment="Top">
+              <TextBlock Text="{Binding LocalPackageCount, StringFormat='{}{0} local'}" />
+            </Border>
+          </Grid>
+
+          <Grid Grid.Row="1" RowDefinitions="Auto,Auto" RowSpacing="8">
+            <TextBox PlaceholderText="Search package name or ID"
+                     Text="{Binding SearchText}" />
+            <ComboBox Grid.Row="1"
+                      ItemsSource="{Binding SourceFilters}"
+                      SelectedItem="{Binding SelectedSourceFilter}" />
+          </Grid>
+
+          <ListBox Grid.Row="2"
+                   Classes="compactList"
+                   ItemsSource="{Binding Entries}"
+                   SelectedItem="{Binding SelectedEntry}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:BehaviourLibraryItemViewModel">
+                <StackPanel Margin="4,7" Spacing="3">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                    <TextBlock Grid.Column="1" Classes="muted" Text="{Binding DeploymentState}" />
+                  </Grid>
+                  <TextBlock Classes="muted" Text="{Binding IdentityLabel}" />
+                  <TextBlock TextWrapping="Wrap" Text="{Binding DeploymentSummary}" />
+                  <TextBlock Classes="muted" Text="{Binding SourceSummary}" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <TextBlock Grid.Row="3"
+                     Classes="emptyState"
+                     IsVisible="{Binding IsEmpty}"
+                     Text="No packages match the current connection and filters." />
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Classes="panel">
+        <TabControl>
+          <TabItem Header="Package">
+            <ScrollViewer Margin="4,12,4,4">
+              <StackPanel Spacing="12">
+                <StackPanel Spacing="3">
+                  <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding SelectedEntry.DisplayName}" />
+                  <TextBlock Classes="muted" Text="{Binding SelectedEntry.IdentityLabel}" />
+                  <TextBlock TextWrapping="Wrap" Text="{Binding SelectedEntry.Description}" />
+                </StackPanel>
+
+                <Border Classes="commandPlanPanel">
+                  <TextBlock TextWrapping="Wrap" Text="{Binding SelectedEntryDetails}" />
+                </Border>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                  <StackPanel Spacing="6">
+                    <TextBlock Classes="eyebrow" Text="IMPORT FOLDER" />
+                    <TextBox PlaceholderText="Path to package folder"
+                             Text="{Binding ImportDirectory}" />
+                    <CheckBox Content="Replace matching local identity"
+                              IsChecked="{Binding AllowReplaceImport}" />
+                    <Button Content="Import folder" Command="{Binding ImportCommand}" />
+                  </StackPanel>
+
+                  <StackPanel Grid.Column="1" Spacing="6">
+                    <TextBlock Classes="eyebrow" Text="EXPORT SELECTED LOCAL PACKAGE" />
+                    <TextBox PlaceholderText="Destination folder"
+                             Text="{Binding ExportDirectory}" />
+                    <CheckBox Content="Replace destination folder"
+                              IsChecked="{Binding AllowReplaceExport}" />
+                    <Button Content="Export folder" Command="{Binding ExportCommand}" />
+                  </StackPanel>
+                </Grid>
+
+                <Border Classes="noticePanel">
+                  <StackPanel Spacing="6">
+                    <TextBlock FontWeight="SemiBold" Text="Remove local copy" />
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="This removes only the Robot Command library copy. It never removes the package from Logos." />
+                    <TextBlock Classes="muted" Text="{Binding RequiredLocalRemoveConfirmation, StringFormat='Type: {0}'}" />
+                    <TextBox Text="{Binding LocalRemoveConfirmation}" />
+                    <Button Classes="danger"
+                            HorizontalAlignment="Left"
+                            Content="Remove local package"
+                            Command="{Binding RemoveLocalCommand}" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+
+          <TabItem Header="Parameters">
+            <ScrollViewer Margin="4,12,4,4">
+              <StackPanel Spacing="12">
+                <Border Classes="noticePanel">
+                  <StackPanel Spacing="4">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock FontWeight="SemiBold" Text="Operator parameter schema" />
+                      <TextBlock Grid.Column="1" Classes="muted" Text="{Binding ParameterSchemaState}" />
+                    </Grid>
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="{Binding ParameterSchemaSummary}" />
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="This metadata drives Robot Command forms only. Logos still decides whether the package and its behaviour tree are valid." />
+                  </StackPanel>
+                </Border>
+
+                <ItemsControl ItemsSource="{Binding ParameterDefinitions}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="models:BehaviourParameterDefinition">
+                      <Border Margin="0,3,0,3" Classes="commandPlanPanel">
+                        <StackPanel Spacing="4">
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <StackPanel>
+                              <TextBlock FontWeight="SemiBold" Text="{Binding Label}" />
+                              <TextBlock Classes="muted" Text="{Binding Id}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                              <TextBlock TextAlignment="Right" Text="{Binding TypeLabel}" />
+                              <TextBlock Classes="muted" TextAlignment="Right" Text="{Binding RequirementLabel}" />
+                            </StackPanel>
+                          </Grid>
+                          <TextBlock TextWrapping="Wrap" Text="{Binding Description}" />
+                          <TextBlock Classes="muted" Text="{Binding ConstraintSummary}" />
+                          <TextBlock Classes="muted" Text="{Binding DefaultSummary}" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Classes="emptyState"
+                           IsVisible="{Binding ShowParameterSchemaEmpty}"
+                           Text="No usable typed fields are declared for the selected local package. Quick Run will use raw JSON when necessary." />
+
+                <Border IsVisible="{Binding HasParameterSchemaFindings}"
+                        Classes="noticePanel">
+                  <StackPanel Spacing="5">
+                    <TextBlock FontWeight="SemiBold" Text="Parameter metadata findings" />
+                    <ItemsControl ItemsSource="{Binding ParameterSchemaFindings}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                          <TextBlock Margin="0,2,0,2" TextWrapping="Wrap" Text="{Binding}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+
+          <TabItem Header="Bindings">
+            <Grid Margin="4,12,4,4" RowDefinitions="Auto,*,Auto" RowSpacing="10">
+              <Border Classes="noticePanel">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <StackPanel Spacing="3">
+                    <TextBlock FontWeight="SemiBold" Text="Installed package geometry bindings" />
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding BindingAvailability}" />
+                    <TextBlock TextWrapping="Wrap" Text="{Binding BindingStatus}" />
+                  </StackPanel>
+                  <Button Grid.Column="1"
+                          VerticalAlignment="Top"
+                          Content="Inspect bindings"
+                          Command="{Binding InspectBindingsCommand}" />
+                </Grid>
+              </Border>
+
+              <Grid Grid.Row="1" ColumnDefinitions="280,*" ColumnSpacing="10">
+                <ListBox Classes="compactList"
+                         ItemsSource="{Binding BindingSlots}"
+                         SelectedItem="{Binding SelectedBindingSlot}">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:BehaviourBindingSlotItemViewModel">
+                      <StackPanel Margin="4,7" Spacing="3">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                          <TextBlock FontWeight="SemiBold" Text="{Binding SlotId}" />
+                          <TextBlock Grid.Column="1" Classes="muted" Text="{Binding State}" />
+                        </Grid>
+                        <TextBlock Classes="muted" Text="{Binding RequirementLabel}" />
+                        <TextBlock TextWrapping="Wrap" Text="{Binding Summary}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel Grid.Column="1" Spacing="8">
+                  <TextBlock Classes="eyebrow" Text="COMPATIBLE REGISTERED GEOMETRY" />
+                  <ComboBox ItemsSource="{Binding BindingCandidates}"
+                            SelectedItem="{Binding SelectedBindingCandidate}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                          <TextBlock Classes="muted" Text="{Binding GeometryId}" />
+                          <TextBlock Classes="muted" Text="{Binding Summary}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Border Classes="commandPlanPanel">
+                    <TextBlock TextWrapping="Wrap" Text="{Binding SelectedBindingDetails}" />
+                  </Border>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="primary"
+                            Content="Set binding"
+                            Command="{Binding SetBindingCommand}" />
+                    <Button Content="Clear binding"
+                            Command="{Binding ClearBindingCommand}" />
+                  </StackPanel>
+                </StackPanel>
+              </Grid>
+
+              <TextBlock Grid.Row="2"
+                         Classes="muted"
+                         TextWrapping="Wrap"
+                         Text="Robot Command filters only by manifest-declared geometry kind and policy. Logos remains authoritative for package and runtime validity." />
+            </Grid>
+          </TabItem>
+        </TabControl>
+      </Border>
+
+      <Border Grid.Column="2" Classes="panel">
+        <ScrollViewer>
+          <StackPanel Spacing="12">
+            <StackPanel Spacing="3">
+              <TextBlock Classes="sectionTitle" Text="Logos package operations" />
+              <TextBlock Classes="muted"
+                         TextWrapping="Wrap"
+                         Text="Validation and all remote mutations go through the selected Logos runtime. Robot Command never validates BehaviorTree.CPP nodes or ports itself." />
+            </StackPanel>
+
+            <Button Content="Validate selected local package with Logos"
+                    Command="{Binding ValidateCommand}" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+              <Button Content="Assess install"
+                      Command="{Binding PrepareInstallCommand}" />
+              <Button Grid.Column="1"
+                      Content="Assess update"
+                      Command="{Binding PrepareUpdateCommand}" />
+            </Grid>
+            <Button Classes="danger"
+                    Content="Assess remote removal"
+                    Command="{Binding PrepareRemoveRemoteCommand}" />
+
+            <Border Classes="commandPlanPanel">
+              <StackPanel Spacing="6">
+                <TextBlock FontWeight="SemiBold" Text="{Binding PreparedOperationTitle}" />
+                <TextBlock TextWrapping="Wrap" Text="{Binding PreparedOperationDetails}" />
+                <TextBlock Classes="muted"
+                           TextWrapping="Wrap"
+                           Text="{Binding RequiredOperationConfirmation, StringFormat='Type exactly: {0}'}" />
+                <TextBox Text="{Binding OperationConfirmation}" />
+                <Button Classes="primary"
+                        Content="Execute prepared operation"
+                        Command="{Binding ExecutePreparedOperationCommand}" />
+              </StackPanel>
+            </Border>
+
+            <StackPanel Spacing="4">
+              <TextBlock Classes="eyebrow" Text="LAST OPERATION" />
+              <Border Classes="noticePanel">
+                <TextBlock TextWrapping="Wrap" Text="{Binding LastOperationDetails}" />
+              </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+              <TextBlock Classes="eyebrow" Text="STATUS" />
+              <TextBlock TextWrapping="Wrap" Text="{Binding StatusMessage}" />
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

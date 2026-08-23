@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "logos.map-deployment.v1",
+  "bundleId": "deployment-toronto-field-test",
+  "displayName": "Toronto field test",
+  "createdAt": "2026-07-25T12:00:00Z",
+  "packages": [
+    {
+      "packageKey": "toronto-field-map:2026.07.0",
+      "packagePath": "packages/toronto-field-map/2026.07.0"
+    }
+  ],
+  "savedViewsPath": "saved-views.json",
+  "documentPaths": [
+    "documents/patrol-demo.logos-mission.json",
+    "documents/inspect-zone.logos-task.json"
+  ]
+}

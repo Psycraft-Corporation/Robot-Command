@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "logos.mission.v1",
+  "missionId": "mission-patrol-demo",
+  "name": "Patrol demonstration",
+  "objective": "Patrol the configured route and dwell at each checkpoint.",
+  "priority": "Normal",
+  "policyId": "default",
+  "geometryIds": ["patrol-route"],
+  "requiredCapabilities": ["vehicle.navigation", "autonomy.behaviour_execution"],
+  "payloadJson": "{\"scenario\":\"patrol\"}",
+  "tasks": [
+    {
+      "schemaVersion": "logos.task.v1",
+      "taskId": "task-patrol-route",
+      "name": "Patrol route",
+      "missionId": "mission-patrol-demo",
+      "objective": "Visit each route checkpoint and complete the configured dwell.",
+      "taskType": "patrol",
+      "priority": "Normal",
+      "behaviourId": "patrol-route",
+      "behaviourVersion": "1.0.0",
+      "packageId": "logos.behaviours.patrol",
+      "parametersJson": "{\"routeGeometryId\":\"patrol-route\"}"
+    }
+  ]
+}

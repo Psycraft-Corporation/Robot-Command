@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>RobotCommand.Simulation</RootNamespace>
+    <AssemblyName>RobotCommand.Simulation</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../core/RobotCommand.Core/RobotCommand.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,34 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Avalonia" Version="12.0.2" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.0.2" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.0.2" />
+    <PackageVersion Include="Psycraft.Logos.Api.Sdk" Version="0.1.0-beta.8" />
+    <!-- LinkD package intentionally unavailable until a later public SDK release. -->
+    <!-- <PackageVersion Include="Logos.Linkd.Sdk" Version="0.1.0-alpha.1" /> -->
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+    <PackageVersion Include="Mapsui" Version="5.1.0" />
+    <PackageVersion Include="Mapsui.Avalonia12" Version="5.1.0-beta.7" />
+    <PackageVersion Include="Mapsui.Nts" Version="5.1.0" />
+    <PackageVersion Include="MavLinkSharp" Version="1.8.0" />
+    <PackageVersion Include="System.IO.Ports" Version="10.0.0" />
+    <PackageVersion Include="BruTile.MbTiles" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageVersion Include="Google.Protobuf" Version="3.29.3" />
+    <PackageVersion Include="Grpc.AspNetCore" Version="2.67.0" />
+    <PackageVersion Include="Grpc.Core.Api" Version="2.67.0" />
+    <PackageVersion Include="Grpc.Net.Client" Version="2.67.0" />
+    <PackageVersion Include="Grpc.Tools" Version="2.67.0" />
+    <PackageVersion Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+    <PackageVersion Include="DSoft.Makaretu.Dns.Multicast" Version="1.0.2412.112" />
+    <PackageVersion Include="QRCoder" Version="1.6.0" />
+    <PackageVersion Include="Veldrid" Version="4.9.0" />
+    <PackageVersion Include="Microsoft.Windows.SDK.NET.Ref" Version="10.0.26100.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+    <PackageVersion Include="xunit.v3" Version="3.0.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>

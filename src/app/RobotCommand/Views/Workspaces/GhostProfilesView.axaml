@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:core="using:RobotCommand.Core"
+             xmlns:loc="using:RobotCommand.Localization"
+             xmlns:render="using:RobotCommand.Rendering.Avalonia"
+             x:Class="RobotCommand.Views.Workspaces.GhostProfilesView"
+             x:DataType="vm:GhostProfilesViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="16" Spacing="12">
+      <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+        <ListBox Grid.ColumnSpan="4" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" MinHeight="72" MaxHeight="160">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="core:GhostProfileSnapshot">
+              <TextBlock Text="{Binding Name}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Grid.Row="1" Content="{loc:Loc Key=NewProfile}" Command="{Binding NewProfileCommand}" />
+        <Button Grid.Row="1" Grid.Column="1" Content="{loc:Loc Key=EditProfile}" Command="{Binding EditProfileCommand}" />
+        <Button Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Classes="danger" Content="{loc:Loc Key=DeleteProfile}" Command="{Binding DeleteProfileCommand}" />
+      </Grid>
+
+      <Border Classes="panel" Padding="16" IsVisible="{Binding IsViewingProfile}">
+        <StackPanel Spacing="8">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding SelectedProfile.Name}" />
+            <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding VehicleType}" />
+          </StackPanel>
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="20" RowSpacing="6">
+            <TextBlock Text="{loc:Loc Key=GhostSpeed}" />
+            <TextBlock Grid.Column="1" Text="{Binding SelectedProfile.Simulation.MaximumHorizontalSpeedMetresPerSecond, StringFormat='{}{0:0.#} m/s'}" />
+            <TextBlock Grid.Row="1" Text="{loc:Loc Key=GhostClimbRate}" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedProfile.Simulation.MaximumClimbRateMetresPerSecond, StringFormat='{}{0:0.#} m/s'}" />
+            <TextBlock Grid.Row="2" Text="{loc:Loc Key=GhostDescentRate}" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedProfile.Simulation.MaximumDescentRateMetresPerSecond, StringFormat='{}{0:0.#} m/s'}" />
+            <TextBlock Grid.Row="3" Text="{loc:Loc Key=GhostAltitudeLimit}" />
+            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedProfile.Simulation.MaximumAltitudeAglMetres, StringFormat='{}{0:0.#} m AGL'}" />
+            <TextBlock Grid.Row="4" Text="{loc:Loc Key=GhostYawRate}" />
+            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedProfile.Simulation.MaximumYawRateDegreesPerSecond, StringFormat='{}{0:0.#}°/s'}" />
+          </Grid>
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="20" RowSpacing="6">
+            <TextBlock Text="{loc:Loc Key=GhostHorizontalAcceleration}" />
+            <TextBlock Grid.Column="1" Text="{Binding SelectedProfile.Simulation.HorizontalAccelerationMetresPerSecondSquared, StringFormat='{}{0:0.#} m/s²'}" />
+            <TextBlock Grid.Row="1" Text="{loc:Loc Key=GhostVerticalAcceleration}" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedProfile.Simulation.VerticalAccelerationMetresPerSecondSquared, StringFormat='{}{0:0.#} m/s²'}" />
+            <TextBlock Grid.Row="2" Text="{loc:Loc Key=GhostEndurance}" />
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedProfile.Simulation.NominalEnduranceMinutes, StringFormat='{}{0:0.#} min'}" />
+          </Grid>
+          <TextBlock Classes="muted" IsVisible="{Binding IsBuiltIn}" Text="{loc:Loc Key=BuiltInProfileReadOnly}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" Padding="12" IsVisible="{Binding IsViewingProfile}">
+        <Grid RowDefinitions="Auto,180" RowSpacing="8">
+          <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+            <TextBlock Text="{Binding VisualAssetSummary}" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Content="{loc:Loc Key=UploadVisual}" IsVisible="{Binding CanUploadVisual}" Click="UploadVisualClick" />
+            <Button Grid.Column="2" Content="{loc:Loc Key=RemoveVisual}" IsVisible="{Binding CanRemoveVisual}" Command="{Binding RemoveVisualCommand}" />
+          </Grid>
+          <Image Grid.Row="1" Source="{Binding PreviewImage}" Stretch="Uniform" IsVisible="{Binding HasImagePreview}" />
+          <render:MeshPreviewControl Grid.Row="1" Asset="{Binding PreviewMesh}" IsVisible="{Binding HasMeshPreview}" />
+          <TextBlock Grid.Row="1" Classes="warningText" Text="{Binding PreviewError}" TextWrapping="Wrap" VerticalAlignment="Center" IsVisible="{Binding HasPreviewError}" />
+        </Grid>
+      </Border>
+
+      <Border Classes="panel" Padding="16" IsVisible="{Binding IsEditing}">
+        <StackPanel Spacing="8">
+          <TextBox PlaceholderText="{loc:Loc Key=ProfileName}" Text="{Binding ProfileName, Mode=TwoWay}" />
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+            <NumericUpDown Minimum="0.1" Value="{Binding MaximumSpeed}" PlaceholderText="{loc:Loc Key=GhostSpeed}" />
+            <NumericUpDown Grid.Column="1" Minimum="0.1" Value="{Binding ClimbRate}" PlaceholderText="{loc:Loc Key=GhostClimbRate}" />
+            <NumericUpDown Grid.Row="1" Minimum="0.1" Value="{Binding DescentRate}" PlaceholderText="{loc:Loc Key=GhostDescentRate}" />
+            <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="0.1" Value="{Binding HorizontalAcceleration}" PlaceholderText="{loc:Loc Key=GhostHorizontalAcceleration}" />
+            <NumericUpDown Grid.Row="2" Minimum="0.1" Value="{Binding VerticalAcceleration}" PlaceholderText="{loc:Loc Key=GhostVerticalAcceleration}" />
+            <NumericUpDown Grid.Row="2" Grid.Column="1" Minimum="0.1" Value="{Binding MaximumYawRate}" PlaceholderText="{loc:Loc Key=GhostYawRate}" />
+            <NumericUpDown Grid.Row="3" Minimum="0.1" Value="{Binding AltitudeLimit}" PlaceholderText="{loc:Loc Key=GhostAltitudeLimit}" />
+            <NumericUpDown Grid.Row="3" Grid.Column="1" Minimum="0.1" Value="{Binding Endurance}" PlaceholderText="{loc:Loc Key=GhostEndurance}" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Classes="primary" Content="{loc:Loc Key=SaveProfile}" Command="{Binding SaveProfileCommand}" />
+            <Button Content="{loc:Loc Key=Cancel}" Command="{Binding CancelEditCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <TextBlock Classes="warningText" IsVisible="{Binding HasStatus}" Text="{Binding Status}" TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

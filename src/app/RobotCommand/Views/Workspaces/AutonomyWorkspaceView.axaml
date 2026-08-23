@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:RobotCommand.Localization"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.AutonomyWorkspaceView"
+             x:DataType="vm:AutonomyWorkspaceViewModel">
+  <TabControl
+                ItemsSource="{Binding Sections}"
+                SelectedItem="{Binding SelectedSection}">
+      <TabControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:AutonomyWorkspaceSection">
+          <TextBlock Text="{Binding Title}" />
+        </DataTemplate>
+      </TabControl.ItemTemplate>
+      <TabControl.ContentTemplate>
+        <DataTemplate x:DataType="vm:AutonomyWorkspaceSection">
+          <ContentControl Content="{Binding Content}" />
+        </DataTemplate>
+      </TabControl.ContentTemplate>
+  </TabControl>
+</UserControl>

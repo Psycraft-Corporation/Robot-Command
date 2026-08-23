@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Shell.ApplicationStatusBar"
+             x:DataType="vm:ApplicationStatusViewModel">
+  <Border Classes="statusBar">
+    <Grid ColumnDefinitions="*,Auto,Auto" VerticalAlignment="Center">
+      <TextBlock Text="{Binding ConnectionText}" />
+      <TextBlock Grid.Column="1" Margin="20,0" Text="{Binding FleetText}" />
+      <TextBlock Grid.Column="2" Classes="muted" Text="{Binding FrameworkText}" />
+    </Grid>
+  </Border>
+</UserControl>

@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>RobotCommand</RootNamespace>
+    <AssemblyName>RobotCommand.Runtime</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../core/RobotCommand.Core/RobotCommand.Core.csproj" />
+    <ProjectReference Include="../../sdk/RobotCommand.Sdk/RobotCommand.Sdk.csproj" />
+    <ProjectReference Include="../../simulation/RobotCommand.Simulation/RobotCommand.Simulation.csproj" />
+    <ProjectReference Include="../../simulation/RobotCommand.Simulator/RobotCommand.Simulator.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../rendering/RobotCommand.Rendering/RobotCommand.Rendering.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Psycraft.Logos.Api.Sdk" />
+    <!-- LinkD integration is retained as an unsupported compatibility surface. -->
+    <!-- <PackageReference Include="Logos.Linkd.Sdk" /> -->
+    <PackageReference Include="YamlDotNet" />
+    <PackageReference Include="Mapsui" />
+    <PackageReference Include="Mapsui.Nts" />
+    <!-- MavLinkSharp 1.8.0 exposes its dialect XML files both as content files and
+         through buildTransitive. Keep the latter, which copies the runtime dialects,
+         and exclude the duplicate content-file assets so self-contained publish has
+         one output for each Dialects/*.xml file. -->
+    <PackageReference Include="MavLinkSharp" ExcludeAssets="contentFiles" />
+    <PackageReference Include="System.IO.Ports" />
+    <PackageReference Include="BruTile.MbTiles" />
+    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" />
+    <PackageReference Include="DSoft.Makaretu.Dns.Multicast" />
+    <FrameworkReference Include="Microsoft.Windows.SDK.NET.Ref" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <Target Name="CopyPortableSimulationWorker" AfterTargets="Build">
+    <ItemGroup>
+      <PortableWorkerFiles Include="$(MSBuildProjectDirectory)\..\..\simulation\RobotCommand.Simulator\bin\$(Configuration)\net10.0\RobotCommand.Simulator*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PortableWorkerFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(PortableWorkerFiles)' != ''" />
+  </Target>
+</Project>

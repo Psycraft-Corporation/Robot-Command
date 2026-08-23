@@ -1,0 +1,505 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.GeometryWorkspaceView"
+             x:DataType="vm:GeometryWorkspaceViewModel">
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <StackPanel>
+        <TextBlock Classes="workspaceTitle" Text="Geometry" />
+        <TextBlock Classes="muted"
+                   Text="Author PoIs, waypoint sequences, and zones; manage local and Logos registry copies" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="4">
+        <Border Classes="statusPill">
+          <TextBlock Text="{Binding GatewayStatus}" />
+        </Border>
+        <TextBlock Classes="muted"
+                   HorizontalAlignment="Right"
+                   MaxWidth="440"
+                   TextWrapping="Wrap"
+                   Text="{Binding RegistrySummary}" />
+      </StackPanel>
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="300,*,340" ColumnSpacing="12">
+      <Border Classes="panel">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="sectionTitle" Text="Local library" />
+            <TextBlock Grid.Column="1" Classes="countBadge" Text="{Binding LocalCount}" />
+          </Grid>
+
+          <TextBlock Grid.Row="1"
+                     Classes="muted"
+                     TextTrimming="CharacterEllipsis"
+                     ToolTip.Tip="{Binding LocalLibraryPath}"
+                     Text="{Binding LocalLibraryPath}" />
+
+          <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox PlaceholderText="Search name or ID" Text="{Binding SearchText}" />
+            <ComboBox Grid.Column="1"
+                      Width="145"
+                      ItemsSource="{Binding KindFilters}"
+                      SelectedItem="{Binding SelectedKindFilter}" />
+          </Grid>
+
+          <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="6">
+            <Button Classes="toolbarButton" Content="New PoI" Command="{Binding NewPointCommand}" />
+            <Button Classes="toolbarButton" Content="New route" Command="{Binding NewRouteCommand}" />
+            <Button Classes="toolbarButton" Content="New zone" Command="{Binding NewZoneCommand}" />
+          </StackPanel>
+
+          <ListBox Grid.Row="4"
+                   Classes="compactList"
+                   ItemsSource="{Binding LocalItems}"
+                   SelectedItem="{Binding SelectedLocal}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="4,6" Spacing="2">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"
+                               Text="{Binding DisplayName}" />
+                    <TextBlock Grid.Column="1" Classes="muted" Text="{Binding ValidationState}" />
+                  </Grid>
+                  <TextBlock Classes="muted"
+                             TextTrimming="CharacterEllipsis"
+                             Text="{Binding GeometryId}" />
+                  <TextBlock Classes="muted"
+                             TextWrapping="Wrap"
+                             Text="{Binding StatusSummary}" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <Grid Grid.Row="5" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+              <TextBox PlaceholderText="Path to import geometry JSON" Text="{Binding ImportPath}" />
+              <Button Grid.Column="1" Content="Import" Command="{Binding ImportCommand}" />
+            </Grid>
+            <CheckBox Grid.Row="1"
+                      Content="Replace a local document with the same ID"
+                      IsChecked="{Binding AllowReplaceImport}" />
+            <TextBlock Grid.Row="2"
+                       Classes="muted"
+                       Text="{Binding LibraryIssueSummary}" />
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" RowSpacing="12">
+        <Border Classes="panel">
+          <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBlock Classes="sectionTitle" Text="{Binding SelectedTitle}" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="{Binding AuthoringKind}" />
+            </Grid>
+            <TextBlock Grid.Row="1" Classes="muted" TextWrapping="Wrap" Text="{Binding SelectedSubtitle}" />
+            <WrapPanel Grid.Row="2" Orientation="Horizontal">
+              <Button Margin="0,0,8,6" Content="Edit on map" Command="{Binding EditOnMapCommand}" />
+              <Button Margin="0,0,8,6" Classes="primary" Content="Save map draft" Command="{Binding SaveMapDraftCommand}" />
+              <Button Margin="0,0,8,6" Content="Discard map draft" Command="{Binding DiscardMapDraftCommand}" />
+              <Button Margin="0,0,8,6" Content="Create on Logos" Command="{Binding CreateRemoteCommand}" />
+              <Button Margin="0,0,8,6" Content="Update Logos" Command="{Binding UpdateRemoteCommand}" />
+              <Button Margin="0,0,0,6" Content="Remove local" Command="{Binding RemoveLocalCommand}" />
+            </WrapPanel>
+          </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1">
+          <TabItem Header="Author">
+            <ScrollViewer>
+              <StackPanel Margin="12" Spacing="14">
+                <Border Classes="noticePanel" IsVisible="{Binding HasAuthoringReadOnlyReason}">
+                  <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding AuthoringReadOnlyReason}" />
+                </Border>
+
+                <Grid IsEnabled="{Binding AuthoringEditable}" ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                  <TextBlock VerticalAlignment="Center" Text="Geometry ID" />
+                  <TextBox Grid.Column="1" IsReadOnly="True" Text="{Binding AuthoringGeometryId}" />
+                  <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="Name" />
+                  <TextBox Grid.Row="1" Grid.Column="1" PlaceholderText="Operator-facing geometry name" Text="{Binding AuthoringDisplayName}" />
+                  <TextBlock Grid.Row="2" VerticalAlignment="Top" Text="Description" />
+                  <TextBox Grid.Row="2" Grid.Column="1" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" Text="{Binding AuthoringDescription}" />
+                  <TextBlock Grid.Row="3" VerticalAlignment="Center" Text="Frame" />
+                  <TextBox Grid.Row="3" Grid.Column="1" IsReadOnly="True" Text="{Binding AuthoringFrame}" />
+                </Grid>
+
+                <Border Classes="noticePanel">
+                  <StackPanel Spacing="4">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock FontWeight="SemiBold" Text="Map authoring" />
+                      <TextBlock Grid.Column="1" Classes="muted" Text="{Binding MapEditActionLabel}" />
+                    </Grid>
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding MapEditSummary}" />
+                  </StackPanel>
+                </Border>
+
+                <StackPanel Spacing="8" IsEnabled="{Binding AuthoringEditable}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                      <TextBlock Classes="sectionTitle" Text="Coordinates" />
+                      <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding VertexRequirement}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="countBadge" Text="{Binding Vertices.Count}" />
+                  </Grid>
+
+                  <ListBox MinHeight="110"
+                           MaxHeight="210"
+                           Classes="compactList"
+                           ItemsSource="{Binding Vertices}"
+                           SelectedItem="{Binding SelectedVertex}">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:GeometryVertexRowViewModel">
+                        <Grid Margin="4,5" ColumnDefinitions="44,*,*,*" ColumnSpacing="8">
+                          <TextBlock FontWeight="SemiBold" Text="{Binding Number}" />
+                          <TextBlock Grid.Column="1" Classes="muted" Text="{Binding LatitudeText}" />
+                          <TextBlock Grid.Column="2" Classes="muted" Text="{Binding LongitudeText}" />
+                          <TextBlock Grid.Column="3" Classes="muted" Text="{Binding AltitudeText}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+
+                  <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                    <StackPanel>
+                      <TextBlock Classes="muted" Text="Longitude" />
+                      <TextBox PlaceholderText="-79.3832" Text="{Binding VertexLongitudeText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Classes="muted" Text="Latitude" />
+                      <TextBox PlaceholderText="43.6532" Text="{Binding VertexLatitudeText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Classes="muted" Text="Altitude (m)" />
+                      <TextBox PlaceholderText="0" Text="{Binding VertexAltitudeText}" />
+                    </StackPanel>
+                  </Grid>
+
+                  <WrapPanel Orientation="Horizontal">
+                    <Button Margin="0,0,8,6" Content="Add / place" Command="{Binding AddVertexCommand}" />
+                    <Button Margin="0,0,8,6" Content="Apply selected" Command="{Binding ApplyVertexCommand}" />
+                    <Button Margin="0,0,8,6" Content="Insert before" Command="{Binding InsertVertexCommand}" />
+                    <Button Margin="0,0,8,6" Content="Move up" Command="{Binding MoveVertexUpCommand}" />
+                    <Button Margin="0,0,8,6" Content="Move down" Command="{Binding MoveVertexDownCommand}" />
+                    <Button Margin="0,0,0,6" Content="Remove" Command="{Binding RemoveVertexCommand}" />
+                  </WrapPanel>
+                </StackPanel>
+
+                <StackPanel Spacing="8" IsEnabled="{Binding AuthoringEditable}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel>
+                      <TextBlock Classes="sectionTitle" Text="Policy annotation" />
+                      <TextBlock Classes="muted" Text="Optional geometry-level operational metadata; this does not edit a policy profile." />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Clear" Command="{Binding ClearPolicyCommand}" />
+                  </Grid>
+
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <StackPanel>
+                      <TextBlock Classes="muted" Text="Constraint" />
+                      <ComboBox ItemsSource="{Binding PolicyPresets}" SelectedItem="{Binding SelectedPolicyPreset}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Classes="muted" Text="Decision" />
+                      <ComboBox ItemsSource="{Binding PolicyDecisions}" SelectedItem="{Binding SelectedPolicyDecision}" />
+                    </StackPanel>
+                  </Grid>
+
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <StackPanel>
+                      <TextBlock Classes="muted" Text="Minimum altitude (m)" />
+                      <TextBox PlaceholderText="Unbounded" Text="{Binding PolicyMinimumAltitudeText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                      <TextBlock Classes="muted" Text="Maximum altitude (m)" />
+                      <TextBox PlaceholderText="Unbounded" Text="{Binding PolicyMaximumAltitudeText}" />
+                    </StackPanel>
+                  </Grid>
+
+                  <TextBox PlaceholderText="Operations, comma-separated (for example: transit, land)" Text="{Binding PolicyOperationsText}" />
+                  <TextBox PlaceholderText="Policy code" Text="{Binding PolicyCode}" />
+                  <TextBox PlaceholderText="Recommended action" Text="{Binding PolicyRecommendedAction}" />
+                  <TextBox PlaceholderText="Tags, comma-separated" Text="{Binding PolicyTagsText}" />
+                </StackPanel>
+
+                <Border Classes="noticePanel">
+                  <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding AuthoringValidationDetails}" />
+                </Border>
+
+                <Button HorizontalAlignment="Left"
+                        Classes="primary"
+                        Content="Save local changes"
+                        Command="{Binding SaveLocalEditsCommand}" />
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+
+          <TabItem Header="Details">
+            <ScrollViewer>
+              <StackPanel Margin="12" Spacing="12">
+                <TextBox IsReadOnly="True"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         MinHeight="190"
+                         Text="{Binding SelectedDetails}" />
+                <Border Classes="noticePanel">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Deployment comparison" />
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding DeploymentDetails}" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+
+          <TabItem Header="Validation">
+            <ScrollViewer>
+              <StackPanel Margin="12" Spacing="12">
+                <StackPanel>
+                  <TextBlock Classes="sectionTitle" Text="Local structural validation" />
+                  <TextBox Margin="0,6,0,0"
+                           IsReadOnly="True"
+                           AcceptsReturn="True"
+                           TextWrapping="Wrap"
+                           MinHeight="100"
+                           Text="{Binding ValidationDetails}" />
+                </StackPanel>
+
+                <Border Classes="noticePanel">
+                  <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Guarded Logos operation" />
+                        <TextBlock Classes="muted" Text="{Binding SelectedRemoteOperationSummary}" />
+                      </StackPanel>
+                      <Button Grid.Column="1"
+                              VerticalAlignment="Top"
+                              Content="Validate operation"
+                              Command="{Binding AssessRemoteCommand}" />
+                    </Grid>
+                    <TextBlock TextWrapping="Wrap" Text="{Binding AssessmentSummary}" />
+                  </StackPanel>
+                </Border>
+
+                <TextBox IsReadOnly="True"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         MinHeight="210"
+                         Text="{Binding AssessmentDetails}" />
+
+                <Border Classes="noticePanel" IsVisible="{Binding HasConflictResolutionContext}">
+                  <StackPanel Spacing="8">
+                    <TextBlock FontWeight="SemiBold" Text="Preserve conflicting content" />
+                    <TextBlock Classes="muted"
+                               TextWrapping="Wrap"
+                               Text="Automatic merging is not attempted. Preserve either side under a new local geometry ID before replacing or refreshing the original." />
+                    <TextBox PlaceholderText="New local geometry ID" Text="{Binding ConflictCopyId}" />
+                    <WrapPanel Orientation="Horizontal">
+                      <Button Margin="0,0,8,0"
+                              Content="Keep local as copy"
+                              Command="{Binding DuplicateLocalCommand}" />
+                      <Button Content="Pull Logos as copy"
+                              Command="{Binding PullRemoteCopyCommand}" />
+                    </WrapPanel>
+                  </StackPanel>
+                </Border>
+
+                <StackPanel>
+                  <TextBlock Classes="sectionTitle" Text="Last remote operation" />
+                  <TextBox Margin="0,6,0,0"
+                           IsReadOnly="True"
+                           AcceptsReturn="True"
+                           TextWrapping="Wrap"
+                           MinHeight="130"
+                           Text="{Binding LastRemoteOperationDetails}" />
+                </StackPanel>
+                <TextBlock Classes="muted"
+                           TextWrapping="Wrap"
+                           Text="Create and update operations repeat this assessment immediately before the RPC and verify the returned revision and content afterward." />
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+
+          <TabItem Header="Bindings">
+            <Grid Margin="12" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+              <Border Classes="noticePanel">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="Behaviour geometry bindings" />
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="Bind installed behaviour slots to geometry registered on the selected Logos runtime." />
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding BindingAvailability}" />
+                  </StackPanel>
+                  <Button Grid.Column="1"
+                          VerticalAlignment="Top"
+                          Content="Refresh packages"
+                          Command="{Binding RefreshBindingsCommand}" />
+                </Grid>
+              </Border>
+
+              <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8">
+                <StackPanel>
+                  <TextBlock Classes="muted" Text="Behaviour package" />
+                  <ComboBox ItemsSource="{Binding BehaviourPackages}"
+                            SelectedItem="{Binding SelectedBehaviourPackage}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock FontWeight="SemiBold" Text="{Binding Label}" />
+                          <TextBlock Classes="muted" Text="{Binding GeometryBindingSummary}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                  <TextBlock Classes="muted" Text="Compatible registered geometry" />
+                  <ComboBox ItemsSource="{Binding BindingGeometryOptions}"
+                            SelectedItem="{Binding SelectedBindingGeometry}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                          <TextBlock Classes="muted" Text="{Binding StatusSummary}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+              </Grid>
+
+              <Grid Grid.Row="2" ColumnDefinitions="280,*" ColumnSpacing="10">
+                <ListBox ItemsSource="{Binding BehaviourSlots}"
+                         SelectedItem="{Binding SelectedBehaviourSlot}">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Margin="4,6" Spacing="2">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                          <TextBlock FontWeight="SemiBold" Text="{Binding SlotId}" />
+                          <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Status}" />
+                        </Grid>
+                        <TextBlock Classes="muted" Text="{Binding ExpectedKind}" />
+                        <TextBlock Classes="muted" TextTrimming="CharacterEllipsis" Text="{Binding GeometryId}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+                <StackPanel Grid.Column="1" Spacing="10">
+                  <TextBox IsReadOnly="True"
+                           AcceptsReturn="True"
+                           TextWrapping="Wrap"
+                           MinHeight="180"
+                           Text="{Binding SelectedBindingDetails}" />
+                  <WrapPanel Orientation="Horizontal">
+                    <Button Margin="0,0,8,0"
+                            Classes="primary"
+                            Content="Set binding"
+                            Command="{Binding SetBindingCommand}" />
+                    <Button Margin="0,0,8,0"
+                            Content="Clear binding"
+                            Command="{Binding ClearBindingCommand}" />
+                    <Button Content="Show geometry"
+                            Command="{Binding ShowBoundGeometryCommand}" />
+                  </WrapPanel>
+                </StackPanel>
+              </Grid>
+
+              <Border Grid.Row="3" Classes="noticePanel">
+                <TextBlock TextWrapping="Wrap" Text="{Binding BindingStatus}" />
+              </Border>
+            </Grid>
+          </TabItem>
+
+          <TabItem Header="Export">
+            <Grid Margin="12" RowDefinitions="Auto,Auto" RowSpacing="8">
+              <TextBox PlaceholderText="Export destination" Text="{Binding ExportPath}" />
+              <Button Grid.Row="1"
+                      HorizontalAlignment="Left"
+                      Content="Export local document"
+                      Command="{Binding ExportCommand}" />
+            </Grid>
+          </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Classes="panel">
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding StatusMessage}" />
+        </Border>
+      </Grid>
+
+      <Border Grid.Column="2" Classes="panel">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="sectionTitle" Text="Logos registry" />
+            <TextBlock Grid.Column="1" Classes="countBadge" Text="{Binding RemoteCount}" />
+          </Grid>
+
+          <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <ComboBox ItemsSource="{Binding Connections}"
+                      SelectedItem="{Binding SelectedConnection}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                    <TextBlock Classes="muted" Text="{Binding State}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshCommand}" />
+          </Grid>
+
+          <Border Grid.Row="2" Classes="noticePanel">
+            <StackPanel Spacing="3">
+              <TextBlock FontWeight="SemiBold" Text="{Binding RegistryWatchSummary}" />
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding RegistryWatchDetails}" />
+            </StackPanel>
+          </Border>
+
+          <ComboBox Grid.Row="3"
+                    ItemsSource="{Binding DeploymentFilters}"
+                    SelectedItem="{Binding SelectedDeploymentFilter}" />
+
+          <ListBox Grid.Row="4"
+                   Classes="compactList"
+                   ItemsSource="{Binding RemoteItems}"
+                   SelectedItem="{Binding SelectedRemote}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="4,6" Spacing="2">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"
+                               Text="{Binding DisplayName}" />
+                    <TextBlock Grid.Column="1" Classes="muted" Text="{Binding DeploymentState}" />
+                  </Grid>
+                  <TextBlock Classes="muted" TextTrimming="CharacterEllipsis" Text="{Binding GeometryId}" />
+                  <TextBlock Classes="muted" Text="{Binding StatusSummary}" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <Grid Grid.Row="5" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="7">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="Pull to local" Command="{Binding PullCommand}" />
+              <CheckBox VerticalAlignment="Center" Content="Replace local" IsChecked="{Binding ReplaceLocalOnPull}" />
+            </StackPanel>
+            <TextBlock Grid.Row="1" Classes="muted" TextWrapping="Wrap" Text="{Binding DeleteConfirmationPrompt}" />
+            <TextBox Grid.Row="2" PlaceholderText="Typed confirmation for remote deletion" Text="{Binding RemoteDeleteConfirmation}" />
+            <Button Grid.Row="3"
+                    Classes="danger"
+                    HorizontalAlignment="Left"
+                    Content="Delete from Logos"
+                    Command="{Binding DeleteRemoteCommand}" />
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <TextBlock Grid.Row="2"
+               Classes="muted"
+               Text="Zones remain two-dimensional geometry. Optional altitude metadata does not turn a zone into a volume." />
+  </Grid>
+</UserControl>
