@@ -1,0 +1,166 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.QuickRunPanel"
+             x:DataType="vm:OperatorControlsViewModel">
+  <ScrollViewer x:Name="OperationsScrollViewer"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="0,0,10,12" Spacing="12">
+          <Border Classes="targetScopeBadge" IsVisible="{Binding HasCommandSelection}">
+            <TextBlock FontWeight="SemiBold" Text="{Binding SelectedVehicleText}" />
+          </Border>
+          <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="8">
+            <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Classes="toolbarButton" Command="{Binding PrepareArmCommand}" Content="Arm" />
+            <Button Grid.Column="1" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Classes="toolbarButton" Command="{Binding PrepareDisarmCommand}" Content="Disarm" />
+            <Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Classes="toolbarButton" Command="{Binding PrepareLandCommand}" Content="Land" />
+            <Button Grid.Column="3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Classes="toolbarButton" Command="{Binding PrepareRecoverCommand}" Content="RTL" />
+            <Button Grid.Column="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Classes="toolbarButton" Command="{Binding PrepareHoldCommand}" Content="Hold" />
+          </Grid>
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+            <StackPanel Spacing="4">
+              <Grid>
+                <TextBox Height="34" VerticalContentAlignment="Center" Padding="8,0,28,0"
+                         Text="{Binding TakeoffAltitudeText, Mode=TwoWay}"
+                         PlaceholderText="Takeoff AGL" />
+                <TextBlock Classes="muted"
+                           Margin="0,0,8,0"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Text="{Binding VerticalDistanceUnitSuffix}" />
+              </Grid>
+              <Button Classes="toolbarButton" Command="{Binding PrepareTakeoffCommand}" Content="Takeoff" />
+            </StackPanel>
+            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4">
+              <Grid>
+                <TextBox Height="34" VerticalContentAlignment="Center" Padding="8,0,28,0"
+                         Text="{Binding AltitudeTargetText, Mode=TwoWay}"
+                         PlaceholderText="Altitude target" />
+                <TextBlock Classes="muted"
+                           Margin="0,0,8,0"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Text="{Binding VerticalDistanceUnitSuffix}" />
+              </Grid>
+              <Button Classes="toolbarButton" Command="{Binding PrepareChangeAltitudeCommand}" Content="Change altitude" />
+            </StackPanel>
+            <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="1.35*,0.65*" ColumnSpacing="12">
+            <StackPanel Spacing="4">
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="4">
+                <Grid>
+                  <TextBox Height="34" VerticalContentAlignment="Center" Padding="8,0,22,0"
+                           Text="{Binding GoToLatitudeText, Mode=TwoWay}" PlaceholderText="Latitude" />
+                  <TextBlock Classes="muted" Margin="0,0,8,0" HorizontalAlignment="Right"
+                             VerticalAlignment="Center" IsHitTestVisible="False" Text="&#176;" />
+                </Grid>
+                <Grid Grid.Column="1">
+                  <TextBox Height="34" VerticalContentAlignment="Center" Padding="8,0,22,0"
+                           Text="{Binding GoToLongitudeText, Mode=TwoWay}" PlaceholderText="Longitude" />
+                  <TextBlock Classes="muted" Margin="0,0,8,0" HorizontalAlignment="Right"
+                             VerticalAlignment="Center" IsHitTestVisible="False" Text="&#176;" />
+                </Grid>
+              </Grid>
+              <Button Classes="toolbarButton" Command="{Binding PrepareGoToCommand}" Content="Go to" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4">
+              <Grid>
+                <TextBox Height="34" VerticalContentAlignment="Center" Padding="8,0,28,0"
+                         Text="{Binding HeadingTargetText, Mode=TwoWay}"
+                         PlaceholderText="Heading" />
+                <TextBlock Classes="muted"
+                           Margin="0,0,8,0"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Text="&#176;" />
+              </Grid>
+              <Button Classes="toolbarButton" Command="{Binding PrepareSetHeadingCommand}" Content="Set heading" />
+            </StackPanel>
+            </Grid>
+          </Grid>
+          <TextBlock Classes="errorText"
+                     IsVisible="{Binding HasParameterValidationMessage}"
+                     Text="{Binding ParameterValidationMessage}"
+                     TextWrapping="Wrap" />
+          <Border x:Name="PendingCommandPanel"
+                  IsVisible="{Binding HasPendingPlan}"
+                  Classes="commandPlanPanel">
+            <StackPanel Spacing="6">
+              <TextBlock FontWeight="SemiBold" Text="{Binding PendingDisplayTitle}" />
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding ConfirmationPrompt}" />
+              <TextBox IsVisible="{Binding RequiresTypedConfirmation}" PlaceholderText="Confirmation phrase" Text="{Binding ConfirmationText, Mode=TwoWay}" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="commandExecuteReady"
+                        IsVisible="{Binding PendingExecutionReady}"
+                        Command="{Binding ExecutePendingCommand}"
+                        Content="Execute command" />
+                <Button Classes="commandExecuteBlocked"
+                        IsVisible="{Binding PendingExecutionBlocked}"
+                        Command="{Binding TogglePendingFindingsCommand}"
+                        Content="Review findings"
+                        ToolTip.Tip="Show the readiness findings blocking this command" />
+                <Button IsVisible="{Binding ShowClearQueuedCommand}"
+                        Command="{Binding ClearQueuedCommandsCommand}"
+                        Content="Clear pending command" />
+              </StackPanel>
+              <ItemsControl IsVisible="{Binding ShowPendingFindings}" ItemsSource="{Binding Findings}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Border Classes="findingItem" Margin="0,2,0,0" Padding="4">
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                        <TextBlock Classes="muted" Text="{Binding Source}" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+          <Button IsVisible="{Binding HasExecutingCommand}"
+                  Command="{Binding CancelExecutingCommandsCommand}"
+                  Content="Cancel command" />
+          <Border IsVisible="{Binding HasRejectedCommand}"
+                  Classes="commandRejectionPanel">
+            <Grid ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+              <Button Grid.Column="0"
+                      Classes="commandRejectionHeader"
+                      HorizontalContentAlignment="Left"
+                      Command="{Binding ToggleRejectedCommand}"
+                      Content="{Binding CommandOutcomeTitle}"
+                      ToolTip.Tip="Show or hide the complete command outcome" />
+              <Button Grid.Column="1"
+                      Classes="compactRejectionToggle"
+                      Command="{Binding ToggleRejectedCommand}"
+                      Content="{Binding RejectedCommandToggleText}"
+                      ToolTip.Tip="Show or hide the complete command outcome" />
+              <Button Grid.Column="2"
+                      Grid.RowSpan="2"
+                      Classes="compactDismissButton"
+                      Command="{Binding DismissRejectedCommand}"
+                      Content="×"
+                      ToolTip.Tip="Dismiss rejection" />
+              <TextBlock Grid.Row="1"
+                         Grid.ColumnSpan="2"
+                         IsVisible="{Binding ShowRejectedCommandSummary}"
+                         Classes="errorText"
+                         TextWrapping="Wrap"
+                         Text="{Binding RejectedCommandSummary}" />
+              <ScrollViewer Grid.Row="1"
+                            Grid.ColumnSpan="2"
+                            IsVisible="{Binding ShowRejectedCommandDetails}"
+                            MaxHeight="180"
+                            VerticalScrollBarVisibility="Auto"
+                            HorizontalScrollBarVisibility="Disabled">
+                <TextBlock Classes="errorText"
+                           TextWrapping="Wrap"
+                           Text="{Binding RejectedCommandMessage}" />
+              </ScrollViewer>
+            </Grid>
+          </Border>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding StatusMessage}" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

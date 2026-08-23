@@ -1,0 +1,15 @@
+name: robot_command_sdk
+description: Dart SDK for the Robot Command protobuf observer API.
+version: 0.1.0-alpha.1
+publish_to: none
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  crypto: ^3.0.7
+  grpc: ^5.1.0
+  protobuf: ^6.0.0
+
+dev_dependencies:
+  test: ^1.26.0

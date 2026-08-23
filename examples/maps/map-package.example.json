@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "logos.map-package.v1",
+  "packageId": "toronto-field-map",
+  "version": "2026.07.0",
+  "displayName": "Toronto Field Map",
+  "kind": "Deployment",
+  "coverage": {
+    "minLatitude": 43.4,
+    "minLongitude": -79.9,
+    "maxLatitude": 44.1,
+    "maxLongitude": -78.9
+  },
+  "minZoom": 0,
+  "maxZoom": 15,
+  "datasetDate": "2026-07-01T00:00:00Z",
+  "buildDate": "2026-07-25T12:00:00Z",
+  "coordinateSystem": "EPSG:3857",
+  "attribution": "Psycraft operational map · Open map data",
+  "license": "ODbL-1.0",
+  "defaultStyleId": "operational",
+  "styles": [
+    {
+      "styleId": "operational",
+      "displayName": "Operational",
+      "kind": "Operational",
+      "baseMapFile": "tiles/toronto-operational.mbtiles",
+      "default": true
+    },
+    {
+      "styleId": "topographic",
+      "displayName": "Topographic",
+      "kind": "Topographic",
+      "baseMapFile": "tiles/toronto-topographic.mbtiles"
+    },
+    {
+      "styleId": "imagery",
+      "displayName": "Imagery",
+      "kind": "Imagery",
+      "baseMapFile": "tiles/toronto-imagery.mbtiles",
+      "overlayFiles": [
+        "tiles/toronto-reference-labels.mbtiles"
+      ],
+      "attribution": "Licensed imagery · Open reference labels"
+    }
+  ],
+  "files": [
+    {
+      "path": "tiles/toronto-operational.mbtiles",
+      "role": "operational",
+      "sha256": "REPLACE_WITH_LOWERCASE_SHA256",
+      "sizeBytes": 0
+    },
+    {
+      "path": "tiles/toronto-topographic.mbtiles",
+      "role": "topographic",
+      "sha256": "REPLACE_WITH_LOWERCASE_SHA256",
+      "sizeBytes": 0
+    },
+    {
+      "path": "tiles/toronto-imagery.mbtiles",
+      "role": "imagery",
+      "sha256": "REPLACE_WITH_LOWERCASE_SHA256",
+      "sizeBytes": 0
+    },
+    {
+      "path": "tiles/toronto-reference-labels.mbtiles",
+      "role": "labels",
+      "sha256": "REPLACE_WITH_LOWERCASE_SHA256",
+      "sizeBytes": 0
+    }
+  ]
+}

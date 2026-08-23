@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.AutonomyPlansView"
+             x:DataType="vm:AutonomyPlansViewModel">
+  <TabControl Margin="8">
+    <TabItem Header="Missions">
+      <ContentControl Content="{Binding Missions}" />
+    </TabItem>
+    <TabItem Header="Tasks">
+      <ContentControl Content="{Binding Tasks}" />
+    </TabItem>
+    <TabItem Header="Task behaviour">
+      <ContentControl Content="{Binding TaskComposer}" />
+    </TabItem>
+  </TabControl>
+</UserControl>

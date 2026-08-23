@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:render="using:RobotCommand.Rendering.Avalonia"
+             x:Class="RobotCommand.Views.Workspaces.ThreeDWorkspaceView"
+             x:DataType="vm:ThreeDWorkspaceViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="10">
+    <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+      <StackPanel Orientation="Horizontal" Spacing="10">
+        <TextBlock Classes="workspaceTitle" Text="3D" />
+        <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding RendererText}" />
+        <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding EntityCountText}" />
+      </StackPanel>
+      <Button Grid.Column="1" Content="Reset" Command="{Binding ResetCameraCommand}" />
+      <Button Grid.Column="2" Content="Fit" Command="{Binding FitSceneCommand}" />
+      <Button Grid.Column="3" Content="Software" Command="{Binding UseSoftwareCommand}" />
+      <Button Grid.Column="4" Content="Auto" Command="{Binding UseAutoCommand}" />
+    </Grid>
+    <Border Grid.Row="1" Classes="mapSurface">
+      <Grid>
+        <render:ThreeDViewportControl x:Name="Viewport" Scene="{Binding Snapshot}" />
+        <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="12" Classes="smallPill">
+          <TextBlock Text="WASDQE  |  drag to look  |  wheel speed  |  R reset  |  F fit" />
+        </Border>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

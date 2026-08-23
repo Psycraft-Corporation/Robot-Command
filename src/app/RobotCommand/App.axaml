@@ -1,0 +1,76 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:workspaces="using:RobotCommand.Views.Workspaces"
+             x:Class="RobotCommand.App"
+             RequestedThemeVariant="Dark">
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://RobotCommand/Styles/AppStyles.axaml" />
+  </Application.Styles>
+
+  <Application.DataTemplates>
+    <DataTemplate DataType="vm:OperateViewModel">
+      <workspaces:OperateView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ManualControlViewModel">
+      <workspaces:ManualControlView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:UnitsWorkspaceViewModel">
+      <workspaces:UnitsWorkspaceView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:UnitsStubViewModel">
+      <workspaces:UnitsStubView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ThreeDWorkspaceViewModel">
+      <workspaces:ThreeDWorkspaceView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:GhostProfilesViewModel">
+      <workspaces:GhostProfilesView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:MapLibraryViewModel">
+      <workspaces:MapLibraryView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:AutonomyWorkspaceViewModel">
+      <workspaces:AutonomyWorkspaceView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:GeometryWorkspaceViewModel">
+      <workspaces:GeometryWorkspaceView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:GeometryLibraryViewModel">
+      <workspaces:GeometryLibraryView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:FlightMissionViewModel">
+      <workspaces:FlightMissionView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:FormationAuthoringViewModel">
+      <workspaces:FormationAuthoringView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:AutonomyMissionPlaceholderViewModel">
+      <Border Classes="noticePanel" Padding="20">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="workspaceTitle" Text="{Binding Title}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Message}" />
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+    <DataTemplate DataType="vm:EventsViewModel">
+      <workspaces:EventsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:CommandsViewModel">
+      <workspaces:CommandsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:HistoryViewModel">
+      <workspaces:HistoryView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:ConnectionsViewModel">
+      <workspaces:ConnectionsView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:MyTeamViewModel">
+      <workspaces:MyTeamView />
+    </DataTemplate>
+    <DataTemplate DataType="vm:SettingsViewModel">
+      <workspaces:SettingsView />
+    </DataTemplate>
+  </Application.DataTemplates>
+</Application>

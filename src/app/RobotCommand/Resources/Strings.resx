@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Robot Command</value></data>
+  <data name="AppSubtitle" xml:space="preserve"><value>Operational ground control station</value></data>
+  <data name="WorkspaceHeader" xml:space="preserve"><value>WORKSPACES</value></data>
+  <data name="WorkspaceSummary" xml:space="preserve"><value>Fleet operations, missions, telemetry, video, and audit</value></data>
+  <data name="UnitsHeader" xml:space="preserve"><value>UNITS</value></data>
+  <data name="Units" xml:space="preserve"><value>Units</value></data>
+  <data name="Ghosts" xml:space="preserve"><value>Ghosts</value></data>
+  <data name="NewProfile" xml:space="preserve"><value>New profile</value></data>
+  <data name="EditProfile" xml:space="preserve"><value>Edit profile</value></data>
+  <data name="DeleteProfile" xml:space="preserve"><value>Delete profile</value></data>
+  <data name="SaveProfile" xml:space="preserve"><value>Save profile</value></data>
+  <data name="ProfileName" xml:space="preserve"><value>Profile name</value></data>
+  <data name="BuiltInProfileReadOnly" xml:space="preserve"><value>Built-in profile · read-only</value></data>
+  <data name="ProfileSaved" xml:space="preserve"><value>Profile saved.</value></data>
+  <data name="ProfileDeleted" xml:space="preserve"><value>Profile deleted.</value></data>
+  <data name="UploadVisual" xml:space="preserve"><value>Upload visual</value></data>
+  <data name="RemoveVisual" xml:space="preserve"><value>Remove visual</value></data>
+  <data name="VisualAssetNone" xml:space="preserve"><value>No visual</value></data>
+  <data name="VisualImported" xml:space="preserve"><value>Visual imported.</value></data>
+  <data name="VisualRemoved" xml:space="preserve"><value>Visual removed.</value></data>
+  <data name="VisualUnavailable" xml:space="preserve"><value>The visual file is unavailable. Re-upload it to restore the preview.</value></data>
+  <data name="VisualPreviewFailed" xml:space="preserve"><value>The visual could not be displayed.</value></data>
+  <data name="ConnectedClients" xml:space="preserve"><value>CONNECTED CLIENTS</value></data>
+  <data name="Operators" xml:space="preserve"><value>OPERATORS</value></data>
+  <data name="SelectedClient" xml:space="preserve"><value>SELECTED CLIENT</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsDescription" xml:space="preserve"><value>Application preferences and accessibility</value></data>
+  <data name="SettingsAccessibility" xml:space="preserve"><value>Accessibility</value></data>
+  <data name="SettingsLanguage" xml:space="preserve"><value>Language</value></data>
+  <data name="SettingsLanguageDescription" xml:space="preserve"><value>Choose the language used by Robot Command controls and messages.</value></data>
+  <data name="SettingsLanguageEnglish" xml:space="preserve"><value>English</value></data>
+  <data name="SettingsLanguageFrench" xml:space="preserve"><value>Fran&#231;ais</value></data>
+  <data name="BrightMode" xml:space="preserve"><value>Bright mode</value></data>
+  <data name="Operate" xml:space="preserve"><value>Operate</value></data>
+  <data name="InputDevices" xml:space="preserve"><value>Input Devices</value></data>
+  <data name="Planning" xml:space="preserve"><value>Planning</value></data>
+  <data name="OperateDescription" xml:space="preserve"><value>Map, video, telemetry, and operational controls</value></data>
+  <data name="ManualControl" xml:space="preserve"><value>Manual Control</value></data>
+  <data name="ManualControlDescription" xml:space="preserve"><value>Xbox controller control for Ghost, PX4, and ArduPilot MAVLink units</value></data>
+  <data name="Maps" xml:space="preserve"><value>Maps</value></data>
+  <data name="MapsDescription" xml:space="preserve"><value>Offline packages, coverage, validation, and storage</value></data>
+  <data name="Autonomy" xml:space="preserve"><value>Autonomy</value></data>
+  <data name="AutonomyDescription" xml:space="preserve"><value>Reusable geometry and upcoming mission planning</value></data>
+  <data name="Geometry" xml:space="preserve"><value>Geometry</value></data>
+  <data name="GeometryDescription" xml:space="preserve"><value>Local PoIs, waypoint sequences, zones, and groups</value></data>
+  <data name="Mission" xml:space="preserve"><value>Mission</value></data>
+  <data name="MissionDeferredDescription" xml:space="preserve"><value>Mission planning is coming next. Geometry objects saved here will be reusable in future PX4, ArduPilot, and Logos plans.</value></data>
+  <data name="Behaviours" xml:space="preserve"><value>Behaviours</value></data>
+  <data name="BehavioursDescription" xml:space="preserve"><value>Package library, Logos validation, deployment, and geometry bindings</value></data>
+  <data name="Inspector" xml:space="preserve"><value>Inspector</value></data>
+  <data name="InspectorDescription" xml:space="preserve"><value>Authoritative mission, task, autonomy, tree, and intervention state</value></data>
+  <data name="Evidence" xml:space="preserve"><value>Evidence</value></data>
+  <data name="EvidenceDescription" xml:space="preserve"><value>Displayed frames, exported clips, and operational metadata</value></data>
+  <data name="Missions" xml:space="preserve"><value>Missions</value></data>
+  <data name="MissionsDescription" xml:space="preserve"><value>Mission packages, assignment, and execution</value></data>
+  <data name="Tasks" xml:space="preserve"><value>Tasks</value></data>
+  <data name="TasksDescription" xml:space="preserve"><value>Task queue and per-vehicle work</value></data>
+  <data name="Events" xml:space="preserve"><value>Events</value></data>
+  <data name="EventsDescription" xml:space="preserve"><value>Operational event stream and audit context</value></data>
+  <data name="Commands" xml:space="preserve"><value>Commands</value></data>
+  <data name="CommandsDescription" xml:space="preserve"><value>Command targeting, policy, and audit history</value></data>
+  <data name="History" xml:space="preserve"><value>History</value></data>
+  <data name="HistoryDescription" xml:space="preserve"><value>Command and operational event history</value></data>
+  <data name="Connections" xml:space="preserve"><value>Connections</value></data>
+  <data name="ConnectionsDescription" xml:space="preserve"><value>Create, monitor, and inspect Logos connections</value></data>
+  <data name="SettingsUnits" xml:space="preserve"><value>Units</value></data>
+  <data name="SettingsHorizontalDistance" xml:space="preserve"><value>Horizontal distance</value></data>
+  <data name="SettingsVerticalDistance" xml:space="preserve"><value>Vertical distance</value></data>
+  <data name="SettingsArea" xml:space="preserve"><value>Area</value></data>
+  <data name="SettingsSpeed" xml:space="preserve"><value>Speed</value></data>
+  <data name="SettingsTemperature" xml:space="preserve"><value>Temperature</value></data>
+  <data name="UnitMeters" xml:space="preserve"><value>Meters</value></data>
+  <data name="UnitFeet" xml:space="preserve"><value>Feet</value></data>
+  <data name="UnitSquareMeters" xml:space="preserve"><value>Square meters</value></data>
+  <data name="UnitSquareFeet" xml:space="preserve"><value>Square feet</value></data>
+  <data name="UnitSquareKilometers" xml:space="preserve"><value>Square kilometers</value></data>
+  <data name="UnitSquareMiles" xml:space="preserve"><value>Square miles</value></data>
+  <data name="UnitHectares" xml:space="preserve"><value>Hectares</value></data>
+  <data name="UnitAcres" xml:space="preserve"><value>Acres</value></data>
+  <data name="UnitMetersPerSecond" xml:space="preserve"><value>Meters/second</value></data>
+  <data name="UnitFeetPerSecond" xml:space="preserve"><value>Feet/second</value></data>
+  <data name="UnitKilometersPerHour" xml:space="preserve"><value>Kilometers/hour</value></data>
+  <data name="UnitMilesPerHour" xml:space="preserve"><value>Miles/hour</value></data>
+  <data name="UnitKnots" xml:space="preserve"><value>Knots</value></data>
+  <data name="UnitCelsius" xml:space="preserve"><value>Celsius</value></data>
+  <data name="UnitFahrenheit" xml:space="preserve"><value>Fahrenheit</value></data>
+  <data name="Release" xml:space="preserve"><value>Release</value></data>
+  <data name="SelectedUnits" xml:space="preserve"><value>Selected units</value></data>
+  <data name="SelectedUnit" xml:space="preserve"><value>Selected unit</value></data>
+  <data name="JumpTo" xml:space="preserve"><value>Jump to</value></data>
+  <data name="Follow" xml:space="preserve"><value>Follow</value></data>
+  <data name="ExecuteAllCommands" xml:space="preserve"><value>Execute all commands</value></data>
+  <data name="CancelCommand" xml:space="preserve"><value>Cancel command</value></data>
+  <data name="ClearAllQueuedCommands" xml:space="preserve"><value>Clear all pending commands</value></data>
+  <data name="ExecuteCommand" xml:space="preserve"><value>Execute command</value></data>
+  <data name="ClearCommandQueue" xml:space="preserve"><value>Clear pending command</value></data>
+  <data name="ManageConnections" xml:space="preserve"><value>Manage connections...</value></data>
+  <data name="RemoveConnectionAssociation" xml:space="preserve"><value>Remove connection association</value></data>
+  <data name="UnitConnections" xml:space="preserve"><value>Unit connections</value></data>
+  <data name="UnitConnectionsDescription" xml:space="preserve"><value>Associate these connections with one physical unit, then choose which connection is authoritative for each responsibility.</value></data>
+  <data name="UnitName" xml:space="preserve"><value>Unit name</value></data>
+  <data name="AvailableConnectionObservations" xml:space="preserve"><value>Available connection observations</value></data>
+  <data name="CommandAuthority" xml:space="preserve"><value>Command authority</value></data>
+  <data name="TelemetryAuthority" xml:space="preserve"><value>Telemetry authority</value></data>
+  <data name="DiagnosticsAuthority" xml:space="preserve"><value>Diagnostics authority</value></data>
+  <data name="SaveUnit" xml:space="preserve"><value>Save unit</value></data>
+  <data name="CreateGhost" xml:space="preserve"><value>Create ghost...</value></data>
+  <data name="NoUnitsDiscovered" xml:space="preserve"><value>No units discovered.</value></data>
+  <data name="CreateGhostUnit" xml:space="preserve"><value>Create ghost unit</value></data>
+  <data name="GhostProfile" xml:space="preserve"><value>Ghost profile</value></data>
+  <data name="GhostModel" xml:space="preserve"><value>Model</value></data>
+  <data name="GhostVehicleType" xml:space="preserve"><value>Type</value></data>
+  <data name="GhostSpeed" xml:space="preserve"><value>Speed</value></data>
+  <data name="GhostClimbRate" xml:space="preserve"><value>Climb</value></data>
+  <data name="GhostDescentRate" xml:space="preserve"><value>Descent</value></data>
+  <data name="GhostAltitudeLimit" xml:space="preserve"><value>Altitude</value></data>
+  <data name="GhostHorizontalAcceleration" xml:space="preserve"><value>Acceleration</value></data>
+  <data name="GhostVerticalAcceleration" xml:space="preserve"><value>Vertical acceleration</value></data>
+  <data name="GhostYawRate" xml:space="preserve"><value>Yaw</value></data>
+  <data name="GhostEndurance" xml:space="preserve"><value>Endurance</value></data>
+  <data name="GhostWheelbase" xml:space="preserve"><value>Wheelbase</value></data>
+  <data name="CreateGhosts" xml:space="preserve"><value>Create Ghosts</value></data>
+  <data name="GhostCount" xml:space="preserve"><value>Count</value></data>
+  <data name="VehicleType" xml:space="preserve"><value>Vehicle type</value></data>
+  <data name="NumberOfGhosts" xml:space="preserve"><value>Number of ghosts</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="ClearSelection" xml:space="preserve"><value>Clear selection</value></data>
+  <data name="ManualMode" xml:space="preserve"><value>MANUAL MODE</value></data>
+  <data name="ControllerCommandPending" xml:space="preserve"><value>CONTROLLER COMMAND PENDING</value></data>
+  <data name="UnitPosition" xml:space="preserve"><value>Position</value></data>
+  <data name="UnitHeading" xml:space="preserve"><value>Heading</value></data>
+  <data name="UnitVelocity" xml:space="preserve"><value>Velocity</value></data>
+  <data name="UnitVerticalSpeed" xml:space="preserve"><value>Vertical speed</value></data>
+  <data name="UnitOperatorDistance" xml:space="preserve"><value>Operator distance</value></data>
+  <data name="UnitBattery" xml:space="preserve"><value>Battery</value></data>
+  <data name="Px4ParametersTitle" xml:space="preserve"><value>PX4 Parameters</value></data>
+  <data name="Px4ParametersDescription" xml:space="preserve"><value>Download, inspect, compare, and safely merge QGroundControl-compatible .params profiles. The vehicle must be connected and disarmed before applying.</value></data>
+  <data name="Px4MavlinkUnit" xml:space="preserve"><value>PX4 MAVLink unit</value></data>
+  <data name="DownloadCurrent" xml:space="preserve"><value>Download current</value></data>
+  <data name="ImportProfile" xml:space="preserve"><value>Import profile</value></data>
+  <data name="ExportProfile" xml:space="preserve"><value>Export profile</value></data>
+  <data name="SavedProfile" xml:space="preserve"><value>Saved profile</value></data>
+  <data name="CompareWithLive" xml:space="preserve"><value>Compare with live</value></data>
+  <data name="ApplyProfile" xml:space="preserve"><value>Apply profile</value></data>
+  <data name="MyTeam" xml:space="preserve"><value>My Team</value></data>
+  <data name="MyTeamDescription" xml:space="preserve"><value>Share read-only unit and map information with approved LAN observers.</value></data>
+  <data name="MyTeamServer" xml:space="preserve"><value>Team observer server</value></data>
+  <data name="MyTeamServerName" xml:space="preserve"><value>Server name</value></data>
+  <data name="MyTeamPort" xml:space="preserve"><value>Port</value></data>
+  <data name="MyTeamMaximumClients" xml:space="preserve"><value>Maximum clients</value></data>
+  <data name="MyTeamStart" xml:space="preserve"><value>Start server</value></data>
+  <data name="MyTeamStop" xml:space="preserve"><value>Stop server</value></data>
+  <data name="MyTeamEndpoint" xml:space="preserve"><value>LAN endpoint</value></data>
+  <data name="MyTeamFingerprint" xml:space="preserve"><value>TLS SHA-256 fingerprint</value></data>
+  <data name="MyTeamShareOperatorLocation" xml:space="preserve"><value>Share operator location for this session</value></data>
+  <data name="MyTeamPendingRequests" xml:space="preserve"><value>Pending access requests</value></data>
+  <data name="MyTeamNoPendingRequests" xml:space="preserve"><value>No pending access requests.</value></data>
+  <data name="MyTeamConnectedClients" xml:space="preserve"><value>Connected observers</value></data>
+  <data name="MyTeamNoConnectedClients" xml:space="preserve"><value>No observers connected.</value></data>
+  <data name="MyTeamApprove" xml:space="preserve"><value>Approve</value></data>
+  <data name="MyTeamReject" xml:space="preserve"><value>Reject</value></data>
+  <data name="MyTeamDisconnect" xml:space="preserve"><value>Disconnect</value></data>
+  <data name="MyTeamFirewallNotice" xml:space="preserve"><value>The listener is running. Windows may ask you to allow Robot Command through the firewall for private networks.</value></data>
+  <data name="MyTeamCompatible" xml:space="preserve"><value>Compatible with Team API v1</value></data>
+  <data name="MyTeamStatusStopped" xml:space="preserve"><value>Stopped</value></data>
+  <data name="MyTeamStatusStarting" xml:space="preserve"><value>Starting</value></data>
+  <data name="MyTeamStatusRunning" xml:space="preserve"><value>Running</value></data>
+  <data name="MyTeamStatusStopping" xml:space="preserve"><value>Stopping</value></data>
+  <data name="MyTeamStatusFaulted" xml:space="preserve"><value>Faulted</value></data>
+  <data name="MyTeamMirror" xml:space="preserve"><value>Mirror another Robot Command</value></data>
+  <data name="MyTeamMirrorDescription" xml:space="preserve"><value>Request a session-only, read-only mirror of another Robot Command's units and map presentation.</value></data>
+  <data name="MyTeamProbe" xml:space="preserve"><value>Probe</value></data>
+  <data name="MyTeamTrust" xml:space="preserve"><value>Trust</value></data>
+  <data name="MyTeamRequestReadOnlyAccess" xml:space="preserve"><value>Request read-only access</value></data>
+  <data name="MyTeamNearby" xml:space="preserve"><value>Nearby Robot Commands</value></data>
+  <data name="MyTeamNearbyDescription" xml:space="preserve"><value>Robot Command instances discovered on your local network. Select Connect, enter the host&apos;s session passphrase, then wait for host approval.</value></data>
+  <data name="MyTeamRefreshNearby" xml:space="preserve"><value>Refresh</value></data>
+  <data name="MyTeamNoNearby" xml:space="preserve"><value>No Robot Commands found nearby. You can still enter an endpoint manually below.</value></data>
+  <data name="MyTeamUseNearby" xml:space="preserve"><value>Connect</value></data>
+  <data name="MyTeamConnect" xml:space="preserve"><value>Connect</value></data>
+  <data name="MyTeamPassphrasePlaceholder" xml:space="preserve"><value>Server session passphrase</value></data>
+  <data name="MyTeamPassphraseHint" xml:space="preserve"><value>Enter the two-word passphrase shown by the host.</value></data>
+  <data name="MyTeamServerPassphrase" xml:space="preserve"><value>Session passphrase</value></data>
+  <data name="MyTeamRequirePassphrase" xml:space="preserve"><value>Require a passphrase</value></data>
+  <data name="MyTeamRegeneratePassphrase" xml:space="preserve"><value>Regenerate</value></data>
+  <data name="MyTeamOpenAccess" xml:space="preserve"><value>Open access is enabled. Compatible observers are accepted without a passphrase.</value></data>
+  <data name="MyTeamServerPassphraseHint" xml:space="preserve"><value>When enabled, clients must enter this session-only phrase. When disabled, the server accepts connections without a passphrase. The phrase is never saved.</value></data>
+  <data name="MyTeamRuntimeAuthentication" xml:space="preserve"><value>Change authentication while the server is running. Existing sessions can remain connected or be asked to authenticate again.</value></data>
+  <data name="MyTeamEnableAuthentication" xml:space="preserve"><value>Turn on authentication</value></data>
+  <data name="MyTeamEnableAuthenticationReauth" xml:space="preserve"><value>Turn on and require re-authentication</value></data>
+  <data name="MyTeamDisableAuthentication" xml:space="preserve"><value>Turn off authentication</value></data>
+  <data name="MyTeamRequireReauthentication" xml:space="preserve"><value>Require re-authentication now</value></data>
+  <data name="MyTeamNearbySelected" xml:space="preserve"><value>{0} selected. Enter its session passphrase, then connect.</value></data>
+  <data name="MyTeamQrPairing" xml:space="preserve"><value>QR pairing</value></data>
+  <data name="MyTeamQrPairingDescription" xml:space="preserve"><value>The QR code contains the endpoint and session passphrase for quick mobile or compatible-client pairing. The host still approves every observer.</value></data>
+  <data name="MyTeamCreatePairingQr" xml:space="preserve"><value>Refresh pairing QR</value></data>
+  <data name="MyTeamPairingCode" xml:space="preserve"><value>Short confirmation code</value></data>
+  <data name="MyTeamPairingLinkPlaceholder" xml:space="preserve"><value>Paste Robot Command pairing link</value></data>
+  <data name="MyTeamUsePairingLink" xml:space="preserve"><value>Use pairing link</value></data>
+  <data name="MyTeamConnectWithPairingLink" xml:space="preserve"><value>Connect with pairing link</value></data>
+  <data name="MapTopographic" xml:space="preserve"><value>Topographic</value></data>
+  <data name="ArduPilotParametersTitle" xml:space="preserve"><value>ArduPilot parameters</value></data>
+  <data name="ArduPilotParametersDescription" xml:space="preserve"><value>Parameter profiles are not supported for ArduPilot yet. This panel is reserved for the shared parameter service.</value></data>
+  <data name="ArduPilotParametersUnavailable" xml:space="preserve"><value>ArduPilot parameters not supported yet</value></data>
+  <data name="ManualControlMappingDescription" xml:space="preserve"><value>Assisted Mode 2: left stick climbs and yaws; right stick moves forward and right. PX4 and ArduPilot use their MAVLink manual-input paths, never Offboard. Use the mapped buttons to queue or execute vehicle operations.</value></data>
+  <data name="RecentAutopilotWarnings" xml:space="preserve"><value>RECENT AUTOPILOT WARNINGS AND ERRORS</value></data>
+  <data name="ManualControlSelectUnit" xml:space="preserve"><value>Select one Ghost, PX4, or ArduPilot MAVLink unit in the Units rail.</value></data>
+  <data name="InspectorOperations" xml:space="preserve"><value>Operations</value></data>
+  <data name="MapFitAll" xml:space="preserve"><value>Fit all</value></data>
+  <data name="MapFollowSelected" xml:space="preserve"><value>Follow selected</value></data>
+  <data name="MapStopFollowing" xml:space="preserve"><value>Stop following</value></data>
+  <data name="MapViews" xml:space="preserve"><value>Views</value></data>
+  <data name="MapLayers" xml:space="preserve"><value>Layers</value></data>
+  <data name="MapApplySavedView" xml:space="preserve"><value>Apply</value></data>
+  <data name="MapDeleteSavedView" xml:space="preserve"><value>Delete</value></data>
+  <data name="MapViewName" xml:space="preserve"><value>View name</value></data>
+  <data name="MapSaveCurrentView" xml:space="preserve"><value>Save view</value></data>
+  <data name="MapResetNorth" xml:space="preserve"><value>Reset north</value></data>
+  <data name="MapClearTrails" xml:space="preserve"><value>Clear trails</value></data>
+  <data name="Terminal" xml:space="preserve"><value>Terminal</value></data>
+  <data name="TerminalToggleTooltip" xml:space="preserve"><value>Toggle the Robot Command CLI (Ctrl+`)</value></data>
+  <data name="TerminalTitle" xml:space="preserve"><value>ROBOT COMMAND CLI</value></data>
+  <data name="TerminalDescription" xml:space="preserve"><value>Interactive Runtime session</value></data>
+  <data name="TerminalClear" xml:space="preserve"><value>Clear</value></data>
+  <data name="TerminalInputPlaceholder" xml:space="preserve"><value>Type a Robot Command command, or help</value></data>
+  <data name="TerminalRun" xml:space="preserve"><value>Run</value></data>
+  <data name="GeometryLocalTitle" xml:space="preserve"><value>Local geometry</value></data>
+  <data name="GeometryTool" xml:space="preserve"><value>Geometry</value></data>
+  <data name="GeometryToolDescription" xml:space="preserve"><value>Create reusable local PoIs, waypoint sequences, and zones. They are not sent to a vehicle or Logos.</value></data>
+  <data name="GeometryDefaultAltitude" xml:space="preserve"><value>Default altitude</value></data>
+  <data name="GeometryNewPoi" xml:space="preserve"><value>New PoI</value></data>
+  <data name="GeometrySelect" xml:space="preserve"><value>Select geometry</value></data>
+  <data name="GeometryExport" xml:space="preserve"><value>Export</value></data>
+  <data name="GeometryDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="GeometryRename" xml:space="preserve"><value>Rename</value></data>
+  <data name="GeometryNewWaypointSequence" xml:space="preserve"><value>New waypoint sequence</value></data>
+  <data name="GeometryNewZone" xml:space="preserve"><value>New zone</value></data>
+  <data name="GeometryDeleteSelected" xml:space="preserve"><value>Delete selected</value></data>
+  <data name="GeometryConfirmDelete" xml:space="preserve"><value>Confirm delete</value></data>
+  <data name="GeometryDraft" xml:space="preserve"><value>Local draft</value></data>
+  <data name="GeometryName" xml:space="preserve"><value>Name</value></data>
+  <data name="GeometryGroups" xml:space="preserve"><value>Groups</value></data>
+  <data name="GeometryOptionalGroups" xml:space="preserve"><value>Optional groups, comma-separated</value></data>
+  <data name="GeometryUndo" xml:space="preserve"><value>Undo</value></data>
+  <data name="GeometryRedo" xml:space="preserve"><value>Redo</value></data>
+  <data name="GeometryRemoveVertex" xml:space="preserve"><value>Remove vertex</value></data>
+  <data name="GeometryFinish" xml:space="preserve"><value>Finish</value></data>
+  <data name="GeometrySave" xml:space="preserve"><value>Save geometry</value></data>
+  <data name="GeometryCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="GeometryLibraryDescription" xml:space="preserve"><value>Reusable local PoIs, waypoint sequences, and zones. Create new geometry from the Map Geometry tool.</value></data>
+  <data name="AutonomyLandingDescription" xml:space="preserve"><value>Create and organise reusable local geometry. Mission planning is coming next.</value></data>
+  <data name="GeometrySearch" xml:space="preserve"><value>Search geometry</value></data>
+  <data name="GeometryGroupFilter" xml:space="preserve"><value>Group filter</value></data>
+  <data name="GeometryImportExport" xml:space="preserve"><value>Import and export</value></data>
+  <data name="GeometryFilePath" xml:space="preserve"><value>Geometry JSON file path</value></data>
+  <data name="GeometrySetFilePath" xml:space="preserve"><value>Geometry set file path</value></data>
+  <data name="GeometryImport" xml:space="preserve"><value>Import geometry</value></data>
+  <data name="GeometryImportSet" xml:space="preserve"><value>Import set</value></data>
+  <data name="GeometryExportSet" xml:space="preserve"><value>Export library set</value></data>
+  <data name="GeometryNewGroup" xml:space="preserve"><value>New group name</value></data>
+  <data name="GeometryCreateGroup" xml:space="preserve"><value>Create group</value></data>
+  <data name="GeometryAddSelected" xml:space="preserve"><value>Add selected</value></data>
+  <data name="GeometryRemoveSelected" xml:space="preserve"><value>Remove selected</value></data>
+  <data name="GeometryDeleteGroup" xml:space="preserve"><value>Delete group</value></data>
+  <data name="FlightMissionDescription" xml:space="preserve"><value>Compose, review, and run saved flight missions.</value></data>
+  <data name="FlightMissionName" xml:space="preserve"><value>Mission name</value></data>
+  <data name="FlightMissionNew" xml:space="preserve"><value>New</value></data>
+  <data name="FlightMissionRename" xml:space="preserve"><value>Rename</value></data>
+  <data name="FlightMissionDuplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="FlightMissionValidate" xml:space="preserve"><value>Validate</value></data>
+  <data name="FlightMissionImport" xml:space="preserve"><value>Import</value></data>
+  <data name="FlightMissionExport" xml:space="preserve"><value>Export</value></data>
+  <data name="FlightMissionDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
+  <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
+  <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
+  <data name="FlightMissionAddGeometry" xml:space="preserve"><value>Add geometry</value></data>
+  <data name="FlightMissionSetAltitude" xml:space="preserve"><value>Set altitude</value></data>
+  <data name="FlightMissionSetSpeed" xml:space="preserve"><value>Set speed</value></data>
+  <data name="FlightMissionSetFence" xml:space="preserve"><value>Set fence</value></data>
+  <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>Survey line spacing (m)</value></data>
+  <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>Survey bearing (°)</value></data>
+  <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>Survey turnaround (m)</value></data>
+  <data name="FlightMissionSurveyReverse" xml:space="preserve"><value>Reverse entry</value></data>
+  <data name="FlightMissionLoiterSeconds" xml:space="preserve"><value>Loiter duration (s)</value></data>
+  <data name="FlightMissionCameraMode" xml:space="preserve"><value>Camera capture mode</value></data>
+  <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Camera trigger distance (m)</value></data>
+  <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Camera trigger interval (s)</value></data>
+  <data name="FlightMissionSetStep" xml:space="preserve"><value>Apply step settings</value></data>
+  <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>Relative altitude (m)</value></data>
+  <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>Cruise speed (m/s)</value></data>
+  <data name="FlightMissionTerrain" xml:space="preserve"><value>Terrain follow</value></data>
+  <data name="FlightMissionSurvey" xml:space="preserve"><value>Survey zone</value></data>
+  <data name="FlightMissionCorridor" xml:space="preserve"><value>Corridor scan</value></data>
+  <data name="FlightMissionCorridorWidth" xml:space="preserve"><value>Corridor width (m)</value></data>
+  <data name="FlightMissionCorridorSpacing" xml:space="preserve"><value>Pass spacing (m)</value></data>
+  <data name="FlightMissionCorridorTurnaround" xml:space="preserve"><value>Turnaround distance (m)</value></data>
+  <data name="FlightMissionCorridorFrontLap" xml:space="preserve"><value>Front lap (%)</value></data>
+  <data name="FlightMissionCorridorSideLap" xml:space="preserve"><value>Side lap (%)</value></data>
+  <data name="FlightMissionCorridorReverse" xml:space="preserve"><value>Reverse</value></data>
+  <data name="FlightMissionCorridorEntryRight" xml:space="preserve"><value>Right entry</value></data>
+  <data name="FlightMissionCorridorImagesInTurns" xml:space="preserve"><value>Images in turns</value></data>
+  <data name="Px4Fences" xml:space="preserve"><value>PX4 fences</value></data>
+  <data name="Px4FenceCreate" xml:space="preserve"><value>Create fence</value></data>
+  <data name="Px4FenceDelete" xml:space="preserve"><value>Delete fence</value></data>
+  <data name="Px4FenceUpload" xml:space="preserve"><value>Upload fence</value></data>
+  <data name="Px4FenceDownload" xml:space="preserve"><value>Download fences</value></data>
+  <data name="Px4FenceClear" xml:space="preserve"><value>Clear fences</value></data>
+  <data name="FlightMissionLoiter" xml:space="preserve"><value>Timed loiter</value></data>
+  <data name="FlightMissionCameraIntent" xml:space="preserve"><value>Camera intent</value></data>
+  <data name="FlightMissionMoveUp" xml:space="preserve"><value>Up</value></data>
+  <data name="FlightMissionMoveDown" xml:space="preserve"><value>Down</value></data>
+  <data name="FlightMissionRemoveStep" xml:space="preserve"><value>Remove step</value></data>
+  <data name="FlightMissionUpload" xml:space="preserve"><value>Upload</value></data>
+  <data name="FlightMissionDownload" xml:space="preserve"><value>Download</value></data>
+  <data name="FlightMissionStart" xml:space="preserve"><value>Start mission</value></data>
+  <data name="FlightMissionPause" xml:space="preserve"><value>Pause</value></data>
+  <data name="FlightMissionResume" xml:space="preserve"><value>Resume</value></data>
+  <data name="FlightMissionExecute" xml:space="preserve"><value>Execute operation</value></data>
+  <data name="FlightMissionCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="TeamStatusSelectCommandable" xml:space="preserve"><value>Select one or more commandable units first.</value></data>
+  <data name="TeamStatusSelectUnits" xml:space="preserve"><value>Select one or more units first.</value></data>
+  <data name="TeamStatusCreated" xml:space="preserve"><value>{0} created.</value></data>
+  <data name="TeamStatusMembershipCleared" xml:space="preserve"><value>Team membership cleared.</value></data>
+  <data name="TeamTooltip" xml:space="preserve"><value>{0}; member {1} of {2}. Drag only within this Team.</value></data>
+  <data name="FormationLock" xml:space="preserve"><value>Lock formation</value></data>
+  <data name="FormationUnlock" xml:space="preserve"><value>Unlock formation</value></data>
+  <data name="FormationHold" xml:space="preserve"><value>Hold formation</value></data>
+  <data name="TeamPosition" xml:space="preserve"><value>Team position</value></data>
+  <data name="FormationGoTo" xml:space="preserve"><value>Move formation</value></data>
+  <data name="FormationChangeAltitude" xml:space="preserve"><value>Change formation altitude</value></data>
+  <data name="FormationLatitude" xml:space="preserve"><value>Latitude</value></data>
+  <data name="FormationLongitude" xml:space="preserve"><value>Longitude</value></data>
+  <data name="FormationAltitudeAgl" xml:space="preserve"><value>AGL altitude (m)</value></data>
+  <data name="FormationRotationDegrees" xml:space="preserve"><value>Rotation (°)</value></data>
+  <data name="FormationRotate" xml:space="preserve"><value>Rotate formation</value></data>
+  <data name="FormationScalePercent" xml:space="preserve"><value>Size (%)</value></data>
+  <data name="FormationScale" xml:space="preserve"><value>Resize formation</value></data>
+  <data name="ThreeD" xml:space="preserve"><value>3D</value></data>
+  <data name="Formations" xml:space="preserve"><value>Formations</value></data>
+  <data name="FormationsDescription" xml:space="preserve"><value>Reusable 3D unit layouts</value></data>
+</root>

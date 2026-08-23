@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:core="using:RobotCommand.Core"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:render="using:RobotCommand.Rendering.Avalonia"
+             x:Class="RobotCommand.Views.Workspaces.FormationAuthoringView"
+             x:DataType="vm:FormationAuthoringViewModel">
+  <Grid ColumnDefinitions="230,*" ColumnSpacing="12" RowDefinitions="Auto,*" Margin="12">
+    <StackPanel Grid.RowSpan="2" Spacing="8">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="New" Command="{Binding NewCommand}" />
+        <Button Content="Delete" Classes="danger" Command="{Binding DeleteCommand}" />
+      </StackPanel>
+      <Border Classes="panel" Padding="8">
+      <ListBox Classes="compactList" ItemsSource="{Binding Formations}" SelectedItem="{Binding SelectedFormation}" MinHeight="120">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="core:FormationWorkflowSnapshot">
+            <StackPanel Margin="4" Spacing="2">
+              <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+              <TextBlock Classes="muted" Text="{Binding Members.Count, StringFormat='{}{0} units'}" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      </Border>
+    </StackPanel>
+
+    <Grid Grid.Column="1" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8" IsVisible="{Binding HasSelection}">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox Width="260" Text="{Binding FormationName, Mode=TwoWay}" PlaceholderText="Formation name" />
+        <Button Content="Add unit" Command="{Binding AddMemberCommand}" />
+        <Button Content="Save" Classes="primary" Command="{Binding SaveCommand}" />
+        <Button Content="Cancel" Command="{Binding CancelCommand}" />
+      </StackPanel>
+      <Grid Grid.Row="1" ColumnDefinitions="220,*" ColumnSpacing="10">
+        <StackPanel Grid.Column="0" Spacing="8">
+          <TextBlock Text="Units" FontWeight="SemiBold" />
+          <ListBox ItemsSource="{Binding Members}" SelectedItem="{Binding SelectedMember}" MaxHeight="220">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Name}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" IsVisible="{Binding HasSelectedMember}">
+          <TextBox Text="{Binding SelectedMember.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Unit name" />
+          <TextBox Width="100" Text="{Binding SelectedMember.EastText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip.Tip="X · East (m)" />
+          <TextBox Width="100" Text="{Binding SelectedMember.UpText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip.Tip="Y · Up (m)" />
+          <TextBox Width="100" Text="{Binding SelectedMember.NorthText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip.Tip="Z · North (m)" />
+          <Button Content="Remove unit" Command="{Binding RemoveMemberCommand}" />
+        </StackPanel>
+      </Grid>
+      <Border Grid.Row="2" Classes="mapSurface" Padding="0" MinHeight="500">
+        <render:ThreeDViewportControl x:Name="Viewport" OrbitControls="True" Scene="{Binding Scene}" />
+      </Border>
+      <TextBlock Grid.Row="3" Classes="warningText" Text="{Binding Status}" />
+    </Grid>
+  </Grid>
+</UserControl>

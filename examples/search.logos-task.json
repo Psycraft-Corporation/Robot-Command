@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "logos.task.v1",
+  "taskId": "task-search-demo",
+  "name": "Search operating area",
+  "objective": "Search the assigned geometry and report detected targets.",
+  "taskType": "search",
+  "priority": "Normal",
+  "behaviourId": "search-area",
+  "behaviourVersion": "1.0.0",
+  "packageId": "logos.behaviours.search",
+  "parametersJson": "{\"geometryId\":\"search-area\"}"
+}

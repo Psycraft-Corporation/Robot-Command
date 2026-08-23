@@ -1,0 +1,255 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="using:RobotCommand.Models"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.OperationalInspectorView"
+             x:DataType="vm:OperationalInspectorViewModel">
+  <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="12">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <StackPanel Spacing="3">
+        <TextBlock Text="Operational Inspector"
+                   FontSize="24"
+                   FontWeight="Bold" />
+        <TextBlock Text="Authoritative mission, task, autonomy, behaviour-tree, and intervention state"
+                   Foreground="#AEB5BF"
+                   TextWrapping="Wrap" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Command="{Binding InspectSelectionCommand}" Content="Inspect selection" />
+        <Button Command="{Binding RefreshTargetCommand}" Content="Restart watches" />
+        <Button Command="{Binding StopWatchingCommand}" Content="Stop watches" />
+        <Button Command="{Binding ClearCommand}" Content="Clear" />
+      </StackPanel>
+    </Grid>
+
+    <Border Grid.Row="1" Classes="noticePanel">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+        <StackPanel Spacing="3">
+          <TextBlock Text="{Binding Status}" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding Detail}" Classes="muted" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding WatchSummary}" FontSize="11" Classes="muted" TextWrapping="Wrap" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Spacing="5" VerticalAlignment="Center">
+          <CheckBox IsChecked="{Binding FollowSelection, Mode=TwoWay}"
+                    Content="Follow selection" />
+          <TextBlock Text="{Binding FollowSelectionSummary}"
+                     FontSize="10"
+                     Classes="muted"
+                     MaxWidth="360"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="2" ColumnDefinitions="320,*,380" ColumnSpacing="12">
+      <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12">
+          <Border Classes="commandPlanPanel">
+            <StackPanel Spacing="6">
+              <TextBlock Text="TARGET" FontWeight="Bold" FontSize="11" Classes="muted" />
+              <TextBlock Text="{Binding TargetSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding TargetIdentity}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding TargetSourceSummary}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="commandPlanPanel">
+            <StackPanel Spacing="6">
+              <TextBlock Text="CURRENT SELECTION" FontWeight="Bold" FontSize="11" Classes="muted" />
+              <TextBlock Text="{Binding SelectionResolutionSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding SelectionResolutionDetail}" Classes="muted" FontSize="11" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="commandPlanPanel">
+            <StackPanel Spacing="8">
+              <TextBlock Text="WATCHES" FontWeight="Bold" FontSize="11" Classes="muted" />
+              <TextBlock Text="{Binding WatchDetail}" FontSize="11" TextWrapping="Wrap" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="commandPlanPanel" IsVisible="{Binding HasBlockingConditions}">
+            <StackPanel Spacing="6">
+              <TextBlock Text="BLOCKING CONDITIONS" FontWeight="Bold" FontSize="11" />
+              <ItemsControl ItemsSource="{Binding BlockingConditions}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Text="{Binding}" Margin="0,2" TextWrapping="Wrap" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <ScrollViewer Grid.Column="1"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+            <Border Classes="commandPlanPanel">
+              <StackPanel Spacing="5">
+                <TextBlock Text="MISSION" FontWeight="Bold" FontSize="11" Classes="muted" />
+                <TextBlock Text="{Binding MissionSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding MissionDetail}" FontSize="11" Classes="muted" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Classes="commandPlanPanel">
+              <StackPanel Spacing="5">
+                <TextBlock Text="TASK" FontWeight="Bold" FontSize="11" Classes="muted" />
+                <TextBlock Text="{Binding TaskSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding TaskDetail}" FontSize="11" Classes="muted" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Classes="commandPlanPanel">
+              <StackPanel Spacing="5">
+                <TextBlock Text="AUTONOMY" FontWeight="Bold" FontSize="11" Classes="muted" />
+                <TextBlock Text="{Binding AutonomySummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding AutonomyDetail}" FontSize="11" Classes="muted" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <Border Classes="commandPlanPanel">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2">
+                  <TextBlock Text="BEHAVIOUR TREE" FontWeight="Bold" FontSize="11" Classes="muted" />
+                  <TextBlock Text="{Binding TreeSummary}" FontSize="11" Classes="muted" />
+                </StackPanel>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Snapshot.UpdatedAt}"
+                           FontSize="10"
+                           Classes="muted"
+                           VerticalAlignment="Top" />
+              </Grid>
+
+              <TextBlock IsVisible="{Binding !HasTreeNodes}"
+                         Text="No behaviour-tree nodes have been projected yet."
+                         Classes="muted" />
+
+              <ItemsControl ItemsSource="{Binding TreeNodes}" IsVisible="{Binding HasTreeNodes}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="models:BehaviourTreeNodeRuntimeRecord">
+                    <Border Margin="0,3" Padding="8" CornerRadius="4" Background="#20242B">
+                      <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                        <TextBlock Text="{Binding Depth}" Classes="muted" FontSize="10" VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" Spacing="2">
+                          <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                          <TextBlock Text="{Binding Detail}" FontSize="11" Classes="muted" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Right" Spacing="2">
+                          <TextBlock Text="{Binding State}" FontWeight="SemiBold" />
+                          <TextBlock Text="{Binding TickCount}" FontSize="10" Classes="muted" HorizontalAlignment="Right" />
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="commandPlanPanel" IsVisible="{Binding HasAttentionNodes}">
+            <StackPanel Spacing="6">
+              <TextBlock Text="ACTIVE / ATTENTION NODES" FontWeight="Bold" FontSize="11" />
+              <ItemsControl ItemsSource="{Binding AttentionNodes}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="models:BehaviourTreeNodeRuntimeRecord">
+                    <Grid Margin="0,2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" />
+                      <TextBlock Grid.Column="1" Text="{Binding State}" Classes="muted" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <ScrollViewer Grid.Column="2"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12">
+          <Border Classes="commandPlanPanel">
+            <StackPanel Spacing="8">
+              <TextBlock Text="INTERVENTIONS" FontWeight="Bold" FontSize="11" Classes="muted" />
+              <TextBlock Text="Prepare against the exact supervised mission, task, and execution identity."
+                         FontSize="11"
+                         Classes="muted"
+                         TextWrapping="Wrap" />
+              <TextBox Text="{Binding InterventionReason, Mode=TwoWay}"
+                       PlaceholderText="Operator reason"
+                       TextWrapping="Wrap" />
+
+              <UniformGrid Columns="2" Rows="4">
+                <Button Margin="3" Command="{Binding PreparePauseMissionCommand}" Content="Pause mission" />
+                <Button Margin="3" Command="{Binding PrepareResumeMissionCommand}" Content="Resume mission" />
+                <Button Margin="3" Command="{Binding PrepareEndMissionCommand}" Content="End mission" />
+                <Button Margin="3" Command="{Binding PrepareCancelMissionCommand}" Content="Cancel mission" />
+                <Button Margin="3" Command="{Binding PrepareAbortMissionCommand}" Content="Abort mission" />
+                <Button Margin="3" Command="{Binding PrepareCancelTaskCommand}" Content="Cancel task" />
+                <Button Margin="3" Command="{Binding PrepareAbortTaskCommand}" Content="Abort task" />
+              </UniformGrid>
+
+              <Border Padding="8" CornerRadius="4" Background="#20242B">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="{Binding InterventionSummary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding InterventionDetail}" FontSize="11" Classes="muted" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding InterventionExpiry}" FontSize="11" Classes="muted" />
+                </StackPanel>
+              </Border>
+
+              <ItemsControl ItemsSource="{Binding InterventionWarnings}" IsVisible="{Binding HasInterventionWarnings}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Text="{Binding}" Margin="0,2" TextWrapping="Wrap" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <ItemsControl ItemsSource="{Binding InterventionBlockers}" IsVisible="{Binding HasInterventionBlockers}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Text="{Binding}" Margin="0,2" TextWrapping="Wrap" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <StackPanel Spacing="5" IsVisible="{Binding InterventionRequiresConfirmation}">
+                <TextBlock Text="{Binding InterventionConfirmationPrompt}" FontSize="11" TextWrapping="Wrap" />
+                <TextBox Text="{Binding InterventionConfirmation, Mode=TwoWay}" PlaceholderText="Typed confirmation" />
+              </StackPanel>
+
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Button Command="{Binding ExecuteInterventionCommand}" Content="Execute" FontWeight="Bold" />
+                <Button Grid.Column="1" Command="{Binding DiscardInterventionCommand}" Content="Discard" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="commandPlanPanel" IsVisible="{Binding HasRuntimeIssues}">
+            <StackPanel Spacing="6">
+              <TextBlock Text="RUNTIME ISSUES" FontWeight="Bold" FontSize="11" />
+              <ItemsControl ItemsSource="{Binding RuntimeIssues}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="models:OperationalRuntimeIssue">
+                    <Border Classes="errorPanel" Margin="0,3" Padding="7" CornerRadius="4">
+                      <StackPanel Spacing="2">
+                        <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Hint}" FontSize="11" Classes="muted" TextWrapping="Wrap" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>RobotCommand.Rendering.Veldrid</RootNamespace>
+    <AssemblyName>RobotCommand.Rendering.Veldrid</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../RobotCommand.Rendering/RobotCommand.Rendering.csproj" />
+    <PackageReference Include="Veldrid" />
+  </ItemGroup>
+</Project>

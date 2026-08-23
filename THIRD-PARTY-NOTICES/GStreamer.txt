@@ -1,0 +1,13 @@
+Robot Command may include the GStreamer Windows MSVC runtime when produced by
+the Windows packaging script.
+
+GStreamer is distributed under the GNU Lesser General Public License, version
+2.1 or later, with additional notices and licenses applying to individual
+plugins and bundled dependencies. The complete upstream runtime package and
+its accompanying notices must be retained beside the packaged native runtime.
+
+Project: https://gstreamer.freedesktop.org/
+Windows packages: https://gstreamer.freedesktop.org/download/
+
+This source-tree notice does not replace the notices shipped with the exact
+runtime bundle used for a release.

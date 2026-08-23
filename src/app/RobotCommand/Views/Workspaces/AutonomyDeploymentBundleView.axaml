@@ -1,0 +1,165 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:models="using:RobotCommand.Models"
+             x:Class="RobotCommand.Views.Workspaces.AutonomyDeploymentBundleView"
+             x:DataType="vm:AutonomyDeploymentBundleViewModel">
+  <Grid Margin="16" RowDefinitions="Auto,*" RowSpacing="12">
+    <Border Classes="noticePanel">
+      <StackPanel Spacing="3">
+        <TextBlock Classes="workspaceTitle" Text="Portable deployments" />
+        <TextBlock Classes="muted"
+                   Text="Export and inspect dependency-aware Logos autonomy bundles. Import always uses the existing local geometry, behaviour, mission, and task workflows; connection-scoped bindings and policy activation remain explicit follow-up operations."
+                   TextWrapping="Wrap" />
+        <TextBlock Classes="muted" Text="{Binding BundleRootPath}" />
+      </StackPanel>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="440,*" ColumnSpacing="12">
+      <ScrollViewer>
+        <StackPanel Spacing="12">
+          <Border Classes="panel">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionTitle" Text="Export bundle" />
+              <TextBox PlaceholderText="Bundle name" Text="{Binding BundleName, Mode=TwoWay}" />
+              <TextBox PlaceholderText="Description"
+                       Text="{Binding Description, Mode=TwoWay}"
+                       AcceptsReturn="True"
+                       MinHeight="64"
+                       TextWrapping="Wrap" />
+              <TextBox PlaceholderText="Destination .zip path" Text="{Binding ExportPath, Mode=TwoWay}" />
+
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <StackPanel>
+                  <CheckBox IsChecked="{Binding IncludeLocalBehaviours, Mode=TwoWay}"
+                            Content="Include all locally managed behaviour packages" />
+                  <TextBlock Classes="muted" Text="{Binding LocalBehaviourCount, StringFormat='{}{0} local package(s)'}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                  <CheckBox IsChecked="{Binding IncludeLocalGeometry, Mode=TwoWay}"
+                            Content="Include all local geometry" />
+                  <TextBlock Classes="muted" Text="{Binding LocalGeometryCount, StringFormat='{}{0} geometry document(s)'}" />
+                </StackPanel>
+              </Grid>
+
+              <CheckBox IsChecked="{Binding IncludeSelectedMission, Mode=TwoWay}"
+                        Content="Include selected mission template" />
+              <ComboBox ItemsSource="{Binding Missions}" SelectedItem="{Binding SelectedMission}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="models:MissionRecord">
+                    <TextBlock Text="{Binding Name}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+
+              <CheckBox IsChecked="{Binding IncludeSelectedTask, Mode=TwoWay}"
+                        Content="Include selected task template" />
+              <ComboBox ItemsSource="{Binding Tasks}" SelectedItem="{Binding SelectedTask}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="models:OperationalTaskRecord">
+                    <TextBlock Text="{Binding Name}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+
+              <TextBlock FontWeight="SemiBold" Text="Optional policy files" />
+              <TextBox PlaceholderText="One policy document path per line"
+                       Text="{Binding PolicyPaths, Mode=TwoWay}"
+                       AcceptsReturn="True"
+                       MinHeight="72"
+                       TextWrapping="NoWrap" />
+
+              <CheckBox IsChecked="{Binding CaptureBindings, Mode=TwoWay}"
+                        Content="Capture current geometry-binding intents" />
+              <ComboBox ItemsSource="{Binding Connections}" SelectedItem="{Binding SelectedConnection}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="models:ConnectionRecord">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Text="{Binding Name}" />
+                      <TextBlock Grid.Column="1" Classes="muted" Text="{Binding State}" />
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+
+              <CheckBox IsChecked="{Binding AllowReplaceArchive, Mode=TwoWay}"
+                        Content="Replace existing destination archive" />
+              <Button Classes="primary"
+                      HorizontalAlignment="Left"
+                      Command="{Binding ExportCommand}"
+                      Content="Export portable bundle"
+                      Padding="14,8" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="panel">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionTitle" Text="Inspect or import" />
+              <TextBox PlaceholderText="Source autonomy bundle .zip path"
+                       Text="{Binding ImportPath, Mode=TwoWay}" />
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Button Command="{Binding InspectCommand}" Content="Inspect integrity" />
+                <Button Grid.Column="1" Classes="primary" Command="{Binding ImportCommand}" Content="Import local assets" />
+              </Grid>
+              <CheckBox IsChecked="{Binding AllowReplaceImportedBundle, Mode=TwoWay}"
+                        Content="Replace an existing imported copy of this bundle" />
+              <CheckBox IsChecked="{Binding AllowReplaceImportedAssets, Mode=TwoWay}"
+                        Content="Allow replacement of matching local geometry and behaviours" />
+              <CheckBox IsChecked="{Binding ImportMissions, Mode=TwoWay}"
+                        Content="Import mission templates as local drafts" />
+              <CheckBox IsChecked="{Binding ImportTasks, Mode=TwoWay}"
+                        Content="Import task templates as local drafts" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+
+      <Border Grid.Column="1" Classes="panel">
+        <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+          <StackPanel>
+            <TextBlock Classes="sectionTitle" Text="Dependency plan" />
+            <TextBlock FontWeight="SemiBold" Text="{Binding ManifestSummary}" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" Text="{Binding Status}" TextWrapping="Wrap" />
+          </StackPanel>
+
+          <Border Grid.Row="1"
+                  IsVisible="{Binding HasIssues}"
+                  Padding="9"
+                  CornerRadius="5"
+                  Classes="errorPanel"
+                  BorderThickness="1">
+            <ItemsControl ItemsSource="{Binding Issues}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Classes="errorText" Text="{Binding}" TextWrapping="Wrap" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+
+          <ListBox Grid.Row="2" ItemsSource="{Binding Plan}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="models:AutonomyDeploymentStep">
+                <Border Margin="0,3" Padding="9" CornerRadius="5" BorderBrush="#3B414A" BorderThickness="1">
+                  <StackPanel Spacing="3">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Label}" />
+                      <TextBlock Grid.Column="1" Classes="muted" Text="{Binding State}" />
+                    </Grid>
+                    <TextBlock Classes="muted" Text="{Binding AssetId}" />
+                    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <TextBlock Grid.Row="3"
+                     Classes="muted"
+                     Text="Bundle import is local-first. Deploying geometry and behaviours to a runtime, applying bindings, activating policy, publishing plans, and launching remain explicit operator-controlled actions."
+                     TextWrapping="Wrap" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

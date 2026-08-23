@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:RobotCommand.Localization"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.ManualControlView"
+             x:DataType="vm:ManualControlViewModel">
+  <ScrollViewer>
+    <StackPanel Spacing="14" MaxWidth="900">
+      <StackPanel Spacing="2">
+        <TextBlock FontSize="26" FontWeight="SemiBold" Text="Manual Control" />
+        <TextBlock Classes="muted" Text="{loc:Loc Key=ManualControlDescription}" />
+      </StackPanel>
+      <Border Classes="panel"><StackPanel Spacing="10">
+        <TextBlock FontWeight="SemiBold" Text="Session" />
+        <TextBlock Text="{Binding SelectedManualUnitText}" />
+        <TextBlock Text="{Binding SessionStatus}" />
+        <TextBlock Text="{Binding DeadmanStatus}" />
+        <Border Classes="manualPendingPanel" IsVisible="{Binding HasPendingButtonAction}">
+          <StackPanel Spacing="2">
+            <TextBlock FontWeight="SemiBold" Text="CONTROLLER COMMAND PENDING" />
+            <TextBlock Text="{Binding PendingButtonAction}" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" Text="{Binding PendingButtonExpiry}" />
+          </StackPanel>
+        </Border>
+        <TextBlock IsVisible="{Binding HasNoPendingButtonAction}" Classes="muted" Text="No pending controller command." />
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Button Classes="primary" Content="{Binding ControlButtonText}" Command="{Binding ToggleControlCommand}" />
+        </StackPanel>
+      </StackPanel></Border>
+      <Border Classes="panel"><StackPanel Spacing="8">
+        <TextBlock FontWeight="SemiBold" Text="Controller" />
+        <ComboBox ItemsSource="{Binding Devices}" SelectedValue="{Binding SelectedDeviceId}" SelectedValueBinding="{Binding Id}">
+          <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+        </ComboBox>
+        <TextBlock Classes="muted" Text="{Binding SelectedDeviceDescription}" />
+        <TextBlock Classes="muted" Text="{loc:Loc Key=ManualControlMappingDescription}" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="16">
+          <TextBlock Text="{Binding LeftX, StringFormat='Left X: {0:F2}'}" />
+          <TextBlock Grid.Column="1" Text="{Binding LeftY, StringFormat='Left Y: {0:F2}'}" />
+          <TextBlock Grid.Row="1" Text="{Binding RightX, StringFormat='Right X: {0:F2}'}" />
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding RightY, StringFormat='Right Y: {0:F2}'}" />
+        </Grid>
+        <TextBlock Text="{Binding ProcessedLeftY, StringFormat='Processed climb m/s: {0:F2}'}" />
+        <TextBlock Text="{Binding ProcessedRightY, StringFormat='Processed forward m/s: {0:F2}'}" />
+        <TextBlock Text="{Binding ProcessedRightX, StringFormat='Processed right m/s: {0:F2}'}" />
+        <TextBlock Text="{Binding ProcessedLeftX, StringFormat='Processed yaw deg/s: {0:F1}'}" />
+        <TextBlock Classes="muted" Text="{Binding InputAge, StringFormat='Last input: {0}'}" />
+        <TextBlock Classes="muted" IsVisible="{Binding IsSelectedJoystick}" Text="{Binding RawAxesText}" TextWrapping="Wrap" />
+      </StackPanel></Border>
+      <Border Classes="panel"><StackPanel Spacing="8">
+        <TextBlock FontWeight="SemiBold" Text="Control profile" />
+        <Grid ColumnDefinitions="Auto,120,Auto,120" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+          <TextBlock VerticalAlignment="Center" Text="Dead zone" /><TextBox Grid.Column="1" Text="{Binding DeadZone}" />
+          <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Expo" /><TextBox Grid.Column="3" Text="{Binding Expo}" />
+          <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="Horizontal m/s" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MaximumHorizontalSpeed}" />
+          <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Text="Vertical m/s" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding MaximumVerticalSpeed}" />
+          <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="Yaw deg/s" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding MaximumYawRate}" />
+          <TextBlock Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" Text="Takeoff AGL m" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding TakeoffAltitude}" />
+        </Grid>
+        <Button HorizontalAlignment="Left" Content="Save profile" Command="{Binding SaveProfileCommand}" />
+      </StackPanel></Border>
+      <Border Classes="panel" IsVisible="{Binding IsSelectedJoystick}"><StackPanel Spacing="8">
+        <TextBlock FontWeight="SemiBold" Text="USB joystick mapping" />
+        <TextBlock Classes="muted" Text="T.16000M defaults: X=right, Y=forward, twist=yaw, slider=climb. Values are zero-based Windows Raw Input indexes; use the live axis readout above to adjust them." TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="Auto,90,Auto,90" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+          <TextBlock VerticalAlignment="Center" Text="Forward axis" /><TextBox Grid.Column="1" Text="{Binding ForwardAxis}" />
+          <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Right axis" /><TextBox Grid.Column="3" Text="{Binding RightAxis}" />
+          <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="Vertical axis" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding VerticalAxis}" />
+          <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Text="Yaw axis" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding YawAxis}" />
+          <CheckBox Grid.Row="2" Grid.ColumnSpan="2" Content="Invert forward" IsChecked="{Binding ForwardInverted}" />
+          <CheckBox Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Content="Invert right" IsChecked="{Binding RightInverted}" />
+          <CheckBox Grid.Row="3" Grid.ColumnSpan="2" Content="Invert vertical" IsChecked="{Binding VerticalInverted}" />
+          <CheckBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Content="Invert yaw" IsChecked="{Binding YawInverted}" />
+          <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="Deadman button" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding DeadmanButton}" />
+          <TextBlock Grid.Row="4" Grid.Column="2" VerticalAlignment="Center" Text="Arm button" /><TextBox Grid.Row="4" Grid.Column="3" Text="{Binding ArmButton}" />
+          <TextBlock Grid.Row="5" VerticalAlignment="Center" Text="Takeoff button" /><TextBox Grid.Row="5" Grid.Column="1" Text="{Binding TakeoffButton}" />
+          <TextBlock Grid.Row="5" Grid.Column="2" VerticalAlignment="Center" Text="Execute button" /><TextBox Grid.Row="5" Grid.Column="3" Text="{Binding ExecuteButton}" />
+          <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="Cancel button" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding CancelButton}" />
+          <TextBlock Grid.Row="6" Grid.Column="2" VerticalAlignment="Center" Text="Release button" /><TextBox Grid.Row="6" Grid.Column="3" Text="{Binding ReleaseButton}" />
+        </Grid>
+        <TextBlock Classes="muted" Text="Hold the deadman to stream motion. Arm/takeoff are queued by their mapped buttons; execute with the mapped Execute button." TextWrapping="Wrap" />
+      </StackPanel></Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

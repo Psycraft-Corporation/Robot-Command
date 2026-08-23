@@ -1,0 +1,70 @@
+# .NET
+bin/
+obj/
+artifacts/
+out/
+tmp/
+TestResults/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / Visual Studio / VS Code
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Local config and secrets
+NuGet.config
+appsettings.local.json
+*.local.json
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Packages
+*.nupkg
+*.snupkg
+*.zip
+*.tar.gz
+*.dmg
+*.msix
+*.deb
+*.rpm
+
+# Dart SDK build output
+sdks/dart/.dart_tool/
+sdks/dart/pubspec.lock
+src/RobotCommand.Sdk.Dart/.dart_tool/
+src/RobotCommand.Sdk.Dart/pubspec.lock
+
+# Local runtime state and generated diagnostics
+**/data/
+**/logs/
+screenshots/
+sitl/
+
+# Release staging exclusions
+**/TestResults/
+**/publish/
+**/extracted/
+*.trace
+*.dmp
+*.etl
+*.cache
+*.nupkg
+*.snupkg
+*.pdb
+*.userprefs
+
+# Local IDE and agent state
+.codex/
+.agents/
+AGENTS.md
+INSTRUCTIONS.md

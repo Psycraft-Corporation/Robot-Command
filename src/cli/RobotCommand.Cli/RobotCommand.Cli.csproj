@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>RobotCommand.Cli</RootNamespace>
+    <AssemblyName>RobotCommand.Cli</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../core/RobotCommand.Core/RobotCommand.Core.csproj" />
+    <ProjectReference Include="../../runtime/RobotCommand.Runtime/RobotCommand.Runtime.csproj" />
+    <ProjectReference Include="../../simulation/RobotCommand.Simulation/RobotCommand.Simulation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="../../app/RobotCommand/appsettings.json" Link="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="CopyPortableSimulationWorkerToCli" AfterTargets="Build">
+    <ItemGroup>
+      <PortableWorkerFiles Include="$(MSBuildProjectDirectory)\..\..\simulation\RobotCommand.Simulator\bin\$(Configuration)\net10.0\RobotCommand.Simulator*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PortableWorkerFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(PortableWorkerFiles)' != ''" />
+  </Target>
+</Project>
