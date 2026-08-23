@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:loc="using:RobotCommand.Localization"
+             x:Class="RobotCommand.Views.Workspaces.CommandsView"
+             x:DataType="vm:CommandsViewModel">
+  <Border Classes="panel">
+      <Grid RowDefinitions="Auto,*">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=HistoryCommandHistory}" />
+          <TextBlock Grid.Column="1" Classes="countBadge" Text="{Binding Count}" />
+        </Grid>
+
+        <Grid Grid.Row="1">
+          <ListBox ItemsSource="{Binding Commands}" SelectedItem="{Binding SelectedCommand}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="6"
+                      ColumnDefinitions="125,90,110,140,*,120"
+                      ColumnSpacing="10">
+                  <StackPanel>
+                    <TextBlock Text="{Binding UpdatedAt}" />
+                    <TextBlock Classes="muted" FontSize="10" Text="{Binding ConnectionId}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding State}" />
+                  <TextBlock Grid.Column="2" Text="{Binding Kind}" />
+                  <StackPanel Grid.Column="3">
+                    <TextBlock Text="{Binding TargetKind}" />
+                    <TextBlock Classes="muted" FontSize="10" Text="{Binding TargetId}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="4" Spacing="2">
+                    <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding Summary}" />
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Message}" />
+                  </StackPanel>
+                  <StackPanel Grid.Column="5">
+                    <TextBlock Classes="muted" Text="Policy" />
+                    <TextBlock Text="{Binding PolicyDecision}" />
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <StackPanel IsVisible="{Binding IsEmpty}"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Spacing="8">
+            <TextBlock HorizontalAlignment="Center"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Text="{loc:Loc Key=HistoryNoCommands}" />
+          </StackPanel>
+        </Grid>
+      </Grid>
+  </Border>
+</UserControl>

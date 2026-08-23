@@ -1,0 +1,188 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.MissionsView"
+             x:DataType="vm:MissionsViewModel">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="12">
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel>
+        <TextBlock Classes="workspaceTitle" Text="Missions" />
+        <TextBlock Classes="muted" Text="Logos-native mission plans, validation, execution state, and lifecycle commands." />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <ComboBox Width="230"
+                  ItemsSource="{Binding Connections}"
+                  SelectedItem="{Binding SelectedConnection}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel>
+                <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                <TextBlock Classes="muted" Text="{Binding State}" />
+              </StackPanel>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+        <Button Content="Refresh Logos" Command="{Binding RefreshRemoteCommand}" />
+      </StackPanel>
+    </Grid>
+
+    <Border Grid.Row="1" Classes="noticePanel">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+        <TextBlock FontWeight="Bold" Text="SDK" />
+        <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{Binding GatewayStatus}" />
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="2" ColumnDefinitions="380,*" ColumnSpacing="12">
+      <Border Classes="panel">
+        <Grid RowDefinitions="Auto,Auto,*" RowSpacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="sectionTitle" Text="Mission library" />
+            <TextBlock Grid.Column="1" Classes="countBadge" Text="{Binding Count}" />
+          </Grid>
+
+          <Grid Grid.Row="1" RowDefinitions="Auto,Auto" RowSpacing="8">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox PlaceholderText="Path to .logos-mission.json" Text="{Binding ImportPath}" />
+              <Button Grid.Column="1" Content="Import" Command="{Binding ImportCommand}" />
+            </Grid>
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+              <TextBox PlaceholderText="Export path" Text="{Binding ExportPath}" />
+              <Button Grid.Column="1" Content="Export" Command="{Binding ExportCommand}" />
+            </Grid>
+          </Grid>
+
+          <Grid Grid.Row="2">
+            <ListBox ItemsSource="{Binding Missions}" SelectedItem="{Binding SelectedMission}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="6" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <StackPanel>
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                      <TextBlock Classes="muted" Text="{Binding Id}" />
+                      <TextBlock Classes="muted" TextTrimming="CharacterEllipsis" Text="{Binding Objective}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                      <TextBlock HorizontalAlignment="Right" Text="{Binding State}" />
+                      <TextBlock Classes="muted" HorizontalAlignment="Right" Text="{Binding ValidationState}" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel IsVisible="{Binding IsEmpty}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="8">
+              <TextBlock HorizontalAlignment="Center" FontSize="20" FontWeight="SemiBold" Text="No missions loaded" />
+              <TextBlock Classes="muted" Text="Import a plan or connect to a runtime emitting mission events." />
+            </StackPanel>
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Grid Grid.Column="1" RowDefinitions="Auto,*,190" RowSpacing="12">
+        <Border Classes="panel">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionTitle" Text="Selected mission" />
+              <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding SelectedMission.Name}" />
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SelectedMission.Objective}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+              <Button Content="Validate" Command="{Binding ValidateCommand}" />
+              <Button Classes="primary" Content="Start" Command="{Binding StartCommand}" />
+              <Button Content="Pause" Command="{Binding PauseCommand}" />
+              <Button Content="Resume" Command="{Binding ResumeCommand}" />
+              <Button Content="End" Command="{Binding EndCommand}" />
+              <Button Content="Cancel" Command="{Binding CancelCommand}" />
+              <Button Classes="danger" Content="Abort" Command="{Binding AbortCommand}" />
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1">
+          <TabItem Header="Plan">
+            <ScrollViewer>
+              <Grid Margin="12" ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+                <TextBlock Classes="muted" Text="Mission ID" />
+                <TextBlock Grid.Column="1" Text="{Binding SelectedMission.Id}" />
+                <TextBlock Grid.Row="1" Classes="muted" Text="State" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedMission.State}" />
+                <TextBlock Grid.Row="2" Classes="muted" Text="Connection" />
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedMission.ConnectionId}" />
+                <TextBlock Grid.Row="3" Classes="muted" Text="Team / vehicle" />
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedMission.AssignedTeamId}" />
+                <TextBlock Grid.Row="4" Classes="muted" Text="Priority" />
+                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedMission.Priority}" />
+                <TextBlock Grid.Row="5" Classes="muted" Text="Policy" />
+                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedMission.PolicyId}" />
+                <TextBlock Grid.Row="6" Classes="muted" Text="Source" />
+                <TextBlock Grid.Row="6" Grid.Column="1" TextWrapping="Wrap" Text="{Binding SelectedMission.SourcePath}" />
+              </Grid>
+            </ScrollViewer>
+          </TabItem>
+          <TabItem Header="Geometry">
+            <Grid Margin="12" RowDefinitions="Auto,Auto,Auto,*" RowSpacing="10">
+              <TextBlock Classes="muted"
+                         TextWrapping="Wrap"
+                         Text="Mission geometry references are canonical Logos geometry IDs. Select one to highlight it on the operational map." />
+              <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                <ComboBox ItemsSource="{Binding SelectedGeometryIds}"
+                          SelectedItem="{Binding SelectedGeometryId}" />
+                <Button Grid.Column="1"
+                        Content="Show on map"
+                        Command="{Binding ShowGeometryCommand}" />
+                <Button Grid.Column="2"
+                        Content="Remove"
+                        Command="{Binding RemoveGeometryReferenceCommand}" />
+              </Grid>
+              <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <ComboBox ItemsSource="{Binding AvailableGeometryIds}"
+                          SelectedItem="{Binding CandidateGeometryId}" />
+                <Button Grid.Column="1"
+                        Content="Add reference"
+                        Command="{Binding AddGeometryReferenceCommand}" />
+              </Grid>
+              <Border Grid.Row="3" Classes="noticePanel" IsVisible="{Binding HasNoGeometryReferences}">
+                <TextBlock Classes="muted" Text="This mission does not reference geometry." />
+              </Border>
+            </Grid>
+          </TabItem>
+          <TabItem Header="Validation">
+            <Grid Margin="12" RowDefinitions="Auto,*" RowSpacing="8">
+              <TextBlock FontWeight="SemiBold" Text="{Binding SelectedMission.ValidationState}" />
+              <TextBox Grid.Row="1"
+                       IsReadOnly="True"
+                       AcceptsReturn="True"
+                       TextWrapping="Wrap"
+                       Text="{Binding ValidationDetails}" />
+            </Grid>
+          </TabItem>
+          <TabItem Header="Command history">
+            <ListBox Margin="8" ItemsSource="{Binding CommandHistory}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="4" ColumnDefinitions="150,120,*,Auto" ColumnSpacing="8">
+                    <TextBlock Text="{Binding Kind}" />
+                    <TextBlock Grid.Column="1" Text="{Binding State}" />
+                    <TextBlock Grid.Column="2" TextTrimming="CharacterEllipsis" Text="{Binding Message}" />
+                    <TextBlock Grid.Column="3" Classes="muted" Text="{Binding UpdatedAt}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" Classes="panel">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+            <TextBlock Classes="sectionTitle" Text="Operator context" />
+            <TextBox Grid.Row="1" PlaceholderText="Command reason" Text="{Binding Reason}" />
+            <TextBlock Grid.Row="2" Classes="muted" TextWrapping="Wrap" Text="{Binding StatusMessage}" />
+          </Grid>
+        </Border>
+      </Grid>
+    </Grid>
+  </Grid>
+</UserControl>

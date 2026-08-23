@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>RobotCommand.Rendering.Veldrid</RootNamespace>
+    <AssemblyName>RobotCommand.Rendering.Veldrid</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../RobotCommand.Rendering/RobotCommand.Rendering.csproj" />
+    <PackageReference Include="Veldrid" />
+    <!-- Veldrid 4.9 pulls NativeLibraryLoader 1.0.13, which pins a
+         vulnerable Newtonsoft.Json 9.x dependency. The renderer does not use
+         Newtonsoft directly; this private reference keeps the resolved graph
+         on a supported Newtonsoft release. -->
+    <PackageReference Include="Newtonsoft.Json" PrivateAssets="All" />
+  </ItemGroup>
+</Project>

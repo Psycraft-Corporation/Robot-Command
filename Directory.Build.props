@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <WarningsAsErrorsProjects>RobotCommand.Core;RobotCommand.Rendering;RobotCommand.Simulation;RobotCommand.Sdk</WarningsAsErrorsProjects>
+    <TreatWarningsAsErrors Condition="$([System.String]::Copy(';$(WarningsAsErrorsProjects);').Contains(';$(MSBuildProjectName);'))">true</TreatWarningsAsErrors>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <Company>Psycraft Corporation</Company>
+    <Authors>Psycraft Corporation</Authors>
+    <RepositoryUrl>https://github.com/Psycraft-Corporation/Robot-Command</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Psycraft-Corporation/Robot-Command</PackageProjectUrl>
+    <Copyright>Copyright (c) 2026 Psycraft Corporation</Copyright>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**\artifacts\**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

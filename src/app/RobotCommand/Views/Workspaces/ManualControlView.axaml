@@ -1,0 +1,133 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:RobotCommand.Localization"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.ManualControlView"
+             x:DataType="vm:ManualControlViewModel">
+  <ScrollViewer>
+    <StackPanel Spacing="10" MaxWidth="1000">
+      <TextBlock FontSize="26" FontWeight="SemiBold" Text="{loc:Loc Key=InputDevices}" />
+
+      <Border Classes="panel">
+        <Grid ColumnDefinitions="220,220,*" ColumnSpacing="12">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ManualProfile}" />
+            <ListBox Classes="compactList"
+                     ItemsSource="{Binding Profiles}"
+                     SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
+                     MinHeight="54"
+                     IsEnabled="{Binding !IsEditingProfile}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Margin="2,5" Text="{Binding Name}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button Content="{loc:Loc Key=NewProfile}" Command="{Binding NewProfileCommand}" />
+              <Button Content="{loc:Loc Key=EditProfile}" Command="{Binding EditProfileCommand}" />
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Grid.Column="1" Spacing="6">
+            <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ManualController}" />
+            <ListBox Classes="compactList"
+                     ItemsSource="{Binding Devices}"
+                     SelectedValue="{Binding SelectedDeviceId}"
+                     SelectedValueBinding="{Binding Id}"
+                     MinHeight="70">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Margin="2,5" Text="{Binding Name}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Classes="emptyState"
+                       IsVisible="{Binding !HasDevices}"
+                       Text="{loc:Loc Key=ManualNoControllers}" />
+            <TextBlock Classes="muted" Text="{Binding SelectedDeviceDescription}" TextWrapping="Wrap" />
+          </StackPanel>
+
+          <StackPanel Grid.Column="2" Spacing="6">
+            <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ManualUnit}" />
+            <TextBlock Text="{Binding SelectedManualUnitText}" />
+            <TextBlock Classes="muted" Text="{Binding SelectedDeviceStatus}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Classes="panel">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+          <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=ManualSession}" />
+          <Button Grid.Column="1" Classes="primary" Content="{Binding ControlButtonText}" Command="{Binding ToggleControlCommand}" />
+          <TextBlock Grid.Row="1" Text="{Binding SessionStatus}" />
+          <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="18">
+            <TextBlock Classes="muted" Text="{Binding DeadmanStatus}" />
+            <TextBlock Classes="muted" Text="{Binding InputAge, StringFormat='{}{0}'}" />
+            <TextBlock Classes="muted" Text="{Binding SessionMode}" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <Border Classes="panel" IsVisible="{Binding IsEditingProfile}">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+            <TextBlock VerticalAlignment="Center" Text="{loc:Loc Key=ProfileName}" />
+            <TextBox Grid.Column="1" Text="{Binding ProfileName}" />
+          </Grid>
+          <Grid ColumnDefinitions="Auto,100,Auto,100" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+            <TextBlock VerticalAlignment="Center" Text="{loc:Loc Key=ManualDeadZone}" /><TextBox Grid.Column="1" Text="{Binding DeadZone}" />
+            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualExpo}" /><TextBox Grid.Column="3" Text="{Binding Expo}" />
+            <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="{loc:Loc Key=ManualHorizontalSpeed}" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MaximumHorizontalSpeed}" />
+            <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualVerticalSpeed}" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding MaximumVerticalSpeed}" />
+            <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualYawRate}" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding MaximumYawRate}" />
+            <TextBlock Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualTakeoffAltitude}" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding TakeoffAltitude}" />
+          </Grid>
+          <Expander Header="{loc:Loc Key=ManualAdvanced}" IsExpanded="{Binding IsAdvancedOpen}">
+            <StackPanel Spacing="8" Margin="0,8,0,0">
+              <Grid ColumnDefinitions="Auto,90,Auto,90" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8" IsEnabled="{Binding HasSelectedDevice}">
+                <TextBlock VerticalAlignment="Center" Text="{loc:Loc Key=ManualForwardAxis}" /><TextBox Grid.Column="1" Text="{Binding ForwardAxis}" />
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualRightAxis}" /><TextBox Grid.Column="3" Text="{Binding RightAxis}" />
+                <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="{loc:Loc Key=ManualVerticalAxis}" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding VerticalAxis}" />
+                <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualYawAxis}" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding YawAxis}" />
+                <CheckBox Grid.Row="2" Grid.ColumnSpan="2" Content="{loc:Loc Key=ManualInvertForward}" IsChecked="{Binding ForwardInverted}" />
+                <CheckBox Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" Content="{loc:Loc Key=ManualInvertRight}" IsChecked="{Binding RightInverted}" />
+                <CheckBox Grid.Row="3" Grid.ColumnSpan="2" Content="{loc:Loc Key=ManualInvertVertical}" IsChecked="{Binding VerticalInverted}" />
+                <CheckBox Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Content="{loc:Loc Key=ManualInvertYaw}" IsChecked="{Binding YawInverted}" />
+                <TextBlock Grid.Row="4" VerticalAlignment="Center" Text="{loc:Loc Key=ManualSafetyButton}" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding DeadmanButton}" />
+                <TextBlock Grid.Row="4" Grid.Column="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualArmButton}" /><TextBox Grid.Row="4" Grid.Column="3" Text="{Binding ArmButton}" />
+                <TextBlock Grid.Row="5" VerticalAlignment="Center" Text="{loc:Loc Key=ManualTakeoffButton}" /><TextBox Grid.Row="5" Grid.Column="1" Text="{Binding TakeoffButton}" />
+                <TextBlock Grid.Row="5" Grid.Column="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualExecuteButton}" /><TextBox Grid.Row="5" Grid.Column="3" Text="{Binding ExecuteButton}" />
+                <TextBlock Grid.Row="6" VerticalAlignment="Center" Text="{loc:Loc Key=ManualCancelButton}" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding CancelButton}" />
+                <TextBlock Grid.Row="6" Grid.Column="2" VerticalAlignment="Center" Text="{loc:Loc Key=ManualReleaseButton}" /><TextBox Grid.Row="6" Grid.Column="3" Text="{Binding ReleaseButton}" />
+              </Grid>
+              <Grid ColumnDefinitions="Auto,100,Auto,100" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                <TextBlock Text="{loc:Loc Key=ManualHorizontalAcceleration}" /><TextBox Grid.Column="1" Text="{Binding HorizontalAcceleration}" />
+                <TextBlock Grid.Column="2" Text="{loc:Loc Key=ManualVerticalAcceleration}" /><TextBox Grid.Column="3" Text="{Binding VerticalAcceleration}" />
+                <TextBlock Grid.Row="1" Text="{loc:Loc Key=ManualYawAcceleration}" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding YawAcceleration}" />
+              </Grid>
+            </StackPanel>
+          </Expander>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Classes="primary" Content="{loc:Loc Key=SaveProfile}" Command="{Binding SaveProfileCommand}" />
+            <Button Content="{loc:Loc Key=Cancel}" Command="{Binding CancelProfileCommand}" />
+            <Button Content="{loc:Loc Key=DeleteProfile}" Command="{Binding DeleteProfileCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ManualDiagnostics}" />
+          <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+            <TextBlock Text="{Binding LeftX, StringFormat='Left X: {0:F2}'}" />
+            <TextBlock Grid.Column="1" Text="{Binding LeftY, StringFormat='Left Y: {0:F2}'}" />
+            <TextBlock Grid.Row="1" Text="{Binding RightX, StringFormat='Right X: {0:F2}'}" />
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding RightY, StringFormat='Right Y: {0:F2}'}" />
+            <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Classes="muted" Text="{Binding RawAxesText}" TextWrapping="Wrap" />
+          </Grid>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

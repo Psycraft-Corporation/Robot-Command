@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:loc="using:RobotCommand.Localization"
+             x:Class="RobotCommand.Views.Workspaces.TeamFormationOperationsView"
+             x:DataType="vm:UnitsPanelViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="0,0,10,12" Spacing="10">
+      <ComboBox ItemsSource="{Binding AuthoredFormations}"
+                SelectedItem="{Binding SelectedAuthoredFormation, Mode=TwoWay}"
+                IsVisible="{Binding !IsTeamFormationActive}"
+                ToolTip.Tip="Select an authored formation">
+        <ComboBox.ItemTemplate>
+          <DataTemplate><TextBlock Text="{Binding Name}" /></DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding !IsTeamFormationActive}">
+        <TextBox Width="100"
+                 PlaceholderText="Heading °"
+                 Text="{Binding TeamEntryHeading, Mode=TwoWay}"
+                 ToolTip.Tip="Absolute entry heading: 0° is North; positive turns clockwise." />
+        <Button Content="Assign formation" Command="{Binding AssignAuthoredFormationCommand}" />
+        <Button Content="Clear"
+                Command="{Binding ClearAuthoredFormationCommand}"
+                IsVisible="{Binding IsTeamFormationAssigned}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsTeamFormationAssigned}">
+        <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding TeamFormationAssignmentStatus}" />
+        <Button Classes="primary"
+                Content="Enter formation"
+                Command="{Binding EnterAuthoredFormationCommand}"
+                IsVisible="{Binding !IsTeamFormationActive}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Classes="primary"
+                Content="{loc:Loc Key=FormationLock}"
+                Command="{Binding LockTeamFormationCommand}"
+                IsVisible="{Binding !IsTeamFormationLocked}" />
+        <Button Content="{loc:Loc Key=FormationHold}"
+                Command="{Binding HoldTeamFormationCommand}"
+                IsVisible="{Binding IsTeamFormationLocked}" />
+        <Button Content="{loc:Loc Key=FormationUnlock}"
+                Command="{Binding UnlockTeamFormationCommand}"
+                IsVisible="{Binding IsTeamFormationLocked}" />
+      </StackPanel>
+      <Grid IsVisible="{Binding IsTeamFormationLocked}"
+            ColumnDefinitions="*,*,Auto"
+            ColumnSpacing="5">
+        <TextBox PlaceholderText="{loc:Loc Key=FormationLatitude}" Text="{Binding TeamGoToLatitude}" />
+        <TextBox Grid.Column="1" PlaceholderText="{loc:Loc Key=FormationLongitude}" Text="{Binding TeamGoToLongitude}" />
+        <Button Grid.Column="2"
+                Content="{loc:Loc Key=FormationGoTo}"
+                Command="{Binding MoveTeamFormationCommand}" />
+      </Grid>
+      <StackPanel IsVisible="{Binding IsTeamFormationLocked}" Orientation="Horizontal" Spacing="5">
+        <TextBox Width="110" PlaceholderText="{loc:Loc Key=FormationAltitudeAgl}" Text="{Binding TeamAltitude}" />
+        <Button Content="{loc:Loc Key=FormationChangeAltitude}" Command="{Binding ChangeTeamFormationAltitudeCommand}" />
+      </StackPanel>
+      <StackPanel IsVisible="{Binding IsTeamFormationLocked}" Orientation="Horizontal" Spacing="5">
+        <TextBox Width="110" PlaceholderText="{loc:Loc Key=FormationRotationDegrees}" Text="{Binding TeamRotation}" />
+        <Button Content="{loc:Loc Key=FormationRotate}" Command="{Binding RotateTeamFormationCommand}" />
+      </StackPanel>
+      <StackPanel IsVisible="{Binding IsTeamFormationLocked}" Orientation="Horizontal" Spacing="5">
+        <TextBox Width="110" PlaceholderText="{loc:Loc Key=FormationScalePercent}" Text="{Binding TeamScale}" />
+        <Button Content="{loc:Loc Key=FormationScale}" Command="{Binding ScaleTeamFormationCommand}" />
+      </StackPanel>
+      <StackPanel IsVisible="{Binding HasPendingFormationOperation}" Orientation="Horizontal" Spacing="5">
+        <Button Classes="primary"
+                Content="{loc:Loc Key=ExecuteCommand}"
+                Command="{Binding ExecuteFormationOperationCommand}" />
+        <Button Content="{loc:Loc Key=Cancel}" Command="{Binding CancelFormationOperationCommand}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="{loc:Loc Key=JumpTo}" Command="{Binding MapNavigation.JumpToSelectedCommand}" />
+        <Button Content="{loc:Loc Key=Follow}" Command="{Binding MapNavigation.FollowSelectedCommand}" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

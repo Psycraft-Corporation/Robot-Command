@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>RobotCommand</RootNamespace>
+    <AssemblyName>RobotCommand</AssemblyName>
+    <UseAppHost>true</UseAppHost>
+    <RobotCommandGStreamerRoot Condition="'$(RobotCommandGStreamerRoot)' == '' and Exists('$(MSBuildProjectDirectory)\native\gstreamer')">$(MSBuildProjectDirectory)\native\gstreamer</RobotCommandGStreamerRoot>
+    <RobotCommandMediaMtxRoot Condition="'$(RobotCommandMediaMtxRoot)' == '' and Exists('$(MSBuildProjectDirectory)\native\mediamtx')">$(MSBuildProjectDirectory)\native\mediamtx</RobotCommandMediaMtxRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+    <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="appsettings.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="appsettings.local.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.local.json')" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RobotCommandGStreamerRoot)' != '' and Exists('$(RobotCommandGStreamerRoot)')">
+    <Content Include="$(RobotCommandGStreamerRoot)\**\*"
+             Link="native\gstreamer\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(RobotCommandMediaMtxRoot)' != '' and Exists('$(RobotCommandMediaMtxRoot)')">
+    <Content Include="$(RobotCommandMediaMtxRoot)\**\*"
+             Link="native\mediamtx\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Mapsui" />
+    <PackageReference Include="Mapsui.Avalonia12" />
+    <PackageReference Include="QRCoder" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../core/RobotCommand.Core/RobotCommand.Core.csproj" />
+    <ProjectReference Include="../../runtime/RobotCommand.Runtime/RobotCommand.Runtime.csproj" />
+    <ProjectReference Include="../../sdk/RobotCommand.Sdk/RobotCommand.Sdk.csproj" />
+    <ProjectReference Include="../../cli/RobotCommand.Cli/RobotCommand.Cli.csproj" />
+    <ProjectReference Include="../../rendering/RobotCommand.Rendering/RobotCommand.Rendering.csproj" />
+    <ProjectReference Include="../../rendering/RobotCommand.Rendering.Veldrid/RobotCommand.Rendering.Veldrid.csproj" />
+  </ItemGroup>
+
+  <Target Name="CopyPortableSimulationWorkerToGui" AfterTargets="Build">
+    <ItemGroup>
+      <PortableWorkerFiles Include="$(MSBuildProjectDirectory)\..\..\simulation\RobotCommand.Simulator\bin\$(Configuration)\net10.0\RobotCommand.Simulator*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PortableWorkerFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="'@(PortableWorkerFiles)' != ''" />
+  </Target>
+</Project>

@@ -1,0 +1,577 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:RobotCommand.Localization"
+             xmlns:controls="using:RobotCommand.Controls"
+             xmlns:render="using:RobotCommand.Rendering.Avalonia"
+             xmlns:models="using:RobotCommand.Models"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.OperateView"
+             x:DataType="vm:OperateViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="14">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <StackPanel>
+        <TextBlock Classes="workspaceTitle" Text="{loc:Loc Key=Operate}" />
+      </StackPanel>
+
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Border Classes="toolbarGroup">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <Button Classes="toolbarButton" Content="{loc:Loc Key=OperateMap}" Command="{Binding ShowMapCommand}" />
+            <Button Classes="toolbarButton" Content="{loc:Loc Key=OperateVideo}" Command="{Binding ShowVideoCommand}" />
+            <Button Classes="toolbarButton" Content="{loc:Loc Key=OperateUnit}" Command="{Binding ShowUnitCommand}" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*">
+      <Grid Grid.Column="0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="{Binding MapPaneWidth}" />
+          <ColumnDefinition Width="8" />
+          <ColumnDefinition Width="{Binding VideoPaneWidth}" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Classes="mapSurface"
+                IsVisible="{Binding MapVisible}">
+          <Grid>
+            <Border Classes="surfaceHeader mapOverlay"
+                    ZIndex="10"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Top"
+                    Margin="12,12,156,12">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Classes="toolbarButton"
+                          Content="{loc:Loc Key=MapFitAll}"
+                          Command="{Binding Map.FitAllCommand}" />
+                  <ComboBox Width="150"
+                            ItemsSource="{Binding Map.Styles}"
+                            SelectedValue="{Binding Map.SelectedStyleId, Mode=TwoWay}"
+                            SelectedValueBinding="{Binding StyleId}"
+                            IsVisible="{Binding Map.MultipleStylesAvailable}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="models:MapStyleOption">
+                        <TextBlock Text="{Binding DisplayName}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Button Classes="toolbarButton"
+                          Content="{loc:Loc Key=MapFollowSelected}"
+                          Command="{Binding Map.FollowSelectedCommand}" />
+                  <Button Classes="toolbarButton"
+                          Content="{loc:Loc Key=MapStopFollowing}"
+                          Command="{Binding Map.StopFollowingCommand}" />
+                  <Button Classes="toolbarButton"
+                          Content="{Binding Map.OperatorNavigationLabel}"
+                          Command="{Binding Map.JumpToOperatorCommand}"
+                          IsEnabled="{Binding Map.CanJumpToOperator}" />
+                  <Button Classes="toolbarButton" Content="{loc:Loc Key=MapViews}">
+                    <Button.Flyout>
+                      <Flyout Placement="Bottom">
+                        <Border Width="330" Margin="0,10,0,0" Padding="10" Classes="panel">
+                          <StackPanel Spacing="7">
+                            <TextBlock Classes="eyebrow" Text="{loc:Loc Key=MapViews}" />
+                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                              <ComboBox ItemsSource="{Binding Map.SavedViews}"
+                                        SelectedItem="{Binding Map.SelectedSavedView}">
+                                <ComboBox.ItemTemplate>
+                                  <DataTemplate x:DataType="models:SavedMapView">
+                                    <StackPanel>
+                                      <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                                      <TextBlock Classes="muted" FontSize="9" Text="{Binding LocationSummary}" />
+                                    </StackPanel>
+                                  </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                              </ComboBox>
+                              <Button Grid.Column="1" Classes="toolbarButton" Content="{loc:Loc Key=MapApplySavedView}" Command="{Binding Map.ApplySavedViewCommand}" />
+                              <Button Grid.Column="2" Classes="toolbarButton" Content="{loc:Loc Key=MapDeleteSavedView}" Command="{Binding Map.DeleteSavedViewCommand}" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                              <TextBox PlaceholderText="{loc:Loc Key=MapViewName}"
+                                       Text="{Binding Map.SavedViewName, UpdateSourceTrigger=PropertyChanged}" />
+                              <Button Grid.Column="1" Classes="primary" Content="{loc:Loc Key=MapSaveCurrentView}" Command="{Binding Map.SaveViewCommand}" />
+                            </Grid>
+                            <TextBlock Classes="muted" FontSize="9" TextWrapping="Wrap" Text="{Binding Map.SavedViewStatus}" />
+                          </StackPanel>
+                        </Border>
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                  <Button Classes="toolbarButton" Content="{loc:Loc Key=MapLayers}">
+                    <Button.Flyout>
+                      <Flyout Placement="Bottom">
+                        <Border Width="360" Margin="0,10,0,0" Padding="10" Classes="panel">
+                          <StackPanel Spacing="6">
+                            <WrapPanel Orientation="Horizontal">
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{Binding Map.GeometryButtonLabel}" Command="{Binding Map.ToggleGeometryCommand}" IsVisible="{Binding Map.GlobalMapControlsAvailable}" />
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{Binding Map.PolicyButtonLabel}" Command="{Binding Map.TogglePolicyCommand}" IsVisible="{Binding Map.OverlayControlsAvailable}" />
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{Binding Map.TrailsButtonLabel}" Command="{Binding Map.ToggleTrailsCommand}" IsVisible="{Binding Map.GlobalMapControlsAvailable}" />
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{Binding Map.GoToIndicatorsButtonLabel}" Command="{Binding Map.ToggleGoToIndicatorsCommand}" IsVisible="{Binding Map.GlobalMapControlsAvailable}" />
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{Binding Map.VehicleLabelsButtonLabel}" Command="{Binding Map.ToggleVehicleLabelsCommand}" IsVisible="{Binding Map.GlobalMapControlsAvailable}" />
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{Binding Map.OrientationButtonLabel}" Command="{Binding Map.ToggleOrientationCommand}" IsVisible="{Binding Map.GlobalMapControlsAvailable}" />
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{loc:Loc Key=MapResetNorth}" Command="{Binding Map.ResetNorthCommand}" IsVisible="{Binding Map.GlobalMapControlsAvailable}" />
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{loc:Loc Key=MapClearTrails}" Command="{Binding Map.ClearTrailsCommand}" IsVisible="{Binding Map.GlobalMapControlsAvailable}" />
+                            <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{Binding Map.WeatherButtonLabel}" Command="{Binding Map.ToggleWeatherCommand}" IsVisible="{Binding Map.GlobalMapControlsAvailable}" />
+                            </WrapPanel>
+                            <Border IsVisible="{Binding Map.GlobalMapControlsAvailable}">
+                              <StackPanel Spacing="2" IsVisible="{Binding Map.WeatherVisible}">
+                                <TextBlock Classes="muted" FontSize="9" Text="{loc:Loc Key=MapWeatherOpacity}" />
+                                <Slider Width="120" Minimum="0.2" Maximum="0.85" Value="{Binding Map.WeatherOpacity, Mode=TwoWay}" />
+                              </StackPanel>
+                            </Border>
+                          </StackPanel>
+                        </Border>
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                </StackPanel>
+            </Border>
+
+            <Grid>
+              <render:ThreeDViewportControl Scene="{Binding Map.WorldScene}"
+                                             IsVisible="{Binding Map.IsThreeD}"
+                                             OrbitControls="False"
+                                             x:Name="WorldViewport" />
+              <controls:NativeOperationalMapControl Presentation="{Binding Map.Presentation}"
+                                                    VehicleMotion="{Binding Map.VehicleMotion}"
+                                                    CurrentViewport="{Binding Map.CurrentViewport}"
+                                                    SelectVehicleCommand="{Binding Map.SelectVehicleCommand}"
+                                                    ClearConnectedClientSelectionCommand="{Binding ClearConnectedClientSelectionCommand}"
+                                                    SelectGeometryCommand="{Binding Map.SelectGeometryCommand}"
+                                                    GeometrySelectionEnabled="{Binding Map.GeometrySelectionEnabled}"
+                                                    MapGoToCommand="{Binding Controls.PrepareMapGoToCommand}"
+                                                    MapSetHeadingCommand="{Binding Controls.PrepareMapSetHeadingCommand}"
+                                                    MapAssembleCommand="{Binding Controls.PrepareMapAssembleCommand}"
+                                                    MapOperatorControls="{Binding Controls}"
+                                                    MapUnitsPanel="{Binding Units}"
+                                                    UserPannedCommand="{Binding Map.UserPannedCommand}"
+                                                    ViewportChangedCommand="{Binding Map.UpdateViewportCommand}"
+                                                    GeometryEditCommand="{Binding Map.GeometryMapEditCommand}"
+                                                    CompleteGeometryEditCommand="{Binding Map.CompleteGeometryEditCommand}"
+                                                    UndoGeometryEditCommand="{Binding Map.UndoGeometryEditCommand}"
+                                                    RedoGeometryEditCommand="{Binding Map.RedoGeometryEditCommand}"
+                                                    CancelGeometryEditCommand="{Binding Map.CancelGeometryEditCommand}"
+                                                    IsVisible="{Binding !Map.IsThreeD}" />
+              <Border Classes="panel mapOverlay"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      Width="50"
+                      Margin="12,92,12,92"
+                      Padding="5"
+                      ZIndex="10"
+                      IsVisible="{Binding Map.GlobalMapControlsAvailable}">
+                <StackPanel Spacing="6">
+                  <TextBox Width="34"
+                           Height="26"
+                           MinWidth="0"
+                           MinHeight="0"
+                           FontSize="12"
+                           HorizontalContentAlignment="Center"
+                           VerticalContentAlignment="Center"
+                           Padding="3,0"
+                           PlaceholderText="20"
+                           ToolTip.Tip="{loc:Loc Key=GeometryDefaultAltitude}"
+                           Text="{Binding Map.GeometryDefaultAltitudeText, UpdateSourceTrigger=PropertyChanged}" />
+                  <ToggleButton Classes="geometryToolButton"
+                                Width="38" Height="28" Padding="0"
+                                HorizontalContentAlignment="Center"
+                                VerticalContentAlignment="Center"
+                                Content="⌖"
+                                FontSize="18"
+                                IsChecked="{Binding Map.GeometrySelectionEnabled, Mode=OneWay}"
+                                ToolTip.Tip="{loc:Loc Key=GeometrySelect}"
+                                Command="{Binding Map.StartGeometrySelectionCommand}" />
+                  <Button Classes="geometryToolButton"
+                          Width="38" Height="28" Padding="0"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center"
+                          Content="●"
+                          FontSize="16"
+                          ToolTip.Tip="{loc:Loc Key=GeometryNewPoi}"
+                          Command="{Binding Map.NewPointGeometryCommand}" />
+                  <Button Classes="geometryToolButton"
+                          Width="38" Height="28" Padding="0"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center"
+                          Content="⌁"
+                          FontSize="20"
+                          ToolTip.Tip="{loc:Loc Key=GeometryNewWaypointSequence}"
+                          Command="{Binding Map.NewRouteGeometryCommand}" />
+                  <Button Classes="geometryToolButton"
+                          Width="38" Height="28" Padding="0"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center"
+                          Content="⬠"
+                          FontSize="17"
+                          ToolTip.Tip="{loc:Loc Key=GeometryNewZone}"
+                          Command="{Binding Map.NewZoneGeometryCommand}" />
+                  <Button Classes="geometryToolButton"
+                          Width="38" Height="28" Padding="0"
+                          HorizontalContentAlignment="Center"
+                          VerticalContentAlignment="Center"
+                          Content="⌫"
+                          FontSize="18"
+                          ToolTip.Tip="{loc:Loc Key=GeometryDeleteSelected}"
+                          Command="{Binding Map.DeleteSelectedGeometryCommand}" />
+                </StackPanel>
+              </Border>
+              <Border HorizontalAlignment="Left"
+                      VerticalAlignment="Top"
+                      Width="212"
+                      Margin="12,86,12,12"
+                      Padding="8"
+                      Classes="panel"
+                       IsVisible="{Binding Map.HasGeometryDraft}">
+                <StackPanel Spacing="6">
+                  <Grid ColumnDefinitions="*,34" ColumnSpacing="6" IsVisible="{Binding Map.GeometryRenameVisible}">
+                    <TextBox PlaceholderText="{loc:Loc Key=GeometryName}"
+                             Text="{Binding Map.GeometryRenameText, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Grid.Column="1" Classes="primary" Width="34" Height="30" Padding="0"
+                            Content="&#x2713;"
+                            FontSize="17"
+                            ToolTip.Tip="{loc:Loc Key=GeometryRename}"
+                            Command="{Binding Map.ApplyGeometryRenameCommand}" />
+                  </Grid>
+                  <WrapPanel Orientation="Horizontal">
+                    <Button Classes="toolbarButton" Width="34" Height="30" Padding="0"
+                            Margin="0,0,5,0"
+                            Content="↶"
+                            FontSize="17"
+                            ToolTip.Tip="{loc:Loc Key=GeometryUndo}"
+                            Command="{Binding Map.UndoGeometryEditCommand}" />
+                    <Button Classes="toolbarButton" Width="34" Height="30" Padding="0"
+                            Margin="0,0,5,0"
+                            Content="↷"
+                            FontSize="17"
+                            ToolTip.Tip="{loc:Loc Key=GeometryRedo}"
+                            Command="{Binding Map.RedoGeometryEditCommand}" />
+                    <Button Classes="toolbarButton" Width="34" Height="30" Padding="0"
+                            Margin="0,0,5,0"
+                            Content="−"
+                            FontSize="19"
+                             ToolTip.Tip="{loc:Loc Key=GeometryRemoveVertex}"
+                             Command="{Binding Map.RemoveGeometryVertexCommand}" />
+                    <Button Classes="primary" Width="34" Height="30" Padding="0"
+                            Margin="0,0,5,0"
+                            Content="&#x2713;"
+                            FontSize="17"
+                            ToolTip.Tip="{loc:Loc Key=GeometrySave}"
+                            Command="{Binding Map.CompleteGeometryEditCommand}" />
+                    <Button Classes="toolbarButton" Width="34" Height="30" Padding="0"
+                             Margin="0,0,5,0"
+                              Content="&#x270e;"
+                             FontSize="17"
+                             ToolTip.Tip="{loc:Loc Key=GeometryRename}"
+                             Command="{Binding Map.BeginGeometryRenameCommand}" />
+                       <Button Classes="danger" Width="34" Height="30" Padding="0"
+                              Margin="0,0,5,0"
+                               Content="&#x232b;"
+                               FontSize="20"
+                               ToolTip.Tip="{loc:Loc Key=GeometryDelete}"
+                               Command="{Binding Map.DeleteActiveGeometryCommand}" />
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </Grid>
+        </Border>
+
+        <GridSplitter Grid.Column="1"
+                      IsVisible="{Binding SplitVisible}"
+                      ResizeDirection="Columns"
+                      ResizeBehavior="PreviousAndNext" />
+
+        <Border Grid.Column="2"
+                Classes="videoSurface"
+                IsVisible="{Binding VideoVisible}">
+          <Grid RowDefinitions="Auto,*,Auto,Auto">
+            <Border Classes="surfaceHeader">
+              <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <StackPanel Spacing="2">
+                    <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=VideoCamera}" />
+                    <TextBlock Classes="muted" FontSize="11" Text="{Binding Camera.CameraStatus}" />
+                  </StackPanel>
+                  <Border Grid.Column="1" Classes="smallPill" VerticalAlignment="Center">
+                    <TextBlock FontSize="11" Text="{Binding Camera.TrackSummary}" />
+                  </Border>
+                </Grid>
+
+                <Grid Grid.Row="1" ColumnDefinitions="2*,*,Auto,Auto,Auto" ColumnSpacing="8">
+                  <ComboBox ItemsSource="{Binding Camera.Cameras}"
+                            SelectedItem="{Binding Camera.SelectedCamera}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="models:CameraSourceRecord">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                          <StackPanel>
+                            <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                            <TextBlock Classes="muted" FontSize="10" Text="{Binding CameraSourceId}" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="1"
+                                     VerticalAlignment="Center"
+                                     Classes="muted"
+                                     Text="{Binding State}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <ComboBox Grid.Column="1"
+                            ItemsSource="{Binding Camera.ProtocolOptions}"
+                            SelectedItem="{Binding Camera.SelectedProtocolDisplay, Mode=TwoWay}" />
+                  <Button Grid.Column="2"
+                          Classes="primary"
+                          Content="▶"
+                          ToolTip.Tip="{Binding Camera.OpenStreamTooltip}"
+                          AutomationProperties.Name="Open stream"
+                          Command="{Binding Camera.OpenStreamCommand}" />
+                  <Button Grid.Column="3"
+                          Content="↻"
+                          ToolTip.Tip="{Binding Camera.RetryStreamTooltip}"
+                          AutomationProperties.Name="Retry stream"
+                          Command="{Binding Camera.RetryStreamCommand}" />
+                  <Button Grid.Column="4"
+                          Content="■"
+                          ToolTip.Tip="{Binding Camera.CloseStreamTooltip}"
+                          AutomationProperties.Name="Close stream"
+                          Command="{Binding Camera.CloseStreamCommand}" />
+                </Grid>
+              </Grid>
+            </Border>
+
+            <Grid Grid.Row="1" ClipToBounds="True">
+              <controls:NativeVideoSurface Source="{Binding Camera.NativeFrameSource}" />
+              <controls:VideoOverlayControl Scene="{Binding Camera.OverlayScene}" />
+              <StackPanel HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          MaxWidth="460"
+                          Spacing="7"
+                          IsVisible="{Binding Camera.ShowPlaybackPlaceholder}">
+                <TextBlock HorizontalAlignment="Center"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Text="{Binding Camera.PlaybackSummary}" />
+                <TextBlock Classes="muted"
+                           TextAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           Text="{Binding Camera.PlaybackDetail}" />
+              </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="2" Classes="surfaceFooter">
+              <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                  <StackPanel Spacing="1">
+                    <TextBlock FontSize="10" FontWeight="SemiBold" Text="{Binding Camera.LocalRecordingStatus}" />
+                    <TextBlock Classes="muted" FontSize="9" TextTrimming="CharacterEllipsis" Text="{Binding Camera.LocalRecordingDetail}" />
+                  </StackPanel>
+                  <Border Grid.Column="1" Classes="smallPill" VerticalAlignment="Center">
+                    <TextBlock FontSize="10" Text="{Binding Camera.TimelineModeText}" />
+                  </Border>
+                  <Button Grid.Column="2"
+                          Classes="toolbarButton"
+                          Content="↻"
+                          ToolTip.Tip="{Binding Camera.RefreshTimelineTooltip}"
+                          AutomationProperties.Name="Refresh timeline"
+                          Command="{Binding Camera.RefreshTimelineCommand}" />
+                </Grid>
+                <controls:LocalVideoTimelineControl Grid.Row="1"
+                                                    Height="28"
+                                                    Timeline="{Binding Camera.VideoTimeline}"
+                                                    Position="{Binding Camera.TimelinePosition, Mode=TwoWay}" />
+                <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6">
+                  <StackPanel VerticalAlignment="Center" Spacing="1">
+                    <TextBlock Classes="muted" FontSize="9" Text="{Binding Camera.TimelineRangeText}" />
+                    <TextBlock Classes="muted" FontSize="9" Text="{Binding Camera.RecordingStorageText}" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="toolbarButton" Content="▶" ToolTip.Tip="{Binding Camera.PlayTimelineTooltip}" AutomationProperties.Name="Play" Command="{Binding Camera.PlayTimelineCommand}" />
+                  <Button Grid.Column="2" Classes="toolbarButton" Content="Ⅱ" ToolTip.Tip="{Binding Camera.PauseTimelineTooltip}" AutomationProperties.Name="Pause" Command="{Binding Camera.PauseTimelineCommand}" />
+                  <Button Grid.Column="3" Classes="toolbarButton" Content="▶" ToolTip.Tip="{Binding Camera.ResumeTimelineTooltip}" AutomationProperties.Name="Resume" Command="{Binding Camera.ResumeTimelineCommand}" />
+                  <Button Grid.Column="4" Classes="toolbarButton" Content="⇩" ToolTip.Tip="{Binding Camera.CacheTimelineTooltip}" AutomationProperties.Name="Cache recording" Command="{Binding Camera.DownloadTimelineCommand}" />
+                  <Button Grid.Column="5" Classes="toolbarButton" Content="★" ToolTip.Tip="{Binding Camera.RetainTimelineTooltip}" AutomationProperties.Name="Retain recording" Command="{Binding Camera.RetainTimelineCommand}" />
+                  <Button Grid.Column="6" Classes="toolbarButton" Content="⇧" ToolTip.Tip="{Binding Camera.ExportTimelineTooltip}" AutomationProperties.Name="Export clip" Command="{Binding Camera.ExportTimelineClipCommand}" />
+                  <Button Grid.Column="7" Classes="primary" Content="●" ToolTip.Tip="{Binding Camera.GoLiveTooltip}" AutomationProperties.Name="Go live" Command="{Binding Camera.GoLiveCommand}" />
+                </Grid>
+              </Grid>
+            </Border>
+
+            <Border Grid.Row="3" Classes="surfaceFooter">
+              <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+                <StackPanel Spacing="2">
+                  <TextBlock FontSize="10" FontWeight="SemiBold" Text="{Binding Camera.NativeVideoStatus}" />
+                  <TextBlock Classes="muted" FontSize="9" Text="{Binding Camera.NativeVideoMetrics}" />
+                  <TextBlock Classes="muted" FontSize="9" TextTrimming="CharacterEllipsis" Text="{Binding Camera.StreamStatus}" />
+                </StackPanel>
+                  <CheckBox Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Content="{loc:Loc Key=VideoIncludeOverlays}"
+                            ToolTip.Tip="{loc:Loc Key=VideoIncludeOverlays}"
+                            IsChecked="{Binding Camera.CaptureIncludeOverlays}" />
+                  <Button Grid.Column="2"
+                          Classes="toolbarButton"
+                          Content="▣"
+                          ToolTip.Tip="{Binding Camera.CaptureFrameTooltip}"
+                          AutomationProperties.Name="Capture frame"
+                          Command="{Binding Camera.CaptureDisplayedFrameCommand}" />
+                  <Button Grid.Column="3"
+                          Classes="toolbarButton"
+                          Content="▤"
+                          AutomationProperties.Name="Capture source image"
+                          ToolTip.Tip="{Binding Camera.CaptureSourceTooltip}"
+                          Command="{Binding Camera.CaptureSourceImageCommand}" />
+              </Grid>
+            </Border>
+          </Grid>
+        </Border>
+
+        <Border Grid.Column="0"
+                Grid.ColumnSpan="3"
+                Classes="panel"
+                IsVisible="{Binding UnitVisible}">
+          <ScrollViewer>
+            <StackPanel Spacing="14" MaxWidth="980" HorizontalAlignment="Center" Margin="8">
+              <StackPanel Spacing="3">
+                <TextBlock FontSize="24" FontWeight="SemiBold" Text="{Binding SelectionTitle}" />
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SelectionSubtitle}" />
+              </StackPanel>
+
+              <Border Classes="panel">
+                <StackPanel Spacing="7">
+                  <TextBlock Classes="eyebrow" Text="OVERALL ASSESSMENT" />
+                  <TextBlock FontSize="22" FontWeight="SemiBold" Foreground="{Binding OverallStatusBrush}" Text="{Binding OverallStatusText}" />
+                </StackPanel>
+              </Border>
+
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Border Classes="panel">
+                  <StackPanel Spacing="7">
+                    <TextBlock Classes="eyebrow" Text="IDENTITY AND BACKEND" />
+                    <TextBlock TextWrapping="Wrap" Text="{Binding BackendIdentityText}" />
+                    <TextBlock Classes="muted" Text="{Binding FlightModeText, StringFormat='Mode: {0}'}" />
+                    <TextBlock Classes="muted" Text="{Binding ArmStateText, StringFormat='Arm state: {0}'}" />
+                    <TextBlock Classes="muted" Text="{Binding LandedStateText, StringFormat='Landed state: {0}'}" />
+                    <TextBlock Classes="muted" Text="{Binding PositionText, StringFormat='Position: {0}'}" TextWrapping="Wrap" />
+                    <TextBlock Classes="muted" Text="{Binding LastTelemetryText, StringFormat='Telemetry: {0}'}" />
+                    <Border Classes="panel" IsVisible="{Binding Units.HasSelectedMissionExecution}">
+                      <StackPanel Spacing="4">
+                        <TextBlock Classes="eyebrow" Text="MISSION" />
+                        <TextBlock FontWeight="SemiBold" Text="{Binding Units.SelectedMissionExecutionState}" />
+                        <TextBlock TextWrapping="Wrap" Text="{Binding Units.SelectedMissionExecutionSummary}" />
+                        <TextBlock Classes="muted" Text="{Binding Units.SelectedMissionExecutionProgress}" />
+                        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Units.SelectedMissionExecutionStep}" />
+                      </StackPanel>
+                    </Border>
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="panel">
+                  <StackPanel Spacing="7">
+                    <TextBlock Classes="eyebrow" Text="PREFLIGHT SUMMARY" />
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+                      <TextBlock Text="Arm" />
+                      <TextBlock Grid.Column="1"
+                                 FontWeight="SemiBold"
+                                 Foreground="{Binding ArmReadinessBrush}"
+                                 Text="{Binding ArmReadinessText}"
+                                 ToolTip.Tip="{Binding ArmReadinessDetail}" />
+                      <TextBlock Grid.Row="1" Text="Navigation" />
+                      <TextBlock Grid.Row="1" Grid.Column="1"
+                                 FontWeight="SemiBold"
+                                 Foreground="{Binding NavigationReadinessBrush}"
+                                 Text="{Binding NavigationReadinessText}"
+                                 ToolTip.Tip="{Binding NavigationReadinessDetail}" />
+                      <TextBlock Grid.Row="2" Text="Telemetry" />
+                      <TextBlock Grid.Row="2" Grid.Column="1"
+                                 FontWeight="SemiBold"
+                                 Foreground="{Binding TelemetryStatusBrush}"
+                                 Text="{Binding TelemetryStatusText}"
+                                 ToolTip.Tip="{Binding TelemetryStatusDetail}" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+              </Grid>
+
+              <Border Classes="panel" IsVisible="{Binding HasDiagnosticBlockers}">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="eyebrow" Text="CURRENT BLOCKERS AND WARNINGS" />
+                  <ItemsControl ItemsSource="{Binding DiagnosticBlockers}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Classes="errorDivider" BorderThickness="0,0,0,1" Padding="0,5">
+                          <StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                              <TextBlock Classes="muted" Text="{Binding State}" />
+                            </StackPanel>
+                            <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Detail}" />
+                          </StackPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Border Classes="panel">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="eyebrow" Text="VEHICLE DIAGNOSTICS" />
+                    <ItemsControl ItemsSource="{Binding DiagnosticChecks}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Grid ColumnDefinitions="110,*,Auto" ColumnSpacing="8" Margin="0,3"
+                                ToolTip.Tip="{Binding Detail}">
+                            <TextBlock Classes="muted" Text="{Binding Category}" />
+                            <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding Name}" />
+                            <TextBlock Grid.Column="2"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{Binding StatusBrush}"
+                                       Text="{Binding StatusSymbol}"
+                                       HorizontalAlignment="Right"
+                                       VerticalAlignment="Center" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Classes="panel">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="eyebrow" Text="LIVE TELEMETRY" />
+                    <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="5">
+                      <TextBlock Classes="muted" Text="Mode" /><TextBlock Grid.Column="1" Text="{Binding FlightModeText}" />
+                      <TextBlock Grid.Row="1" Classes="muted" Text="Position" /><TextBlock Grid.Row="1" Grid.Column="1" TextWrapping="Wrap" Text="{Binding PositionText}" />
+                      <TextBlock Grid.Row="2" Classes="muted" Text="Altitude" /><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AltitudeText}" />
+                      <TextBlock Grid.Row="3" Classes="muted" Text="Heading" /><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding HeadingText}" />
+                      <TextBlock Grid.Row="4" Classes="muted" Text="Velocity" /><TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding VelocityText}" />
+                      <TextBlock Grid.Row="5" Classes="muted" Text="Links" /><TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding LinkText}" />
+                      <TextBlock Grid.Row="6" Classes="muted" Text="Last sample" /><TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding LastTelemetryText}" />
+                    </Grid>
+                  </StackPanel>
+                </Border>
+              </Grid>
+
+              <Border Classes="panel" IsVisible="{Binding HasRecentDiagnosticMessages}">
+                <StackPanel Spacing="8">
+                  <TextBlock Classes="eyebrow" Text="{loc:Loc Key=RecentAutopilotWarnings}" />
+                  <ItemsControl ItemsSource="{Binding RecentDiagnosticMessages}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Grid ColumnDefinitions="90,80,*" ColumnSpacing="8" Margin="0,3">
+                          <TextBlock Classes="muted" Text="{Binding Timestamp, StringFormat='{}{0:HH:mm:ss}'}" />
+                          <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding Severity}" />
+                          <TextBlock Grid.Column="2" TextWrapping="Wrap" Text="{Binding Text}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </Border>
+      </Grid>
+
+    </Grid>
+  </Grid>
+</UserControl>

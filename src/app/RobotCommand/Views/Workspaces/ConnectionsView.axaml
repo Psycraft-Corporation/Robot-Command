@@ -1,0 +1,277 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:loc="using:RobotCommand.Localization"
+             x:Class="RobotCommand.Views.Workspaces.ConnectionsView"
+             x:DataType="vm:ConnectionsViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="14">
+    <Grid ColumnDefinitions="*,Auto">
+      <StackPanel>
+        <TextBlock Classes="workspaceTitle" Text="{loc:Loc Key=Connections}" />
+      </StackPanel>
+      <TextBlock Grid.Column="1" VerticalAlignment="Center" Classes="muted" Text="{Binding ActionStatus}" />
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="280,*" ColumnSpacing="14">
+      <ScrollViewer>
+        <StackPanel Spacing="10">
+          <Button Classes="primary" Content="{loc:Loc Key=ConnectionsNew}" Command="{Binding NewConnectionCommand}" />
+          <ListBox Classes="compactList"
+                   ItemsSource="{Binding Connections}"
+                   SelectedValue="{Binding SelectedConnectionId, Mode=TwoWay}"
+                   SelectedValueBinding="{Binding Id}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="2,5" ColumnDefinitions="*,Auto">
+                  <StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                      <TextBlock IsVisible="{Binding IsGhost}" Classes="tag" Text="GHOST" />
+                    </StackPanel>
+                    <TextBlock Classes="muted" FontSize="11" Text="{Binding Target}" />
+                    <TextBlock Classes="muted" FontSize="11" Text="{Binding Mode}" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding State}" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <TextBlock IsVisible="{Binding IsEmpty}" Classes="emptyState" Text="{loc:Loc Key=ConnectionsEmpty}" />
+        </StackPanel>
+      </ScrollViewer>
+
+      <ScrollViewer Grid.Column="1">
+        <StackPanel Spacing="12">
+          <Border Classes="panel" IsVisible="{Binding IsEditableConnection}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ConnectionDetails}" />
+              <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionName}" />
+              <TextBox Text="{Binding Name}" />
+              <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionTarget}" />
+              <TextBox Text="{Binding Target}" />
+              <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionType}" />
+              <ComboBox ItemsSource="{Binding Modes}" SelectedItem="{Binding Mode}" />
+
+              <StackPanel IsVisible="{Binding IsMavlinkConnection}" Spacing="7">
+                <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionTransport}" />
+                <ComboBox ItemsSource="{Binding MavlinkTransports}" SelectedItem="{Binding MavlinkTransport}" />
+
+                <StackPanel IsVisible="{Binding IsUdpMavlink}" Spacing="4">
+                  <TextBlock Classes="muted" Text="UDP listeners use udp-listen://address:port." TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Border IsVisible="{Binding IsSerialMavlink}" Classes="panel">
+                  <StackPanel Spacing="7">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ConnectionSerialDevice}" />
+                      <Button Grid.Column="1" Content="{loc:Loc Key=ConnectionDetectDevices}" Command="{Binding DetectSerialDevicesCommand}" />
+                    </Grid>
+                    <ComboBox ItemsSource="{Binding DetectedSerialDevices}" SelectedItem="{Binding SelectedSerialDevice}">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel>
+                            <TextBlock Text="{Binding DisplayName}" />
+                            <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionLikelySikRadio}" IsVisible="{Binding IsLikelySikRadio}" />
+                          </StackPanel>
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Classes="muted" Text="Baud rate" />
+                    <NumericUpDown Minimum="1200" Maximum="921600" Increment="1200" Value="{Binding MavlinkBaudRate}" />
+                    <TextBlock Classes="muted" Text="Default: 57,600 baud, 8 data bits, no parity, one stop bit, no flow control." TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+
+                <TextBlock Classes="muted" Text="Autopilot profile" />
+                <ComboBox ItemsSource="{Binding MavlinkAutopilotProfiles}" SelectedItem="{Binding MavlinkAutopilot}" />
+              </StackPanel>
+
+              <Border IsVisible="{Binding IsLinkdConnection}" Classes="panel">
+                <StackPanel Spacing="7">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <StackPanel>
+                      <TextBlock Classes="sectionTitle" Text="LinkD radio" />
+                      <TextBlock Classes="muted" Text="Select the local SiK radio that LinkD should own. Robot Command sends this configuration to the running LinkD service when you connect." TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="Detect devices" Command="{Binding DetectSerialDevicesCommand}" />
+                  </Grid>
+                  <ComboBox ItemsSource="{Binding DetectedSerialDevices}" SelectedItem="{Binding SelectedSerialDevice}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel>
+                          <TextBlock Text="{Binding DisplayName}" />
+                          <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionLikelySikRadio}" IsVisible="{Binding IsLikelySikRadio}" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <TextBlock Classes="muted" Text="Serial baud rate" />
+                  <NumericUpDown Minimum="1200" Maximum="921600" Increment="1200" Value="{Binding LinkdBaudRate}" />
+                  <TextBlock Classes="muted" Text="LinkD endpoint" />
+                  <TextBlock Classes="muted" Text="{Binding Target}" />
+                  <TextBlock Classes="muted" Text="The LinkD service remains the owner of the radio process. A selected device is applied through its authenticated control API; linkd.conf is not edited by Robot Command." TextWrapping="Wrap" />
+                </StackPanel>
+              </Border>
+
+              <CheckBox Content="{loc:Loc Key=ConnectionAutoReconnect}" IsChecked="{Binding AutoReconnect}" />
+              <Button IsVisible="{Binding IsCreatingConnection}" Classes="primary" Content="{loc:Loc Key=ConnectionAdd}" Command="{Binding AddCommand}" />
+              <Grid IsVisible="{Binding IsExistingConnection}" ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Button Classes="primary" Content="{loc:Loc Key=UnitsSave}" Command="{Binding SaveCommand}" />
+                <Button Grid.Column="1" Content="{loc:Loc Key=Delete}" Command="{Binding DeleteCommand}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="panel" IsVisible="{Binding UsesLogosCredentials}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionTitle" Text="Runtime credentials" />
+              <TextBox PasswordChar="*" PlaceholderText="API key (optional)" Text="{Binding ApiKey}" />
+              <TextBox PasswordChar="*" PlaceholderText="Bearer token (optional)" Text="{Binding BearerToken}" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="panel" IsVisible="{Binding ShowConnectionControls}">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ConnectionControls}" />
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="7">
+                <Button Classes="primary" Content="{Binding ActionButtonText}" Command="{Binding ToggleConnectionCommand}" />
+                <Button Grid.Column="1" Content="{loc:Loc Key=MapRefresh}" Command="{Binding RefreshCommand}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="panel" IsVisible="{Binding IsSerialMavlink}">
+            <StackPanel Spacing="9">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <StackPanel>
+                  <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ConnectionRadioSetup}" />
+                  <TextBlock Classes="muted" Text="Disconnect MAVLink before probing or changing radio settings." />
+                </StackPanel>
+                <Button Grid.Column="1" Content="{loc:Loc Key=ConnectionProbeRadio}" Command="{Binding ProbeRadioCommand}" />
+              </Grid>
+              <TextBlock TextWrapping="Wrap" Text="{Binding RadioProbeStatus}" />
+
+              <Border Classes="panel">
+                <StackPanel Spacing="7">
+                  <TextBlock FontWeight="SemiBold" Text="Pair directly attached radios" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap" Text="Copies only the air-link settings from Source to Target. Both radios must be attached by USB and MAVLink must be disconnected. UART speed and transmit power are left unchanged." />
+                  <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <StackPanel Spacing="3">
+                      <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionSourceRadio}" />
+                      <ComboBox ItemsSource="{Binding DetectedSerialDevices}" SelectedItem="{Binding PairingSourceRadio}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate>
+                            <StackPanel>
+                              <TextBlock Text="{Binding DisplayName}" />
+                              <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionLikelySikRadio}" IsVisible="{Binding IsLikelySikRadio}" />
+                            </StackPanel>
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="3">
+                      <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionTargetRadio}" />
+                      <ComboBox ItemsSource="{Binding DetectedSerialDevices}" SelectedItem="{Binding PairingTargetRadio}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate>
+                            <StackPanel>
+                              <TextBlock Text="{Binding DisplayName}" />
+                              <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionLikelySikRadio}" IsVisible="{Binding IsLikelySikRadio}" />
+                            </StackPanel>
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                    </StackPanel>
+                  </Grid>
+                  <Button Classes="primary" HorizontalAlignment="Left" Content="{loc:Loc Key=ConnectionPairRadios}" Command="{Binding PairRadiosCommand}" />
+                  <TextBlock TextWrapping="Wrap" Text="{Binding RadioPairingStatus}" />
+                </StackPanel>
+              </Border>
+
+              <CheckBox Content="{loc:Loc Key=ConnectionShowAdvancedRadioSettings}" IsChecked="{Binding ShowAdvancedRadioSettings}" />
+
+              <Grid ColumnDefinitions="60,180,100,100,*" ColumnSpacing="7">
+                <TextBlock FontWeight="SemiBold" Text="Param" />
+                <TextBlock Grid.Column="1" FontWeight="SemiBold" Text="Setting" />
+                <TextBlock Grid.Column="2" FontWeight="SemiBold" Text="Local" />
+                <TextBlock Grid.Column="3" FontWeight="SemiBold" Text="Remote" />
+                <TextBlock Grid.Column="4" FontWeight="SemiBold" Text="Description" />
+              </Grid>
+              <ItemsControl ItemsSource="{Binding VisibleRadioSettings}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:SikRadioSettingRow">
+                    <Grid ColumnDefinitions="60,180,100,100,*" ColumnSpacing="7" Margin="0,2">
+                      <TextBlock VerticalAlignment="Center" Text="{Binding Parameter}" />
+                      <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Name}" />
+                      <NumericUpDown Grid.Column="2" Value="{Binding DesiredLocalValue}" IsEnabled="{Binding CanEditLocal}" />
+                      <NumericUpDown Grid.Column="3" Value="{Binding DesiredRemoteValue}" IsEnabled="{Binding CanEditRemote}" />
+                      <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" Text="{Binding Description}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                <Button Content="{loc:Loc Key=ConnectionReviewLocalChanges}" Command="{Binding ReviewLocalRadioCommand}" />
+                <Button Grid.Column="1" Content="{loc:Loc Key=ConnectionReviewPairedChanges}" Command="{Binding ReviewPairedRadioCommand}" />
+              </Grid>
+              <Border Classes="panel" IsVisible="{Binding IsRadioApplyPending}">
+                <StackPanel Spacing="7">
+                  <TextBlock FontWeight="SemiBold" Text="Confirm radio configuration" />
+                  <TextBlock TextWrapping="Wrap" Text="{Binding RadioApplySummary}" />
+                  <TextBlock Classes="muted" TextWrapping="Wrap" Text="Pair-critical local and remote settings must match. Firmware flashing and factory reset are not performed." />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Classes="primary" Content="Apply settings" Command="{Binding ConfirmRadioApplyCommand}" />
+                    <Button Content="Cancel" Command="{Binding CancelRadioApplyCommand}" />
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </Border>
+
+          <Border Classes="panel" IsVisible="{Binding IsGhostConnection}">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="sectionTitle" Text="Simulated connection" />
+              <TextBlock Classes="muted" Text="This ghost connection is provided by the in-app simulator. It does not contact Logos and is not persisted." />
+              <TextBlock Text="{Binding ConnectionKind}" />
+            </StackPanel>
+          </Border>
+
+          <ItemsControl ItemsSource="{Binding Tiles}">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="panel" Width="180" Margin="0,0,8,8">
+                  <StackPanel Spacing="4">
+                    <TextBlock Classes="muted" Text="{Binding Title}" />
+                    <TextBlock FontSize="17" FontWeight="SemiBold" Foreground="{Binding ValueColor}" Text="{Binding Value}" />
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <Border Classes="panel">
+            <StackPanel Spacing="8">
+                  <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ConnectionInformation}" />
+              <TextBlock Text="{Binding ProtocolSummary}" />
+              <TextBlock Text="{Binding BaudRateSummary}" />
+              <TextBlock Text="{Binding ConnectedSinceSummary}" />
+              <TextBlock Text="{Binding LastConnectedSummary}" />
+              <TextBlock Text="{Binding LastSeenSummary}" />
+              <TextBlock Text="{Binding LastAttemptSummary}" />
+              <ItemsControl ItemsSource="{Binding LinkDetails}" />
+            </StackPanel>
+          </Border>
+
+          <TabControl>
+            <TabItem Header="{loc:Loc Key=Events}"><ListBox ItemsSource="{Binding EventLines}" /></TabItem>
+            <TabItem Header="{loc:Loc Key=ConnectionSdkCalls}"><ListBox ItemsSource="{Binding SdkCalls}" /></TabItem>
+            <TabItem Header="{loc:Loc Key=ConnectionLog}"><ListBox ItemsSource="{Binding LogLines}" /></TabItem>
+          </TabControl>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</UserControl>

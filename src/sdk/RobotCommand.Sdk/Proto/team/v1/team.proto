@@ -1,0 +1,354 @@
+syntax = "proto3";
+
+package psycraft.logos.robotcommand.team.v1;
+
+option csharp_namespace = "RobotCommand.Sdk.Team.V1";
+
+import "google/protobuf/timestamp.proto";
+
+service ServerInfoService {
+  rpc GetServerInfo(ServerInfoRequest) returns (ServerInfoResponse);
+}
+
+service AccessService {
+  rpc RequestAccess(AccessRequest) returns (stream AccessStatus);
+}
+
+service ObserverService {
+  rpc GetSnapshot(GetSnapshotRequest) returns (RobotCommandSnapshot);
+  rpc WatchSnapshots(WatchSnapshotsRequest) returns (stream SnapshotEnvelope);
+}
+
+message ServerInfoRequest {}
+
+message ServerInfoResponse {
+  string instance_id = 1;
+  string display_name = 2;
+  string api_version = 3;
+  repeated string capabilities = 4;
+  google.protobuf.Timestamp server_time = 5;
+  string tls_sha256_fingerprint = 6;
+  string minimum_sdk_version = 7;
+  bool requires_passphrase = 8;
+}
+
+enum AccessState {
+  ACCESS_STATE_UNSPECIFIED = 0;
+  ACCESS_STATE_PENDING = 1;
+  ACCESS_STATE_APPROVED = 2;
+  ACCESS_STATE_REJECTED = 3;
+  ACCESS_STATE_EXPIRED = 4;
+  ACCESS_STATE_INCOMPATIBLE = 5;
+}
+
+message AccessRequest {
+  string display_name = 1;
+  string application_name = 2;
+  string application_version = 3;
+  string sdk_version = 4;
+  string api_version = 5;
+  string client_instance_id = 6;
+  string request_nonce = 7;
+  string pairing_id = 8;
+  string pairing_code = 9;
+  // Session-only human pairing phrase. It is sent only over the TLS channel.
+  string pairing_phrase = 10;
+}
+
+message AccessStatus {
+  string request_id = 1;
+  AccessState state = 2;
+  string message = 3;
+  google.protobuf.Timestamp expires_at = 4;
+  string session_token = 5;
+}
+
+message GetSnapshotRequest {
+  uint64 known_revision = 1;
+}
+
+message WatchSnapshotsRequest {
+  uint64 after_revision = 1;
+}
+
+message SnapshotEnvelope {
+  oneof payload {
+    RobotCommandSnapshot snapshot = 1;
+    SnapshotHeartbeat heartbeat = 2;
+    ObserverDisconnectNotice disconnect = 3;
+  }
+}
+
+enum ObserverDisconnectReason {
+  OBSERVER_DISCONNECT_REASON_UNSPECIFIED = 0;
+  OBSERVER_DISCONNECT_REASON_OPERATOR_DISCONNECTED = 1;
+  OBSERVER_DISCONNECT_REASON_AUTHENTICATION_REQUIRED = 2;
+  OBSERVER_DISCONNECT_REASON_SERVER_STOPPED = 3;
+}
+
+message ObserverDisconnectNotice {
+  ObserverDisconnectReason reason = 1;
+  string message = 2;
+  google.protobuf.Timestamp occurred_at = 3;
+}
+
+message SnapshotHeartbeat {
+  uint64 current_revision = 1;
+  google.protobuf.Timestamp server_time = 2;
+}
+
+message RobotCommandSnapshot {
+  uint64 revision = 1;
+  google.protobuf.Timestamp captured_at = 2;
+  repeated UnitSnapshot units = 3;
+  repeated ConnectionSnapshot connections = 4;
+  MapSnapshot map = 5;
+}
+
+enum Availability {
+  AVAILABILITY_UNSPECIFIED = 0;
+  AVAILABILITY_UNKNOWN = 1;
+  AVAILABILITY_CONNECTING = 2;
+  AVAILABILITY_RECONNECTING = 3;
+  AVAILABILITY_ONLINE = 4;
+  AVAILABILITY_DEGRADED = 5;
+  AVAILABILITY_STALE = 6;
+  AVAILABILITY_OFFLINE = 7;
+  AVAILABILITY_FAULTED = 8;
+}
+
+enum DiagnosticStatus {
+  DIAGNOSTIC_STATUS_UNSPECIFIED = 0;
+  DIAGNOSTIC_STATUS_UNKNOWN = 1;
+  DIAGNOSTIC_STATUS_READY = 2;
+  DIAGNOSTIC_STATUS_LIMITED = 3;
+  DIAGNOSTIC_STATUS_BLOCKED = 4;
+  DIAGNOSTIC_STATUS_STALE = 5;
+  DIAGNOSTIC_STATUS_OFFLINE = 6;
+}
+
+enum DiagnosticCheckState {
+  DIAGNOSTIC_CHECK_STATE_UNSPECIFIED = 0;
+  DIAGNOSTIC_CHECK_STATE_PASSED = 1;
+  DIAGNOSTIC_CHECK_STATE_WARNING = 2;
+  DIAGNOSTIC_CHECK_STATE_FAILED = 3;
+  DIAGNOSTIC_CHECK_STATE_UNKNOWN = 4;
+  DIAGNOSTIC_CHECK_STATE_NOT_APPLICABLE = 5;
+}
+
+message UnitSnapshot {
+  string id = 1;
+  string name = 2;
+  string backend = 3;
+  string vehicle_class = 4;
+  string domain = 5;
+  Availability state = 6;
+  bool is_ghost = 7;
+  string logos_instance_id = 8;
+  repeated string capabilities = 9;
+  repeated string connection_ids = 10;
+  string telemetry_authority_connection_id = 11;
+  string diagnostics_authority_connection_id = 12;
+  TelemetrySnapshot telemetry = 13;
+  DiagnosticsSnapshot diagnostics = 14;
+  ActionSnapshot actions = 15;
+  repeated LinkSnapshot links = 16;
+}
+
+message ConnectionSnapshot {
+  string id = 1;
+  string name = 2;
+  string target = 3;
+  string mode = 4;
+  Availability state = 5;
+  bool auto_reconnect = 6;
+  string logos_instance_id = 7;
+  string runtime_role = 8;
+  google.protobuf.Timestamp connected_at = 9;
+  google.protobuf.Timestamp last_seen = 10;
+  string last_error = 11;
+  bool is_ghost = 12;
+}
+
+message TelemetrySnapshot {
+  bool reported = 1;
+  bool armed = 2;
+  string landed_state = 3;
+  string mode = 4;
+  optional double latitude_degrees = 5;
+  optional double longitude_degrees = 6;
+  optional double altitude_msl_metres = 7;
+  optional double altitude_agl_metres = 8;
+  optional double local_north_metres = 9;
+  optional double local_east_metres = 10;
+  optional double local_down_metres = 11;
+  optional double velocity_north_metres_per_second = 12;
+  optional double velocity_east_metres_per_second = 13;
+  optional double velocity_down_metres_per_second = 14;
+  optional double heading_degrees = 15;
+  bool stale = 16;
+  string code = 17;
+  string message = 18;
+  google.protobuf.Timestamp observed_at = 19;
+}
+
+message DiagnosticsSnapshot {
+  bool reported = 1;
+  string backend = 2;
+  DiagnosticStatus overall_status = 3;
+  string summary = 4;
+  DiagnosticStatus arm_readiness = 5;
+  string arm_readiness_detail = 6;
+  DiagnosticStatus navigation_readiness = 7;
+  string navigation_readiness_detail = 8;
+  DiagnosticStatus telemetry_status = 9;
+  string telemetry_detail = 10;
+  repeated DiagnosticCheck checks = 11;
+  repeated DiagnosticMessage recent_messages = 12;
+  google.protobuf.Timestamp observed_at = 13;
+  uint32 system_id = 14;
+  uint32 component_id = 15;
+  string version = 16;
+  string mode = 17;
+}
+
+message DiagnosticCheck {
+  string code = 1;
+  string category = 2;
+  string name = 3;
+  DiagnosticCheckState state = 4;
+  string detail = 5;
+  repeated string affected_operations = 6;
+}
+
+message DiagnosticMessage {
+  string id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string severity = 3;
+  string text = 4;
+  string source = 5;
+}
+
+message ActionSnapshot {
+  string current_kind = 1;
+  string current_state = 2;
+  string current_summary = 3;
+  string queued_kind = 4;
+  string queued_state = 5;
+  string queued_summary = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message LinkSnapshot {
+  string id = 1;
+  string connection_id = 2;
+  string name = 3;
+  string kind = 4;
+  string direction = 5;
+  string state = 6;
+  string health = 7;
+  bool connected = 8;
+  bool stale = 9;
+  optional double rssi_dbm = 10;
+  optional double snr_db = 11;
+  optional double quality = 12;
+  optional double packet_loss = 13;
+  optional double latency_milliseconds = 14;
+  string code = 15;
+  string message = 16;
+  google.protobuf.Timestamp observed_at = 17;
+}
+
+message MapSnapshot {
+  string coordinate_frame = 1;
+  string frame_label = 2;
+  MapViewport viewport = 3;
+  string style_id = 4;
+  string style_name = 5;
+  string style_attribution = 6;
+  bool geometry_visible = 7;
+  bool policy_visible = 8;
+  bool trails_visible = 9;
+  bool destinations_visible = 10;
+  bool labels_visible = 11;
+  repeated string selected_unit_ids = 12;
+  repeated MapUnitVisual unit_visuals = 13;
+  repeated MapTrail trails = 14;
+  repeated MapGeometry geometries = 15;
+  repeated MapDestination destinations = 16;
+  repeated MapDestination formation_preview_destinations = 17;
+  repeated MapPath formation_preview_paths = 18;
+  OperatorLocation operator_location = 19;
+}
+
+message MapViewport {
+  bool reported = 1;
+  double longitude_degrees = 2;
+  double latitude_degrees = 3;
+  double resolution_metres_per_pixel = 4;
+  double rotation_degrees = 5;
+}
+
+message MapUnitVisual {
+  string unit_id = 1;
+  string name = 2;
+  double x = 3;
+  double y = 4;
+  optional double heading_degrees = 5;
+  Availability state = 6;
+  bool selected = 7;
+  bool ghost = 8;
+}
+
+message GeoPoint {
+  double x = 1;
+  double y = 2;
+  optional double altitude_metres = 3;
+}
+
+message MapTrail {
+  string unit_id = 1;
+  string name = 2;
+  string connection_id = 3;
+  repeated GeoPoint points = 4;
+  Availability state = 5;
+  bool selected = 6;
+}
+
+message MapGeometry {
+  string id = 1;
+  string name = 2;
+  string kind = 3;
+  bool closed = 4;
+  repeated GeoPoint points = 5;
+  repeated GeoRing rings = 6;
+  string policy_constraint = 7;
+  string policy_kind = 8;
+  bool highlighted = 9;
+}
+
+message GeoRing {
+  repeated GeoPoint points = 1;
+}
+
+message MapDestination {
+  string unit_id = 1;
+  double latitude_degrees = 2;
+  double longitude_degrees = 3;
+  bool selected = 4;
+  bool preview = 5;
+}
+
+message MapPath {
+  repeated GeoPoint points = 1;
+  bool closed = 2;
+}
+
+message OperatorLocation {
+  bool shared = 1;
+  bool available = 2;
+  optional double latitude_degrees = 3;
+  optional double longitude_degrees = 4;
+  optional double accuracy_metres = 5;
+  google.protobuf.Timestamp observed_at = 6;
+}

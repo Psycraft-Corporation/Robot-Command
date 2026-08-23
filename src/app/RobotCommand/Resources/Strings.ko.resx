@@ -1,0 +1,582 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>로봇 커맨드</value></data>
+  <data name="AppSubtitle" xml:space="preserve"><value>운영 지상 통제소</value></data>
+  <data name="WorkspaceHeader" xml:space="preserve"><value>작업 공간</value></data>
+  <data name="WorkspaceSummary" xml:space="preserve"><value>운영, 임무, 원격 측정, 영상 및 감사</value></data>
+  <data name="UnitsHeader" xml:space="preserve"><value>유닛</value></data>
+  <data name="Units" xml:space="preserve"><value>유닛</value></data>
+   <data name="UnitSaved" xml:space="preserve"><value>유닛이 저장되었습니다.</value></data>
+   <data name="UnitDeleted" xml:space="preserve"><value>유닛이 삭제되었습니다.</value></data>
+   <data name="UnitsNew" xml:space="preserve"><value>새로 만들기</value></data>
+   <data name="UnitsEdit" xml:space="preserve"><value>편집</value></data>
+   <data name="UnitsDelete" xml:space="preserve"><value>삭제</value></data>
+   <data name="UnitsSavedAssociation" xml:space="preserve"><value>연결이 저장되었습니다.</value></data>
+   <data name="UnitsConnections" xml:space="preserve"><value>연결</value></data>
+   <data name="UnitsCameraSources" xml:space="preserve"><value>카메라 소스</value></data>
+   <data name="UnitsSave" xml:space="preserve"><value>저장</value></data>
+   <data name="UnitsCancel" xml:space="preserve"><value>취소</value></data>
+   <data name="UnitsNamePlaceholder" xml:space="preserve"><value>유닛 이름</value></data>
+  <data name="Ghosts" xml:space="preserve"><value>Ghost</value></data>
+  <data name="NewProfile" xml:space="preserve"><value>새 프로필</value></data>
+  <data name="EditProfile" xml:space="preserve"><value>프로필 편집</value></data>
+  <data name="DeleteProfile" xml:space="preserve"><value>삭제</value></data>
+  <data name="SaveProfile" xml:space="preserve"><value>프로필 저장</value></data>
+  <data name="ProfileName" xml:space="preserve"><value>프로필 이름</value></data>
+   <data name="ProfileSaved" xml:space="preserve"><value>프로필이 저장되었습니다.</value></data>
+   <data name="ProfileDeleted" xml:space="preserve"><value>프로필이 삭제되었습니다.</value></data>
+  <data name="UploadVisual" xml:space="preserve"><value>Upload visual</value></data>
+  <data name="RemoveVisual" xml:space="preserve"><value>Remove visual</value></data>
+  <data name="VisualAssetNone" xml:space="preserve"><value>No visual</value></data>
+  <data name="VisualImported" xml:space="preserve"><value>Visual imported.</value></data>
+  <data name="VisualRemoved" xml:space="preserve"><value>Visual removed.</value></data>
+  <data name="VisualUnavailable" xml:space="preserve"><value>The visual file is unavailable. Re-upload it to restore the preview.</value></data>
+  <data name="VisualPreviewFailed" xml:space="preserve"><value>The visual could not be displayed.</value></data>
+  <data name="ConnectedClients" xml:space="preserve"><value>CONNECTED CLIENTS</value></data>
+  <data name="Operators" xml:space="preserve"><value>OPERATORS</value></data>
+  <data name="SelectedClient" xml:space="preserve"><value>SELECTED CLIENT</value></data>
+  <data name="Settings" xml:space="preserve"><value>설정</value></data>
+  <data name="SettingsDescription" xml:space="preserve"><value>애플리케이션 기본 설정 및 접근성</value></data>
+   <data name="SettingsAccessibility" xml:space="preserve"><value>접근성</value></data>
+  <data name="SettingsLanguage" xml:space="preserve"><value>언어</value></data>
+  <data name="SettingsLanguageDescription" xml:space="preserve"><value>Robot Command 컨트롤 및 메시지에 사용할 언어를 선택합니다.</value></data>
+  <data name="SettingsLanguageEnglish" xml:space="preserve"><value>영어</value></data>
+  <data name="SettingsLanguageFrench" xml:space="preserve"><value>프랑스어</value></data>
+  <data name="SettingsLanguageJapanese" xml:space="preserve"><value>일본어</value></data>
+  <data name="SettingsLanguageUkrainian" xml:space="preserve"><value>우크라이나어</value></data>
+  <data name="BrightMode" xml:space="preserve"><value>밝은 모드</value></data>
+   <data name="SettingsMedia" xml:space="preserve"><value>미디어</value></data>
+   <data name="SettingsMediaRuntime" xml:space="preserve"><value>런타임</value></data>
+   <data name="SettingsMediaPlaybackServer" xml:space="preserve"><value>재생 서버</value></data>
+   <data name="SettingsMediaGStreamerNotInspected" xml:space="preserve"><value>GStreamer를 확인하지 않음</value></data>
+   <data name="SettingsMediaGStreamerUnavailable" xml:space="preserve"><value>GStreamer 런타임을 찾을 수 없음</value></data>
+   <data name="SettingsMediaGStreamerAvailable" xml:space="preserve"><value>GStreamer 런타임 사용 가능</value></data>
+   <data name="SettingsMediaGStreamerFaulted" xml:space="preserve"><value>GStreamer 런타임 오류</value></data>
+   <data name="SettingsMediaPlaybackNotInspected" xml:space="preserve"><value>재생 서버를 확인하지 않음</value></data>
+   <data name="SettingsMediaPlaybackUnavailable" xml:space="preserve"><value>재생 서버를 사용할 수 없음</value></data>
+   <data name="SettingsMediaPlaybackAvailable" xml:space="preserve"><value>재생 서버 사용 가능</value></data>
+   <data name="SettingsMediaLookbackValue" xml:space="preserve"><value>원격 되감기 {0}시간</value></data>
+   <data name="SettingsMediaProtocol" xml:space="preserve"><value>프로토콜</value></data>
+   <data name="SettingsMediaRtspTransport" xml:space="preserve"><value>RTSP 전송</value></data>
+   <data name="SettingsMediaLatency" xml:space="preserve"><value>지연 시간(ms)</value></data>
+   <data name="SettingsMediaReconnect" xml:space="preserve"><value>재연결 시도</value></data>
+   <data name="SettingsMediaRecording" xml:space="preserve"><value>로컬 녹화</value></data>
+   <data name="SettingsMediaBuffer" xml:space="preserve"><value>순환 버퍼(분)</value></data>
+   <data name="SettingsMediaSegment" xml:space="preserve"><value>세그먼트(초)</value></data>
+   <data name="SettingsMediaStorage" xml:space="preserve"><value>저장 공간(GB)</value></data>
+   <data name="SettingsMediaBitrate" xml:space="preserve"><value>비트레이트(kbps)</value></data>
+   <data name="SettingsMediaLookback" xml:space="preserve"><value>원격 되감기(시간)</value></data>
+   <data name="SettingsMediaRescan" xml:space="preserve"><value>다시 검색</value></data>
+   <data name="SettingsMediaProfiles" xml:space="preserve"><value>구성된 녹화 프로필</value></data>
+  <data name="VideoOpen" xml:space="preserve"><value>스트림 열기</value></data>
+  <data name="VideoNoStream" xml:space="preserve"><value>스트림 없음</value></data>
+   <data name="VideoOpenStreamHint" xml:space="preserve"><value>재생하려면 카메라 스트림을 여세요.</value></data>
+   <data name="VideoLocalRecordingStopped" xml:space="preserve"><value>로컬 녹화 중지됨</value></data>
+   <data name="VideoLocalRecordingHint" xml:space="preserve"><value>순환 버퍼를 시작하려면 카메라 스트림을 여세요.</value></data>
+   <data name="VideoNativeStopped" xml:space="preserve"><value>기본 영상 중지됨</value></data>
+   <data name="VideoNoDecodedFrame" xml:space="preserve"><value>디코딩된 프레임 없음</value></data>
+   <data name="VideoNoRecordings" xml:space="preserve"><value>녹화 없음</value></data>
+   <data name="VideoOpenAutomatic" xml:space="preserve"><value>자동 열기</value></data>
+  <data name="VideoProtocolAutomatic" xml:space="preserve"><value>Automatic</value></data>
+  <data name="VideoProtocolRtsp" xml:space="preserve"><value>RTSP</value></data>
+  <data name="VideoProtocolHls" xml:space="preserve"><value>HLS</value></data>
+  <data name="VideoProtocolWebRtc" xml:space="preserve"><value>WebRTC/WHEP</value></data>
+  <data name="VideoCamera" xml:space="preserve"><value>카메라</value></data>
+   <data name="VideoNoCameraSource" xml:space="preserve"><value>사용 가능한 카메라 소스 없음</value></data>
+   <data name="VideoNoPerceptionTracks" xml:space="preserve"><value>인식 트랙 없음</value></data>
+   <data name="VideoTracksOverlayed" xml:space="preserve"><value>트랙 {0}개 표시됨</value></data>
+   <data name="VideoInspect" xml:space="preserve"><value>검사</value></data>
+   <data name="VideoTestPattern" xml:space="preserve"><value>테스트 패턴</value></data>
+   <data name="VideoTestFile" xml:space="preserve"><value>테스트 파일</value></data>
+   <data name="VideoStopTest" xml:space="preserve"><value>테스트 중지</value></data>
+   <data name="VideoIncludeOverlays" xml:space="preserve"><value>오버레이 포함</value></data>
+  <data name="VideoRetry" xml:space="preserve"><value>스트림 재시도</value></data>
+  <data name="VideoClose" xml:space="preserve"><value>스트림 닫기</value></data>
+  <data name="VideoRefresh" xml:space="preserve"><value>Refresh timeline</value></data>
+  <data name="VideoPlay" xml:space="preserve"><value>재생</value></data>
+  <data name="VideoPause" xml:space="preserve"><value>일시 중지</value></data>
+  <data name="VideoResume" xml:space="preserve"><value>재개</value></data>
+  <data name="VideoCache" xml:space="preserve"><value>Cache recording</value></data>
+  <data name="VideoRetain" xml:space="preserve"><value>Retain recording</value></data>
+  <data name="VideoExport" xml:space="preserve"><value>Export clip</value></data>
+  <data name="VideoLive" xml:space="preserve"><value>실시간</value></data>
+  <data name="VideoCaptureFrame" xml:space="preserve"><value>프레임 캡처</value></data>
+  <data name="VideoCaptureSource" xml:space="preserve"><value>원본 이미지 캡처</value></data>
+  <data name="Operate" xml:space="preserve"><value>운영</value></data>
+   <data name="OperateMap" xml:space="preserve"><value>지도</value></data>
+   <data name="OperateVideo" xml:space="preserve"><value>영상</value></data>
+   <data name="OperateUnit" xml:space="preserve"><value>유닛</value></data>
+  <data name="InputDevices" xml:space="preserve"><value>입력 장치</value></data>
+  <data name="Planning" xml:space="preserve"><value>계획</value></data>
+  <data name="OperateDescription" xml:space="preserve"><value>지도, 영상, 원격 측정 및 운영 제어</value></data>
+   <data name="ManualControl" xml:space="preserve"><value>수동 제어</value></data>
+   <data name="ManualControlDescription" xml:space="preserve"><value>입력 프로필을 구성하고 선택한 유닛을 수동으로 제어합니다.</value></data>
+  <data name="Maps" xml:space="preserve"><value>지도</value></data>
+  <data name="MapsDescription" xml:space="preserve"><value>지도, 레이어 및 저장된 보기</value></data>
+   <data name="MapInstalledMaps" xml:space="preserve"><value>설치된 지도</value></data>
+   <data name="MapInstall" xml:space="preserve"><value>지도 설치</value></data>
+   <data name="MapInstallFolder" xml:space="preserve"><value>폴더 설치</value></data>
+   <data name="MapRefresh" xml:space="preserve"><value>새로 고침</value></data>
+   <data name="MapNoInstalledMaps" xml:space="preserve"><value>설치된 지도가 없습니다.</value></data>
+   <data name="MapOpenDirectory" xml:space="preserve"><value>디렉터리 열기</value></data>
+   <data name="MapActivate" xml:space="preserve"><value>활성화</value></data>
+   <data name="MapRemove" xml:space="preserve"><value>제거</value></data>
+   <data name="MapNoActivePackage" xml:space="preserve"><value>활성 패키지 없음</value></data>
+  <data name="Autonomy" xml:space="preserve"><value>Autonomy</value></data>
+  <data name="AutonomyDescription" xml:space="preserve"><value>Reusable geometry and upcoming mission planning</value></data>
+  <data name="Geometry" xml:space="preserve"><value>지오메트리</value></data>
+   <data name="GeometryDescription" xml:space="preserve"><value>로컬 관심 지점, 웨이포인트 순서, 구역 및 그룹</value></data>
+  <data name="Mission" xml:space="preserve"><value>임무</value></data>
+  <data name="MissionDeferredDescription" xml:space="preserve"><value>Mission planning is coming next. Geometry objects saved here will be reusable in future PX4, ArduPilot, and Logos plans.</value></data>
+  <data name="Behaviours" xml:space="preserve"><value>Behaviours</value></data>
+  <data name="BehavioursDescription" xml:space="preserve"><value>Package library, Logos validation, deployment, and geometry bindings</value></data>
+  <data name="Inspector" xml:space="preserve"><value>Inspector</value></data>
+  <data name="InspectorDescription" xml:space="preserve"><value>Authoritative mission, task, autonomy, tree, and intervention state</value></data>
+  <data name="Evidence" xml:space="preserve"><value>Evidence</value></data>
+  <data name="EvidenceDescription" xml:space="preserve"><value>Displayed frames, exported clips, and operational metadata</value></data>
+  <data name="Missions" xml:space="preserve"><value>Missions</value></data>
+  <data name="MissionsDescription" xml:space="preserve"><value>Mission packages, assignment, and execution</value></data>
+  <data name="Tasks" xml:space="preserve"><value>Tasks</value></data>
+  <data name="TasksDescription" xml:space="preserve"><value>Task queue and per-vehicle work</value></data>
+   <data name="Events" xml:space="preserve"><value>이벤트</value></data>
+  <data name="Commands" xml:space="preserve"><value>명령</value></data>
+   <data name="HistoryCommandHistory" xml:space="preserve"><value>명령 기록</value></data>
+   <data name="HistoryEventStream" xml:space="preserve"><value>이벤트 스트림</value></data>
+   <data name="HistoryNoCommands" xml:space="preserve"><value>기록된 명령 없음</value></data>
+   <data name="HistoryNoEvents" xml:space="preserve"><value>수신된 이벤트 없음</value></data>
+  <data name="History" xml:space="preserve"><value>기록</value></data>
+  <data name="Connections" xml:space="preserve"><value>연결</value></data>
+  <data name="ConnectionsDescription" xml:space="preserve"><value>연결 및 원격 측정 소스</value></data>
+   <data name="ConnectionsNew" xml:space="preserve"><value>새 연결</value></data>
+   <data name="ConnectionsEmpty" xml:space="preserve"><value>연결 없음</value></data>
+  <data name="ConnectionDetails" xml:space="preserve"><value>연결 세부 정보</value></data>
+  <data name="ConnectionName" xml:space="preserve"><value>이름</value></data>
+  <data name="ConnectionTarget" xml:space="preserve"><value>대상</value></data>
+  <data name="ConnectionType" xml:space="preserve"><value>연결 유형</value></data>
+   <data name="ConnectionTransport" xml:space="preserve"><value>전송 방식</value></data>
+  <data name="ConnectionAutoReconnect" xml:space="preserve"><value>자동 재연결</value></data>
+  <data name="ConnectionAdd" xml:space="preserve"><value>연결 추가</value></data>
+  <data name="ConnectionControls" xml:space="preserve"><value>연결 제어</value></data>
+  <data name="ConnectionInformation" xml:space="preserve"><value>연결 정보</value></data>
+   <data name="ConnectionSdkCalls" xml:space="preserve"><value>SDK 호출</value></data>
+   <data name="ConnectionLog" xml:space="preserve"><value>연결 로그</value></data>
+  <data name="SettingsUnits" xml:space="preserve"><value>단위</value></data>
+  <data name="SettingsHorizontalDistance" xml:space="preserve"><value>수평 거리</value></data>
+  <data name="SettingsVerticalDistance" xml:space="preserve"><value>수직 거리</value></data>
+  <data name="SettingsArea" xml:space="preserve"><value>면적</value></data>
+  <data name="SettingsSpeed" xml:space="preserve"><value>속도</value></data>
+  <data name="SettingsTemperature" xml:space="preserve"><value>온도</value></data>
+  <data name="UnitMeters" xml:space="preserve"><value>미터</value></data>
+  <data name="UnitFeet" xml:space="preserve"><value>피트</value></data>
+  <data name="UnitSquareMeters" xml:space="preserve"><value>제곱미터</value></data>
+  <data name="UnitSquareFeet" xml:space="preserve"><value>제곱피트</value></data>
+  <data name="UnitSquareKilometers" xml:space="preserve"><value>제곱킬로미터</value></data>
+  <data name="UnitSquareMiles" xml:space="preserve"><value>제곱마일</value></data>
+  <data name="UnitHectares" xml:space="preserve"><value>헥타르</value></data>
+  <data name="UnitAcres" xml:space="preserve"><value>에이커</value></data>
+  <data name="UnitMetersPerSecond" xml:space="preserve"><value>초당 미터</value></data>
+  <data name="UnitFeetPerSecond" xml:space="preserve"><value>초당 피트</value></data>
+  <data name="UnitKilometersPerHour" xml:space="preserve"><value>시속 킬로미터</value></data>
+  <data name="UnitMilesPerHour" xml:space="preserve"><value>시속 마일</value></data>
+  <data name="UnitKnots" xml:space="preserve"><value>노트</value></data>
+  <data name="UnitCelsius" xml:space="preserve"><value>섭씨</value></data>
+  <data name="UnitFahrenheit" xml:space="preserve"><value>화씨</value></data>
+   <data name="Release" xml:space="preserve"><value>해제</value></data>
+   <data name="SelectedUnits" xml:space="preserve"><value>선택한 유닛</value></data>
+   <data name="SelectedUnit" xml:space="preserve"><value>선택한 유닛</value></data>
+   <data name="JumpTo" xml:space="preserve"><value>이동</value></data>
+   <data name="Follow" xml:space="preserve"><value>따라가기</value></data>
+  <data name="ExecuteAllCommands" xml:space="preserve"><value>Execute all commands</value></data>
+  <data name="CancelCommand" xml:space="preserve"><value>Cancel command</value></data>
+  <data name="ClearAllQueuedCommands" xml:space="preserve"><value>Clear all pending commands</value></data>
+  <data name="ExecuteCommand" xml:space="preserve"><value>Command 실행</value></data>
+  <data name="ClearCommandQueue" xml:space="preserve"><value>Clear pending command</value></data>
+   <data name="ManageConnections" xml:space="preserve"><value>연결 관리...</value></data>
+   <data name="RemoveConnectionAssociation" xml:space="preserve"><value>연결 연결 해제</value></data>
+   <data name="UnitConnections" xml:space="preserve"><value>유닛 연결</value></data>
+   <data name="UnitConnectionsDescription" xml:space="preserve"><value>이 연결들을 하나의 실제 유닛에 연결합니다.</value></data>
+   <data name="UnitName" xml:space="preserve"><value>유닛 이름</value></data>
+   <data name="AvailableConnectionObservations" xml:space="preserve"><value>사용 가능한 연결</value></data>
+   <data name="CommandAuthority" xml:space="preserve"><value>명령 연결</value></data>
+   <data name="TelemetryAuthority" xml:space="preserve"><value>원격 측정 연결</value></data>
+   <data name="DiagnosticsAuthority" xml:space="preserve"><value>진단 연결</value></data>
+   <data name="SaveUnit" xml:space="preserve"><value>유닛 저장</value></data>
+  <data name="CreateGhost" xml:space="preserve"><value>Ghost 만들기</value></data>
+   <data name="NoUnitsDiscovered" xml:space="preserve"><value>검색된 유닛이 없습니다.</value></data>
+  <data name="CreateGhostUnit" xml:space="preserve"><value>Ghost 유닛 만들기</value></data>
+  <data name="GhostProfile" xml:space="preserve"><value>Ghost 프로필</value></data>
+   <data name="GhostModel" xml:space="preserve"><value>모델</value></data>
+   <data name="GhostVehicleType" xml:space="preserve"><value>형식</value></data>
+   <data name="GhostSpeed" xml:space="preserve"><value>속도</value></data>
+   <data name="GhostClimbRate" xml:space="preserve"><value>상승</value></data>
+   <data name="GhostDescentRate" xml:space="preserve"><value>하강</value></data>
+   <data name="GhostAltitudeLimit" xml:space="preserve"><value>고도</value></data>
+   <data name="GhostHorizontalAcceleration" xml:space="preserve"><value>가속도</value></data>
+   <data name="GhostVerticalAcceleration" xml:space="preserve"><value>수직 가속도</value></data>
+   <data name="GhostYawRate" xml:space="preserve"><value>요</value></data>
+   <data name="GhostEndurance" xml:space="preserve"><value>비행 시간</value></data>
+   <data name="GhostWheelbase" xml:space="preserve"><value>축간 거리</value></data>
+   <data name="CreateGhosts" xml:space="preserve"><value>Ghost 만들기</value></data>
+   <data name="GhostCount" xml:space="preserve"><value>수량</value></data>
+   <data name="VehicleType" xml:space="preserve"><value>기체 형식</value></data>
+   <data name="NumberOfGhosts" xml:space="preserve"><value>Ghost 수</value></data>
+   <data name="Confirm" xml:space="preserve"><value>확인</value></data>
+  <data name="Cancel" xml:space="preserve"><value>취소</value></data>
+   <data name="AirborneDisarmTitle" xml:space="preserve"><value>Disarm 확인</value></data>
+   <data name="AirborneDisarmWarning" xml:space="preserve"><value>기체가 비행 중입니다. 그래도 Disarm할까요?</value></data>
+  <data name="AirborneDisarmConfirm" xml:space="preserve"><value>Disarm</value></data>
+  <data name="Delete" xml:space="preserve"><value>삭제</value></data>
+  <data name="ClearSelection" xml:space="preserve"><value>선택 지우기</value></data>
+   <data name="ManualMode" xml:space="preserve"><value>수동 모드</value></data>
+   <data name="ControllerCommandPending" xml:space="preserve"><value>컨트롤러 명령 대기 중</value></data>
+   <data name="UnitPosition" xml:space="preserve"><value>위치</value></data>
+   <data name="UnitHeading" xml:space="preserve"><value>방위</value></data>
+   <data name="UnitVelocity" xml:space="preserve"><value>속도</value></data>
+   <data name="UnitVerticalSpeed" xml:space="preserve"><value>수직 속도</value></data>
+   <data name="UnitOperatorDistance" xml:space="preserve"><value>운영자와의 거리</value></data>
+   <data name="UnitBattery" xml:space="preserve"><value>배터리</value></data>
+  <data name="Px4ParametersTitle" xml:space="preserve"><value>PX4 Parameters</value></data>
+  <data name="Px4ParametersDescription" xml:space="preserve"><value>Download, inspect, compare, and safely merge QGroundControl-compatible .params profiles. The vehicle must be connected and disarmed before applying.</value></data>
+  <data name="Px4MavlinkUnit" xml:space="preserve"><value>PX4 MAVLink unit</value></data>
+  <data name="DownloadCurrent" xml:space="preserve"><value>Download current</value></data>
+  <data name="ImportProfile" xml:space="preserve"><value>Import profile</value></data>
+  <data name="ExportProfile" xml:space="preserve"><value>Export profile</value></data>
+  <data name="SavedProfile" xml:space="preserve"><value>Saved profile</value></data>
+  <data name="CompareWithLive" xml:space="preserve"><value>Compare with live</value></data>
+  <data name="ApplyProfile" xml:space="preserve"><value>Apply profile</value></data>
+  <data name="MyTeam" xml:space="preserve"><value>내 팀</value></data>
+   <data name="MyTeamServer" xml:space="preserve"><value>팀 관찰 서버</value></data>
+   <data name="MyTeamServerName" xml:space="preserve"><value>서버 이름</value></data>
+   <data name="MyTeamPort" xml:space="preserve"><value>포트</value></data>
+   <data name="MyTeamMaximumClients" xml:space="preserve"><value>최대 클라이언트</value></data>
+   <data name="MyTeamStart" xml:space="preserve"><value>서버 시작</value></data>
+   <data name="MyTeamStop" xml:space="preserve"><value>서버 중지</value></data>
+  <data name="MyTeamEndpoint" xml:space="preserve"><value>LAN endpoint</value></data>
+  <data name="MyTeamFingerprint" xml:space="preserve"><value>TLS SHA-256 fingerprint</value></data>
+  <data name="MyTeamShareOperatorLocation" xml:space="preserve"><value>Share operator location for this session</value></data>
+   <data name="MyTeamPendingRequests" xml:space="preserve"><value>접근 요청 대기</value></data>
+   <data name="MyTeamNoPendingRequests" xml:space="preserve"><value>대기 중인 접근 요청이 없습니다.</value></data>
+   <data name="MyTeamConnectedClients" xml:space="preserve"><value>연결된 관찰자</value></data>
+   <data name="MyTeamNoConnectedClients" xml:space="preserve"><value>연결된 관찰자가 없습니다.</value></data>
+   <data name="MyTeamApprove" xml:space="preserve"><value>승인</value></data>
+   <data name="MyTeamReject" xml:space="preserve"><value>거부</value></data>
+   <data name="MyTeamDisconnect" xml:space="preserve"><value>연결 해제</value></data>
+  <data name="MyTeamFirewallNotice" xml:space="preserve"><value>Allow private-network firewall access if prompted.</value></data>
+  <data name="MyTeamCompatible" xml:space="preserve"><value>Compatible with Team API v1</value></data>
+  <data name="MyTeamStatusStopped" xml:space="preserve"><value>Stopped</value></data>
+  <data name="MyTeamStatusStarting" xml:space="preserve"><value>Starting</value></data>
+  <data name="MyTeamStatusRunning" xml:space="preserve"><value>Running</value></data>
+  <data name="MyTeamStatusStopping" xml:space="preserve"><value>Stopping</value></data>
+  <data name="MyTeamStatusFaulted" xml:space="preserve"><value>Faulted</value></data>
+   <data name="MyTeamMirror" xml:space="preserve"><value>다른 Robot Command 미러링</value></data>
+   <data name="MyTeamMirrorDescription" xml:space="preserve"><value>읽기 전용 미러</value></data>
+  <data name="MyTeamProbe" xml:space="preserve"><value>Probe</value></data>
+  <data name="MyTeamTrust" xml:space="preserve"><value>Trust</value></data>
+  <data name="MyTeamRequestReadOnlyAccess" xml:space="preserve"><value>Request read-only access</value></data>
+   <data name="MyTeamNearby" xml:space="preserve"><value>주변 Robot Command</value></data>
+   <data name="MyTeamNearbyDescription" xml:space="preserve"><value>주변 호스트</value></data>
+   <data name="MyTeamRefreshNearby" xml:space="preserve"><value>새로 고침</value></data>
+   <data name="MyTeamNoNearby" xml:space="preserve"><value>찾을 수 없습니다.</value></data>
+   <data name="MyTeamUseNearby" xml:space="preserve"><value>연결</value></data>
+   <data name="MyTeamConnect" xml:space="preserve"><value>연결</value></data>
+   <data name="MyTeamPassphrasePlaceholder" xml:space="preserve"><value>서버 세션 암호</value></data>
+   <data name="MyTeamPassphraseHint" xml:space="preserve"><value>세션 암호</value></data>
+   <data name="MyTeamServerPassphrase" xml:space="preserve"><value>세션 암호</value></data>
+   <data name="MyTeamRequirePassphrase" xml:space="preserve"><value>암호 필요</value></data>
+   <data name="MyTeamRegeneratePassphrase" xml:space="preserve"><value>새로 생성</value></data>
+  <data name="MyTeamOpenAccess" xml:space="preserve"><value>Open access.</value></data>
+  <data name="MyTeamServerPassphraseHint" xml:space="preserve"><value>Session-only. Not saved.</value></data>
+  <data name="MyTeamRuntimeAuthentication" xml:space="preserve"><value>Authentication.</value></data>
+  <data name="MyTeamEnableAuthentication" xml:space="preserve"><value>Turn on authentication</value></data>
+  <data name="MyTeamEnableAuthenticationReauth" xml:space="preserve"><value>Turn on and require re-authentication</value></data>
+  <data name="MyTeamDisableAuthentication" xml:space="preserve"><value>Turn off authentication</value></data>
+  <data name="MyTeamRequireReauthentication" xml:space="preserve"><value>Require re-authentication now</value></data>
+  <data name="MyTeamNearbySelected" xml:space="preserve"><value>{0} selected.</value></data>
+   <data name="MyTeamQrPairing" xml:space="preserve"><value>QR 페어링</value></data>
+   <data name="MyTeamQrPairingDescription" xml:space="preserve"><value>스캔하여 페어링</value></data>
+   <data name="MyTeamCreatePairingQr" xml:space="preserve"><value>페어링 QR 새로 고침</value></data>
+   <data name="MyTeamPairingCode" xml:space="preserve"><value>짧은 확인 코드</value></data>
+   <data name="MyTeamPairingLinkPlaceholder" xml:space="preserve"><value>Robot Command 페어링 링크 붙여넣기</value></data>
+   <data name="MyTeamUsePairingLink" xml:space="preserve"><value>페어링 링크 사용</value></data>
+   <data name="MyTeamConnectWithPairingLink" xml:space="preserve"><value>페어링 링크로 연결</value></data>
+  <data name="MapTopographic" xml:space="preserve"><value>지형</value></data>
+  <data name="ArduPilotParametersTitle" xml:space="preserve"><value>ArduPilot parameters</value></data>
+  <data name="ArduPilotParametersDescription" xml:space="preserve"><value>Parameter profiles are not supported for ArduPilot yet. This panel is reserved for the shared parameter service.</value></data>
+  <data name="ArduPilotParametersUnavailable" xml:space="preserve"><value>ArduPilot parameters not supported yet</value></data>
+  <data name="ManualControlMappingDescription" xml:space="preserve"><value>Map axes and safety buttons for the selected controller.</value></data>
+  <data name="RecentAutopilotWarnings" xml:space="preserve"><value>RECENT AUTOPILOT WARNINGS AND ERRORS</value></data>
+  <data name="ManualControlSelectUnit" xml:space="preserve"><value>Select one Ghost, PX4, or ArduPilot MAVLink unit in the Units rail.</value></data>
+   <data name="InspectorOperations" xml:space="preserve"><value>작업</value></data>
+  <data name="MapFitAll" xml:space="preserve"><value>전체 보기</value></data>
+   <data name="MapFollowSelected" xml:space="preserve"><value>선택 항목 따라가기</value></data>
+   <data name="MapStopFollowing" xml:space="preserve"><value>따라가기 중지</value></data>
+  <data name="MapViews" xml:space="preserve"><value>보기</value></data>
+  <data name="MapLayers" xml:space="preserve"><value>레이어</value></data>
+   <data name="MapApplySavedView" xml:space="preserve"><value>적용</value></data>
+   <data name="MapDeleteSavedView" xml:space="preserve"><value>삭제</value></data>
+   <data name="MapViewName" xml:space="preserve"><value>보기 이름</value></data>
+   <data name="MapSaveCurrentView" xml:space="preserve"><value>보기 저장</value></data>
+   <data name="MapResetNorth" xml:space="preserve"><value>북쪽으로 재설정</value></data>
+   <data name="MapClearTrails" xml:space="preserve"><value>궤적 지우기</value></data>
+  <data name="MapJumpToOperator" xml:space="preserve"><value>운영자 위치로 이동</value></data>
+  <data name="MapOperatorUnavailable" xml:space="preserve"><value>Operator location unavailable</value></data>
+  <data name="MapShowGeometries" xml:space="preserve"><value>지오메트리 표시</value></data>
+  <data name="MapHideGeometries" xml:space="preserve"><value>지오메트리 숨기기</value></data>
+  <data name="MapShowPolicy" xml:space="preserve"><value>정책 표시</value></data>
+  <data name="MapHidePolicy" xml:space="preserve"><value>정책 숨기기</value></data>
+  <data name="MapShowTrails" xml:space="preserve"><value>궤적 표시</value></data>
+  <data name="MapHideTrails" xml:space="preserve"><value>궤적 숨기기</value></data>
+  <data name="MapShowGoTo" xml:space="preserve"><value>Go To 표시</value></data>
+  <data name="MapHideGoTo" xml:space="preserve"><value>Go To 숨기기</value></data>
+  <data name="MapShowLabels" xml:space="preserve"><value>레이블 표시</value></data>
+  <data name="MapHideLabels" xml:space="preserve"><value>레이블 숨기기</value></data>
+   <data name="MapNorthUp" xml:space="preserve"><value>북쪽 위</value></data>
+   <data name="MapCourseUp" xml:space="preserve"><value>진행 방향 위</value></data>
+   <data name="MapHideWeather" xml:space="preserve"><value>날씨 숨기기</value></data>
+  <data name="MapWeatherRadar" xml:space="preserve"><value>날씨</value></data>
+  <data name="MapWeatherOpacity" xml:space="preserve"><value>불투명도</value></data>
+  <data name="Terminal" xml:space="preserve"><value>Terminal</value></data>
+  <data name="TerminalToggleTooltip" xml:space="preserve"><value>Toggle the Robot Command CLI (Ctrl+`)</value></data>
+  <data name="TerminalTitle" xml:space="preserve"><value>ROBOT COMMAND CLI</value></data>
+  <data name="TerminalDescription" xml:space="preserve"><value>Interactive Runtime session</value></data>
+  <data name="TerminalClear" xml:space="preserve"><value>Clear</value></data>
+  <data name="TerminalInputPlaceholder" xml:space="preserve"><value>Type a Robot Command command, or help</value></data>
+  <data name="TerminalRun" xml:space="preserve"><value>Run</value></data>
+  <data name="GeometryLocalTitle" xml:space="preserve"><value>Local geometry</value></data>
+  <data name="GeometryTool" xml:space="preserve"><value>Geometry</value></data>
+  <data name="GeometryToolDescription" xml:space="preserve"><value>Create reusable local PoIs, waypoint sequences, and zones. They are not sent to a vehicle or Logos.</value></data>
+  <data name="GeometryDefaultAltitude" xml:space="preserve"><value>Default altitude</value></data>
+  <data name="GeometryNewPoi" xml:space="preserve"><value>New PoI</value></data>
+  <data name="GeometrySelect" xml:space="preserve"><value>Select geometry</value></data>
+  <data name="GeometryExport" xml:space="preserve"><value>Export</value></data>
+  <data name="GeometryDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="GeometryRename" xml:space="preserve"><value>Rename</value></data>
+  <data name="GeometryNewWaypointSequence" xml:space="preserve"><value>New waypoint sequence</value></data>
+  <data name="GeometryNewZone" xml:space="preserve"><value>New zone</value></data>
+  <data name="GeometryDeleteSelected" xml:space="preserve"><value>Delete selected</value></data>
+  <data name="GeometryConfirmDelete" xml:space="preserve"><value>Confirm delete</value></data>
+  <data name="GeometryDraft" xml:space="preserve"><value>Local draft</value></data>
+  <data name="GeometryName" xml:space="preserve"><value>Name</value></data>
+  <data name="GeometryGroups" xml:space="preserve"><value>Groups</value></data>
+  <data name="GeometryOptionalGroups" xml:space="preserve"><value>Optional groups, comma-separated</value></data>
+  <data name="GeometryUndo" xml:space="preserve"><value>Undo</value></data>
+  <data name="GeometryRedo" xml:space="preserve"><value>Redo</value></data>
+  <data name="GeometryRemoveVertex" xml:space="preserve"><value>Remove vertex</value></data>
+  <data name="GeometryFinish" xml:space="preserve"><value>Finish</value></data>
+  <data name="GeometrySave" xml:space="preserve"><value>Save geometry</value></data>
+  <data name="GeometryCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="AutonomyLandingDescription" xml:space="preserve"><value>Create and organise reusable local geometry. Mission planning is coming next.</value></data>
+   <data name="GeometrySearch" xml:space="preserve"><value>지오메트리 검색</value></data>
+   <data name="GeometryGroupFilter" xml:space="preserve"><value>그룹 필터</value></data>
+   <data name="GeometryImportExport" xml:space="preserve"><value>가져오기 및 내보내기</value></data>
+   <data name="GeometryFilePath" xml:space="preserve"><value>지오메트리 JSON 파일 경로</value></data>
+   <data name="GeometrySetFilePath" xml:space="preserve"><value>지오메트리 세트 파일 경로</value></data>
+   <data name="GeometryImport" xml:space="preserve"><value>지오메트리 가져오기</value></data>
+   <data name="GeometryImportSet" xml:space="preserve"><value>세트 가져오기</value></data>
+   <data name="GeometryExportSet" xml:space="preserve"><value>라이브러리 세트 내보내기</value></data>
+   <data name="GeometryNewGroup" xml:space="preserve"><value>새 그룹 이름</value></data>
+   <data name="GeometryCreateGroup" xml:space="preserve"><value>그룹 만들기</value></data>
+   <data name="GeometryAddSelected" xml:space="preserve"><value>선택 항목 추가</value></data>
+   <data name="GeometryRemoveSelected" xml:space="preserve"><value>선택 항목 제거</value></data>
+   <data name="GeometryDeleteGroup" xml:space="preserve"><value>그룹 삭제</value></data>
+   <data name="FlightMissionDescription" xml:space="preserve"><value>저장된 비행 임무를 작성하고 검토하고 실행합니다.</value></data>
+   <data name="FlightMissionName" xml:space="preserve"><value>임무 이름</value></data>
+  <data name="FlightMissionDefaultName" xml:space="preserve"><value>새 임무</value></data>
+   <data name="FlightMissionNew" xml:space="preserve"><value>새로 만들기</value></data>
+   <data name="FlightMissionRename" xml:space="preserve"><value>이름 변경</value></data>
+   <data name="FlightMissionDuplicate" xml:space="preserve"><value>복제</value></data>
+   <data name="FlightMissionValidate" xml:space="preserve"><value>검증</value></data>
+   <data name="FlightMissionImport" xml:space="preserve"><value>가져오기</value></data>
+   <data name="FlightMissionExport" xml:space="preserve"><value>내보내기</value></data>
+   <data name="FlightMissionDelete" xml:space="preserve"><value>삭제</value></data>
+  <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
+  <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
+  <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
+   <data name="FlightMissionAddGeometry" xml:space="preserve"><value>지오메트리 추가</value></data>
+   <data name="FlightMissionSetAltitude" xml:space="preserve"><value>고도 설정</value></data>
+   <data name="FlightMissionSetSpeed" xml:space="preserve"><value>속도 설정</value></data>
+   <data name="FlightMissionSetFence" xml:space="preserve"><value>펜스 설정</value></data>
+   <data name="FlightMissionSetEnd" xml:space="preserve"><value>임무 종료 설정</value></data>
+  <data name="FlightMissionEndHold" xml:space="preserve"><value>Hold</value></data>
+  <data name="FlightMissionEndRtl" xml:space="preserve"><value>RTL</value></data>
+  <data name="FlightMissionContinue" xml:space="preserve"><value>계속</value></data>
+   <data name="FlightMissionRetain" xml:space="preserve"><value>유지</value></data>
+   <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>제거</value></data>
+   <data name="FlightMissionStatus" xml:space="preserve"><value>임무 상태</value></data>
+  <data name="FlightMissionPreview" xml:space="preserve"><value>임무 미리 보기</value></data>
+  <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>Survey line spacing (m)</value></data>
+  <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>Survey bearing (°)</value></data>
+  <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>Survey turnaround (m)</value></data>
+  <data name="FlightMissionSurveyReverse" xml:space="preserve"><value>Reverse entry</value></data>
+  <data name="FlightMissionLoiterSeconds" xml:space="preserve"><value>Loiter duration (s)</value></data>
+  <data name="FlightMissionCameraMode" xml:space="preserve"><value>Camera capture mode</value></data>
+  <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Camera trigger distance (m)</value></data>
+  <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Camera trigger interval (s)</value></data>
+   <data name="FlightMissionSetStep" xml:space="preserve"><value>단계 설정 적용</value></data>
+   <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>상대 고도(m)</value></data>
+   <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>순항 속도(m/s)</value></data>
+   <data name="FlightMissionTerrain" xml:space="preserve"><value>지형 추적</value></data>
+   <data name="FlightMissionSurvey" xml:space="preserve"><value>측량 구역</value></data>
+   <data name="FlightMissionCorridor" xml:space="preserve"><value>통로 스캔</value></data>
+  <data name="FlightMissionCorridorWidth" xml:space="preserve"><value>Corridor width (m)</value></data>
+  <data name="FlightMissionCorridorSpacing" xml:space="preserve"><value>Pass spacing (m)</value></data>
+  <data name="FlightMissionCorridorTurnaround" xml:space="preserve"><value>Turnaround distance (m)</value></data>
+  <data name="FlightMissionCorridorFrontLap" xml:space="preserve"><value>Front lap (%)</value></data>
+  <data name="FlightMissionCorridorSideLap" xml:space="preserve"><value>Side lap (%)</value></data>
+  <data name="FlightMissionCorridorReverse" xml:space="preserve"><value>Reverse</value></data>
+  <data name="FlightMissionCorridorEntryRight" xml:space="preserve"><value>Right entry</value></data>
+  <data name="FlightMissionCorridorImagesInTurns" xml:space="preserve"><value>Images in turns</value></data>
+  <data name="Px4Fences" xml:space="preserve"><value>PX4 fences</value></data>
+  <data name="Px4FenceCreate" xml:space="preserve"><value>Create fence</value></data>
+  <data name="Px4FenceDelete" xml:space="preserve"><value>Delete fence</value></data>
+  <data name="Px4FenceUpload" xml:space="preserve"><value>Upload fence</value></data>
+  <data name="Px4FenceDownload" xml:space="preserve"><value>Download fences</value></data>
+  <data name="Px4FenceClear" xml:space="preserve"><value>Clear fences</value></data>
+   <data name="FlightMissionLoiter" xml:space="preserve"><value>시간 제한 선회</value></data>
+   <data name="FlightMissionCameraIntent" xml:space="preserve"><value>카메라 의도</value></data>
+   <data name="FlightMissionMoveUp" xml:space="preserve"><value>위로</value></data>
+   <data name="FlightMissionMoveDown" xml:space="preserve"><value>아래로</value></data>
+   <data name="FlightMissionRemoveStep" xml:space="preserve"><value>단계 제거</value></data>
+  <data name="FlightMissionUpload" xml:space="preserve"><value>업로드</value></data>
+  <data name="FlightMissionDownload" xml:space="preserve"><value>다운로드</value></data>
+  <data name="FlightMissionStart" xml:space="preserve"><value>임무 시작</value></data>
+  <data name="FlightMissionPause" xml:space="preserve"><value>일시 중지</value></data>
+   <data name="FlightMissionResume" xml:space="preserve"><value>재개</value></data>
+   <data name="FlightMissionExecute" xml:space="preserve"><value>작업 실행</value></data>
+   <data name="FlightMissionCancel" xml:space="preserve"><value>취소</value></data>
+  <data name="TeamStatusSelectCommandable" xml:space="preserve"><value>Select one or more commandable units first.</value></data>
+  <data name="TeamStatusSelectUnits" xml:space="preserve"><value>Select one or more units first.</value></data>
+  <data name="TeamStatusCreated" xml:space="preserve"><value>{0} created.</value></data>
+  <data name="TeamStatusMembershipCleared" xml:space="preserve"><value>Team membership cleared.</value></data>
+  <data name="TeamTooltip" xml:space="preserve"><value>{0}; member {1} of {2}. Drag only within this Team.</value></data>
+  <data name="FormationLock" xml:space="preserve"><value>형성 잠금</value></data>
+  <data name="FormationUnlock" xml:space="preserve"><value>형성 잠금 해제</value></data>
+  <data name="FormationHold" xml:space="preserve"><value>형성 유지</value></data>
+  <data name="TeamPosition" xml:space="preserve"><value>Team position</value></data>
+  <data name="FormationGoTo" xml:space="preserve"><value>형성 이동</value></data>
+  <data name="FormationChangeAltitude" xml:space="preserve"><value>형성 고도 변경</value></data>
+  <data name="FormationLatitude" xml:space="preserve"><value>Latitude</value></data>
+  <data name="FormationLongitude" xml:space="preserve"><value>Longitude</value></data>
+  <data name="FormationAltitudeAgl" xml:space="preserve"><value>AGL altitude (m)</value></data>
+  <data name="FormationRotationDegrees" xml:space="preserve"><value>Rotation (°)</value></data>
+  <data name="FormationRotate" xml:space="preserve"><value>형성 회전</value></data>
+  <data name="FormationScalePercent" xml:space="preserve"><value>Size (%)</value></data>
+  <data name="FormationScale" xml:space="preserve"><value>형성 크기 변경</value></data>
+  <data name="ThreeD" xml:space="preserve"><value>3D</value></data>
+  <data name="Formations" xml:space="preserve"><value>형성</value></data>
+  <data name="FormationsDescription" xml:space="preserve"><value>Reusable 3D unit layouts</value></data>
+  <data name="FormationNamePlaceholder" xml:space="preserve"><value>형성 이름</value></data>
+  <data name="FormationAddUnit" xml:space="preserve"><value>유닛 추가</value></data>
+  <data name="FormationRemoveUnit" xml:space="preserve"><value>유닛 제거</value></data>
+  <data name="ManualProfile" xml:space="preserve"><value>프로필</value></data>
+  <data name="ManualController" xml:space="preserve"><value>컨트롤러</value></data>
+  <data name="ManualUnit" xml:space="preserve"><value>유닛</value></data>
+  <data name="ManualSession" xml:space="preserve"><value>세션</value></data>
+  <data name="ManualAdvanced" xml:space="preserve"><value>고급</value></data>
+  <data name="ManualDiagnostics" xml:space="preserve"><value>진단</value></data>
+  <data name="ManualConnected" xml:space="preserve"><value>연결됨</value></data>
+  <data name="ManualDisconnected" xml:space="preserve"><value>연결 안 됨</value></data>
+  <data name="ManualNoUnit" xml:space="preserve"><value>선택된 유닛 없음</value></data>
+  <data name="ManualNoSession" xml:space="preserve"><value>수동 제어 세션 없음</value></data>
+   <data name="ManualNone" xml:space="preserve"><value>없음</value></data>
+   <data name="ManualNoControllers" xml:space="preserve"><value>컨트롤러 없음</value></data>
+   <data name="ManualNoController" xml:space="preserve"><value>선택된 컨트롤러 없음</value></data>
+  <data name="ManualTakeControl" xml:space="preserve"><value>제어권 취득</value></data>
+  <data name="ManualRelease" xml:space="preserve"><value>제어권 해제</value></data>
+   <data name="ManualTakingControl" xml:space="preserve"><value>제어권 취득 중…</value></data>
+   <data name="ManualReleasingControl" xml:space="preserve"><value>제어권 해제 중…</value></data>
+   <data name="ManualSafetyActive" xml:space="preserve"><value>안전 장치 활성</value></data>
+   <data name="ManualSafetyReleased" xml:space="preserve"><value>안전 해제됨</value></data>
+   <data name="ManualNoLiveInput" xml:space="preserve"><value>실시간 입력 없음</value></data>
+   <data name="ManualDeadZone" xml:space="preserve"><value>데드 존</value></data>
+   <data name="ManualExpo" xml:space="preserve"><value>엑스포</value></data>
+   <data name="ManualHorizontalSpeed" xml:space="preserve"><value>수평 속도</value></data>
+   <data name="ManualVerticalSpeed" xml:space="preserve"><value>수직 속도</value></data>
+   <data name="ManualYawRate" xml:space="preserve"><value>요 속도</value></data>
+   <data name="ManualTakeoffAltitude" xml:space="preserve"><value>Takeoff 고도</value></data>
+   <data name="ManualForwardAxis" xml:space="preserve"><value>전진 축</value></data>
+   <data name="ManualRightAxis" xml:space="preserve"><value>오른쪽 축</value></data>
+   <data name="ManualVerticalAxis" xml:space="preserve"><value>수직 축</value></data>
+   <data name="ManualYawAxis" xml:space="preserve"><value>요 축</value></data>
+   <data name="ManualInvertForward" xml:space="preserve"><value>전진 반전</value></data>
+   <data name="ManualInvertRight" xml:space="preserve"><value>오른쪽 반전</value></data>
+   <data name="ManualInvertVertical" xml:space="preserve"><value>수직 반전</value></data>
+   <data name="ManualInvertYaw" xml:space="preserve"><value>요 반전</value></data>
+   <data name="ManualSafetyButton" xml:space="preserve"><value>안전 버튼</value></data>
+   <data name="ManualArmButton" xml:space="preserve"><value>Arm 버튼</value></data>
+   <data name="ManualTakeoffButton" xml:space="preserve"><value>Takeoff 버튼</value></data>
+   <data name="ManualExecuteButton" xml:space="preserve"><value>실행 버튼</value></data>
+   <data name="ManualCancelButton" xml:space="preserve"><value>취소 버튼</value></data>
+   <data name="ManualReleaseButton" xml:space="preserve"><value>해제 버튼</value></data>
+   <data name="ManualHorizontalAcceleration" xml:space="preserve"><value>수평 가속도</value></data>
+   <data name="ManualVerticalAcceleration" xml:space="preserve"><value>수직 가속도</value></data>
+   <data name="ManualYawAcceleration" xml:space="preserve"><value>요 가속도</value></data>
+   <data name="UnitNoSelected" xml:space="preserve"><value>선택된 유닛 없음</value></data>
+   <data name="UnitSelectedCount" xml:space="preserve"><value>유닛 {0}개 선택됨</value></data>
+   <data name="UnitConnectHint" xml:space="preserve"><value>유닛을 검색하려면 런타임에 연결하세요.</value></data>
+   <data name="UnitKindGhost" xml:space="preserve"><value>Ghost</value></data>
+   <data name="UnitOnline" xml:space="preserve"><value>온라인</value></data>
+   <data name="UnitOffline" xml:space="preserve"><value>오프라인</value></data>
+   <data name="UnitDegraded" xml:space="preserve"><value>성능 저하</value></data>
+   <data name="UnitReconnecting" xml:space="preserve"><value>재연결 중</value></data>
+   <data name="UnitStale" xml:space="preserve"><value>오래됨</value></data>
+   <data name="UnitFaulted" xml:space="preserve"><value>오류</value></data>
+   <data name="UnitUnknown" xml:space="preserve"><value>알 수 없음</value></data>
+   <data name="UnitDisarmed" xml:space="preserve"><value>Disarmed</value></data>
+   <data name="UnitLanded" xml:space="preserve"><value>착륙</value></data>
+   <data name="UnitFlying" xml:space="preserve"><value>비행 중</value></data>
+   <data name="UnitNoCurrentBlockers" xml:space="preserve"><value>현재 차단 요인 없음</value></data>
+   <data name="UnitBlockerCount" xml:space="preserve"><value>차단 요인 {0}개</value></data>
+   <data name="UnitDiagnosticsNotReported" xml:space="preserve"><value>진단이 보고되지 않음</value></data>
+   <data name="UnitNotReported" xml:space="preserve"><value>보고되지 않음</value></data>
+   <data name="UnitAltitudeNotReported" xml:space="preserve"><value>고도가 보고되지 않음</value></data>
+   <data name="UnitBatteryNotReported" xml:space="preserve"><value>이 기체에서 배터리 비율을 보고하지 않았습니다.</value></data>
+   <data name="UnitBatteryTooltip" xml:space="preserve"><value>배터리 {0}.{1} 출처: 기체 진단.</value></data>
+   <data name="UnitBatteryTooltipShort" xml:space="preserve"><value>배터리 {0}.</value></data>
+   <data name="UnitSignalNotReported" xml:space="preserve"><value>연결 신호 정보가 보고되지 않았습니다.</value></data>
+   <data name="UnitSignalQuality" xml:space="preserve"><value>연결 신호 품질</value></data>
+   <data name="UnitSimulatorLinkQuality" xml:space="preserve"><value>시뮬레이터 링크 품질: 100%.</value></data>
+  <data name="UnitConnectionLabel" xml:space="preserve"><value>{0} connection(s)</value></data>
+  <data name="UnitLinkCount" xml:space="preserve"><value>{0} links</value></data>
+  <data name="UnitRouteItemProgress" xml:space="preserve"><value>Route item {0} of {1}</value></data>
+   <data name="MapNoPackageSelected" xml:space="preserve"><value>선택된 패키지 없음</value></data>
+   <data name="MapNoPackageSelectedPeriod" xml:space="preserve"><value>선택된 패키지 없음.</value></data>
+   <data name="MapReady" xml:space="preserve"><value>준비됨.</value></data>
+  <data name="ConnectionState" xml:space="preserve"><value>상태</value></data>
+  <data name="ConnectionProtocol" xml:space="preserve"><value>프로토콜</value></data>
+  <data name="ConnectionConnected" xml:space="preserve"><value>연결됨</value></data>
+  <data name="ConnectionLinks" xml:space="preserve"><value>링크</value></data>
+   <data name="ConnectionEvents" xml:space="preserve"><value>이벤트</value></data>
+   <data name="ConnectionBaudRate" xml:space="preserve"><value>보드레이트</value></data>
+   <data name="ConnectionConnectedSince" xml:space="preserve"><value>연결 시작</value></data>
+   <data name="ConnectionLastConnected" xml:space="preserve"><value>마지막 연결</value></data>
+   <data name="ConnectionLastSeen" xml:space="preserve"><value>마지막 확인</value></data>
+   <data name="ConnectionLastAttempt" xml:space="preserve"><value>마지막 시도</value></data>
+   <data name="MyTeamReady" xml:space="preserve"><value>준비됨</value></data>
+   <data name="MyTeamStopped" xml:space="preserve"><value>중지됨.</value></data>
+   <data name="MyTeamConnected" xml:space="preserve"><value>연결됨.</value></data>
+   <data name="MyTeamNoneFound" xml:space="preserve"><value>찾을 수 없습니다.</value></data>
+  <data name="MyTeamPassphraseRequired" xml:space="preserve"><value>Enter a server passphrase before starting the server.</value></data>
+  <data name="MyTeamChecking" xml:space="preserve"><value>Checking...</value></data>
+  <data name="MyTeamConnecting" xml:space="preserve"><value>Connecting...</value></data>
+  <data name="MyTeamEnterPassphrase" xml:space="preserve"><value>Enter a passphrase.</value></data>
+  <data name="MyTeamAuthenticationEnabled" xml:space="preserve"><value>Authentication enabled.</value></data>
+  <data name="MyTeamAuthenticationDisabled" xml:space="preserve"><value>Authentication disabled.</value></data>
+
+  <data name="SettingsLanguageKorean" xml:space="preserve"><value>한국어</value></data>
+  <data name="ConnectionSerialDevice" xml:space="preserve"><value>직렬 / SiK 장치</value></data>
+  <data name="ConnectionDetectDevices" xml:space="preserve"><value>장치 검색</value></data>
+  <data name="ConnectionLikelySikRadio" xml:space="preserve"><value>SiK 라디오로 추정</value></data>
+  <data name="ConnectionRadioSetup" xml:space="preserve"><value>SiK 라디오 설정</value></data>
+  <data name="ConnectionProbeRadio" xml:space="preserve"><value>라디오 확인</value></data>
+  <data name="ConnectionPairRadios" xml:space="preserve"><value>라디오 페어링</value></data>
+  <data name="ConnectionSourceRadio" xml:space="preserve"><value>원본 라디오</value></data>
+  <data name="ConnectionTargetRadio" xml:space="preserve"><value>대상 라디오</value></data>
+  <data name="ConnectionShowAdvancedRadioSettings" xml:space="preserve"><value>고급 S0-S14 설정 표시</value></data>
+  <data name="ConnectionReviewLocalChanges" xml:space="preserve"><value>로컬 변경 검토</value></data>
+  <data name="ConnectionReviewPairedChanges" xml:space="preserve"><value>페어링 변경 검토</value></data>
+</root>

@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:loc="using:RobotCommand.Localization"
+             x:Class="RobotCommand.Views.Workspaces.MapLibraryView"
+             x:DataType="vm:MapLibraryViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="12">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+      <TextBlock Classes="workspaceTitle" Text="{loc:Loc Key=Maps}" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Border Classes="smallPill"><TextBlock Text="{Binding ActivePackageText}" /></Border>
+        <Border Classes="smallPill"><TextBlock Text="{Binding TotalStorageText}" /></Border>
+      </StackPanel>
+    </Grid>
+
+    <Grid Grid.Row="1" ColumnDefinitions="320,*" ColumnSpacing="12">
+      <Border Classes="panel">
+        <Grid RowDefinitions="Auto,*" RowSpacing="8">
+          <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+            <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=MapInstalledMaps}" />
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
+              <Button Classes="toolbarButton primary" Content="{loc:Loc Key=MapInstall}" Click="InstallMapClick" />
+              <Button Classes="toolbarButton" Content="{loc:Loc Key=MapInstallFolder}" Click="InstallFolderClick" />
+              <Button Classes="toolbarButton" Content="{loc:Loc Key=MapRefresh}" Command="{Binding RefreshCommand}" />
+            </StackPanel>
+          </Grid>
+          <Grid Grid.Row="1">
+            <ListBox Classes="compactList"
+                     ItemsSource="{Binding Packages}"
+                     SelectedItem="{Binding SelectedPackage}">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="4,6" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                    <TextBlock Grid.Column="1" Classes="muted" Text="{Binding StateLabel}" />
+                    <TextBlock Grid.Row="1" Classes="muted" Text="{Binding Kind}" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Classes="muted" Text="{Binding ZoomSummary}" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Classes="emptyState"
+                       IsVisible="{Binding IsEmpty}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Text="{loc:Loc Key=MapNoInstalledMaps}" />
+          </Grid>
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="1" Classes="panel">
+        <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Spacing="2">
+              <TextBlock FontSize="20" FontWeight="SemiBold" Text="{Binding SelectedPackageTitle}" />
+              <TextBlock Classes="muted" Text="{Binding SelectedPackageSubtitle}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+              <Button Classes="toolbarButton" Content="{loc:Loc Key=MapOpenDirectory}" Command="{Binding RevealCommand}" />
+              <Button Classes="toolbarButton primary" Content="{loc:Loc Key=MapActivate}" Command="{Binding ActivateCommand}" />
+              <Button Classes="toolbarButton danger" Content="{loc:Loc Key=MapRemove}" Command="{Binding RemoveCommand}" />
+            </StackPanel>
+          </Grid>
+          <Border Grid.Row="1" Classes="noticePanel">
+            <TextBlock Text="{Binding SelectedValidationDetails}" TextWrapping="Wrap" />
+          </Border>
+          <ScrollViewer Grid.Row="2">
+            <TextBlock FontFamily="Consolas, Menlo, monospace"
+                       Text="{Binding SelectedPackageDetails}"
+                       TextWrapping="Wrap" />
+          </ScrollViewer>
+          <Border Grid.Row="3" Classes="surfaceFooter">
+            <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" />
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</UserControl>

@@ -1,0 +1,104 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="14" MaxWidth="720">
+      <StackPanel Spacing="4">
+        <TextBlock Classes="workspaceTitle" Text="{Binding Title}" />
+        <TextBlock Classes="muted" Text="{Binding Description}" />
+      </StackPanel>
+
+      <Border Classes="panel">
+        <ToggleSwitch IsChecked="{Binding BrightModeEnabled}">
+          <TextBlock FontWeight="SemiBold" Text="{Binding BrightModeTitle}" />
+        </ToggleSwitch>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="sectionTitle" Text="{Binding LanguageTitle}" />
+          <TextBlock Classes="muted" Text="{Binding LanguageDescription}" TextWrapping="Wrap" />
+          <ComboBox ItemsSource="{Binding Languages}"
+                    SelectedIndex="{Binding SelectedLanguageIndex, Mode=OneWay}"
+                    DropDownClosed="OnLanguageDropDownClosed">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding DisplayName}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="sectionTitle" Text="{Binding UnitsTitle}" />
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="16">
+            <TextBlock Text="{Binding HorizontalDistanceTitle}" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="1" Tag="horizontal" ItemsSource="{Binding HorizontalDistanceOptions}" SelectedIndex="{Binding HorizontalDistanceIndex, Mode=OneWay}" DropDownClosed="OnUnitDropDownClosed">
+              <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Grid.Row="1" Text="{Binding VerticalDistanceTitle}" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="1" Grid.Column="1" Tag="vertical" ItemsSource="{Binding VerticalDistanceOptions}" SelectedIndex="{Binding VerticalDistanceIndex, Mode=OneWay}" DropDownClosed="OnUnitDropDownClosed">
+              <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Grid.Row="2" Text="{Binding AreaTitle}" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="2" Grid.Column="1" Tag="area" ItemsSource="{Binding AreaOptions}" SelectedIndex="{Binding AreaIndex, Mode=OneWay}" DropDownClosed="OnUnitDropDownClosed">
+              <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Grid.Row="3" Text="{Binding SpeedTitle}" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="3" Grid.Column="1" Tag="speed" ItemsSource="{Binding SpeedOptions}" SelectedIndex="{Binding SpeedIndex, Mode=OneWay}" DropDownClosed="OnUnitDropDownClosed">
+              <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Grid.Row="4" Text="{Binding TemperatureTitle}" VerticalAlignment="Center" />
+            <ComboBox Grid.Row="4" Grid.Column="1" Tag="temperature" ItemsSource="{Binding TemperatureOptions}" SelectedIndex="{Binding TemperatureIndex, Mode=OneWay}" DropDownClosed="OnUnitDropDownClosed">
+              <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding DisplayName}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="sectionTitle" Text="{Binding MediaTitle}" />
+          <StackPanel Spacing="4">
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="5">
+              <TextBlock Text="GStreamer" />
+              <TextBlock Grid.Column="1" Classes="muted" Text="{Binding GStreamerRuntimeStatus}" />
+              <TextBlock Grid.Row="1" Text="{Binding PlaybackServerTitle}" />
+              <TextBlock Grid.Row="1" Grid.Column="1" Classes="muted" Text="{Binding MediaMtxRuntimeStatus}" />
+              <TextBlock Grid.Row="2" Classes="muted" Text="{Binding MediaRuntimeDetail}" TextTrimming="CharacterEllipsis" />
+              <Button Grid.Row="2" Grid.Column="1" Classes="toolbarButton" Content="{Binding RescanMediaLabel}" Command="{Binding RescanMediaCommand}" />
+            </Grid>
+          </StackPanel>
+
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="7">
+              <TextBlock Text="{Binding DefaultProtocolTitle}" VerticalAlignment="Center" />
+              <ComboBox Grid.Column="1" ItemsSource="{Binding MediaProtocols}" SelectedIndex="{Binding MediaProtocolIndex, Mode=TwoWay}" />
+              <TextBlock Grid.Row="1" Text="{Binding RtspTransportTitle}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding RtspTransports}" SelectedIndex="{Binding RtspTransportIndex, Mode=TwoWay}" />
+              <TextBlock Grid.Row="2" Text="{Binding RtspLatencyTitle}" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="2" Grid.Column="1" Minimum="0" Maximum="60000" Value="{Binding RtspLatencyMilliseconds, Mode=TwoWay}" />
+              <TextBlock Grid.Row="3" Text="{Binding ReconnectTitle}" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="3" Grid.Column="1" Minimum="0" Maximum="20" Value="{Binding RtspReconnectAttempts, Mode=TwoWay}" />
+              <TextBlock Grid.Row="4" Text="{Binding LocalRecordingTitle}" VerticalAlignment="Center" />
+              <ToggleSwitch Grid.Row="4" Grid.Column="1" IsChecked="{Binding LocalRecordingEnabled}" />
+              <TextBlock Grid.Row="5" Text="{Binding BufferTitle}" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="5" Grid.Column="1" Minimum="1" Maximum="1440" Value="{Binding RollingBufferMinutes, Mode=TwoWay}" />
+              <TextBlock Grid.Row="6" Text="{Binding SegmentTitle}" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="6" Grid.Column="1" Minimum="2" Maximum="300" Value="{Binding SegmentSeconds, Mode=TwoWay}" />
+              <TextBlock Grid.Row="7" Text="{Binding StorageTitle}" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="7" Grid.Column="1" Minimum="1" Maximum="2048" Value="{Binding MaximumStorageGigabytes, Mode=TwoWay}" />
+              <TextBlock Grid.Row="8" Text="{Binding RemoteLookbackTitle}" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="8" Grid.Column="1" Minimum="1" Maximum="2160" Value="{Binding RemoteLookbackHours, Mode=TwoWay}" />
+              <TextBlock Grid.Row="9" Text="{Binding BitrateTitle}" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Row="9" Grid.Column="1" Minimum="128" Maximum="100000" Value="{Binding EncodingBitrateKbps, Mode=TwoWay}" />
+          </Grid>
+          <TextBlock Classes="muted" Text="{Binding MediaProfilesSummary}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

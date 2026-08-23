@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>ロボットコマンド</value></data>
+  <data name="AppSubtitle" xml:space="preserve"><value>運用管制ステーション</value></data>
+  <data name="WorkspaceHeader" xml:space="preserve"><value>ワークスペース</value></data>
+  <data name="WorkspaceSummary" xml:space="preserve"><value>フリート運用、ミッション、テレメトリ、映像、監査</value></data>
+  <data name="UnitsHeader" xml:space="preserve"><value>ユニット</value></data>
+  <data name="Units" xml:space="preserve"><value>ユニット</value></data>
+  <data name="UnitSaved" xml:space="preserve"><value>ユニットを保存しました。</value></data>
+  <data name="UnitDeleted" xml:space="preserve"><value>ユニットを削除しました。</value></data>
+  <data name="UnitsNew" xml:space="preserve"><value>新規</value></data>
+  <data name="UnitsEdit" xml:space="preserve"><value>編集</value></data>
+  <data name="UnitsDelete" xml:space="preserve"><value>削除</value></data>
+  <data name="UnitsSavedAssociation" xml:space="preserve"><value>保存済み関連付け</value></data>
+  <data name="UnitsConnections" xml:space="preserve"><value>接続</value></data>
+  <data name="UnitsCameraSources" xml:space="preserve"><value>カメラソース</value></data>
+  <data name="UnitsSave" xml:space="preserve"><value>保存</value></data>
+  <data name="UnitsCancel" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="UnitsNamePlaceholder" xml:space="preserve"><value>ユニット名</value></data>
+  <data name="Ghosts" xml:space="preserve"><value>ゴースト</value></data>
+  <data name="NewProfile" xml:space="preserve"><value>新しいプロファイル</value></data>
+  <data name="EditProfile" xml:space="preserve"><value>プロファイルを編集</value></data>
+  <data name="DeleteProfile" xml:space="preserve"><value>プロファイルを削除</value></data>
+  <data name="SaveProfile" xml:space="preserve"><value>プロファイルを保存</value></data>
+  <data name="ProfileName" xml:space="preserve"><value>プロファイル名</value></data>
+  <data name="ProfileSaved" xml:space="preserve"><value>プロファイルを保存しました。</value></data>
+  <data name="ProfileDeleted" xml:space="preserve"><value>プロファイルを削除しました。</value></data>
+  <data name="ConnectedClients" xml:space="preserve"><value>接続中のクライアント</value></data>
+  <data name="Operators" xml:space="preserve"><value>オペレーター</value></data>
+  <data name="SelectedClient" xml:space="preserve"><value>選択中のクライアント</value></data>
+  <data name="Settings" xml:space="preserve"><value>設定</value></data>
+  <data name="SettingsDescription" xml:space="preserve"><value>アプリケーション設定とアクセシビリティ</value></data>
+  <data name="SettingsAccessibility" xml:space="preserve"><value>アクセシビリティ</value></data>
+  <data name="SettingsLanguage" xml:space="preserve"><value>言語</value></data>
+  <data name="SettingsLanguageEnglish" xml:space="preserve"><value>English</value></data>
+  <data name="SettingsLanguageFrench" xml:space="preserve"><value>Français</value></data>
+  <data name="SettingsLanguageJapanese" xml:space="preserve"><value>日本語</value></data>
+  <data name="SettingsLanguageKorean" xml:space="preserve"><value>韓国語</value></data>
+  <data name="BrightMode" xml:space="preserve"><value>明るいテーマ</value></data>
+  <data name="SettingsMedia" xml:space="preserve"><value>メディア</value></data>
+  <data name="SettingsMediaRuntime" xml:space="preserve"><value>ランタイム</value></data>
+  <data name="SettingsMediaPlaybackServer" xml:space="preserve"><value>再生サーバー</value></data>
+  <data name="SettingsMediaGStreamerUnavailable" xml:space="preserve"><value>GStreamer ランタイムが見つかりません</value></data>
+  <data name="SettingsMediaPlaybackUnavailable" xml:space="preserve"><value>再生サーバーを利用できません</value></data>
+  <data name="SettingsMediaProtocol" xml:space="preserve"><value>プロトコル</value></data>
+  <data name="SettingsMediaRtspTransport" xml:space="preserve"><value>RTSP トランスポート</value></data>
+  <data name="SettingsMediaLatency" xml:space="preserve"><value>遅延 (ms)</value></data>
+  <data name="SettingsMediaReconnect" xml:space="preserve"><value>再接続回数</value></data>
+  <data name="SettingsMediaRecording" xml:space="preserve"><value>ローカル録画</value></data>
+  <data name="SettingsMediaBuffer" xml:space="preserve"><value>ローリングバッファ (分)</value></data>
+  <data name="SettingsMediaSegment" xml:space="preserve"><value>セグメント (秒)</value></data>
+  <data name="SettingsMediaStorage" xml:space="preserve"><value>ストレージ (GB)</value></data>
+  <data name="SettingsMediaBitrate" xml:space="preserve"><value>ビットレート (kbps)</value></data>
+  <data name="SettingsMediaRescan" xml:space="preserve"><value>再スキャン</value></data>
+  <data name="VideoOpen" xml:space="preserve"><value>ストリームを開く</value></data>
+  <data name="VideoNoStream" xml:space="preserve"><value>ストリームなし</value></data>
+  <data name="VideoCamera" xml:space="preserve"><value>カメラ</value></data>
+  <data name="VideoNoCameraSource" xml:space="preserve"><value>カメラソースなし</value></data>
+  <data name="VideoRetry" xml:space="preserve"><value>再試行</value></data>
+  <data name="VideoClose" xml:space="preserve"><value>閉じる</value></data>
+  <data name="VideoRefresh" xml:space="preserve"><value>更新</value></data>
+  <data name="VideoPlay" xml:space="preserve"><value>再生</value></data>
+  <data name="VideoPause" xml:space="preserve"><value>一時停止</value></data>
+  <data name="VideoResume" xml:space="preserve"><value>再開</value></data>
+  <data name="VideoCache" xml:space="preserve"><value>キャッシュ</value></data>
+  <data name="VideoRetain" xml:space="preserve"><value>保持</value></data>
+  <data name="VideoExport" xml:space="preserve"><value>書き出し</value></data>
+  <data name="VideoLive" xml:space="preserve"><value>ライブ</value></data>
+  <data name="VideoCaptureFrame" xml:space="preserve"><value>フレームを保存</value></data>
+  <data name="VideoCaptureSource" xml:space="preserve"><value>ソース画像を保存</value></data>
+  <data name="Operate" xml:space="preserve"><value>運用</value></data>
+  <data name="OperateMap" xml:space="preserve"><value>地図</value></data>
+  <data name="OperateVideo" xml:space="preserve"><value>映像</value></data>
+  <data name="OperateUnit" xml:space="preserve"><value>ユニット</value></data>
+  <data name="InputDevices" xml:space="preserve"><value>入力デバイス</value></data>
+  <data name="Planning" xml:space="preserve"><value>計画</value></data>
+  <data name="ManualControl" xml:space="preserve"><value>手動操作</value></data>
+  <data name="Maps" xml:space="preserve"><value>地図</value></data>
+  <data name="MapInstalledMaps" xml:space="preserve"><value>インストール済み地図</value></data>
+  <data name="MapInstall" xml:space="preserve"><value>地図をインストール</value></data>
+  <data name="MapInstallFolder" xml:space="preserve"><value>フォルダーをインストール</value></data>
+  <data name="MapRefresh" xml:space="preserve"><value>更新</value></data>
+  <data name="MapNoInstalledMaps" xml:space="preserve"><value>インストール済み地図はありません。</value></data>
+  <data name="MapOpenDirectory" xml:space="preserve"><value>ディレクトリを開く</value></data>
+  <data name="MapActivate" xml:space="preserve"><value>有効化</value></data>
+  <data name="MapRemove" xml:space="preserve"><value>削除</value></data>
+  <data name="MapNoActivePackage" xml:space="preserve"><value>有効なパッケージなし</value></data>
+  <data name="Autonomy" xml:space="preserve"><value>自律運用</value></data>
+  <data name="Geometry" xml:space="preserve"><value>ジオメトリ</value></data>
+  <data name="Mission" xml:space="preserve"><value>ミッション</value></data>
+  <data name="Formations" xml:space="preserve"><value>編隊</value></data>
+  <data name="History" xml:space="preserve"><value>履歴</value></data>
+  <data name="Commands" xml:space="preserve"><value>コマンド</value></data>
+  <data name="Events" xml:space="preserve"><value>イベント</value></data>
+  <data name="HistoryCommandHistory" xml:space="preserve"><value>コマンド履歴</value></data>
+  <data name="HistoryEventStream" xml:space="preserve"><value>イベントストリーム</value></data>
+  <data name="HistoryNoCommands" xml:space="preserve"><value>コマンドはありません</value></data>
+  <data name="HistoryNoEvents" xml:space="preserve"><value>イベントはありません</value></data>
+  <data name="Connections" xml:space="preserve"><value>接続</value></data>
+  <data name="ConnectionsNew" xml:space="preserve"><value>新しい接続</value></data>
+  <data name="ConnectionsEmpty" xml:space="preserve"><value>接続なし</value></data>
+  <data name="ConnectionDetails" xml:space="preserve"><value>接続の詳細</value></data>
+  <data name="ConnectionName" xml:space="preserve"><value>名前</value></data>
+  <data name="ConnectionTarget" xml:space="preserve"><value>ターゲット</value></data>
+  <data name="ConnectionType" xml:space="preserve"><value>接続タイプ</value></data>
+  <data name="ConnectionTransport" xml:space="preserve"><value>トランスポート</value></data>
+  <data name="ConnectionAutoReconnect" xml:space="preserve"><value>自動再接続</value></data>
+  <data name="ConnectionAdd" xml:space="preserve"><value>接続を追加</value></data>
+  <data name="ConnectionControls" xml:space="preserve"><value>接続操作</value></data>
+  <data name="ConnectionInformation" xml:space="preserve"><value>接続情報</value></data>
+  <data name="SettingsUnits" xml:space="preserve"><value>単位</value></data>
+  <data name="SettingsHorizontalDistance" xml:space="preserve"><value>水平距離</value></data>
+  <data name="SettingsVerticalDistance" xml:space="preserve"><value>垂直距離</value></data>
+  <data name="SettingsArea" xml:space="preserve"><value>面積</value></data>
+  <data name="SettingsSpeed" xml:space="preserve"><value>速度</value></data>
+  <data name="SettingsTemperature" xml:space="preserve"><value>温度</value></data>
+  <data name="SelectedUnits" xml:space="preserve"><value>選択中のユニット</value></data>
+  <data name="SelectedUnit" xml:space="preserve"><value>選択中のユニット</value></data>
+  <data name="JumpTo" xml:space="preserve"><value>移動</value></data>
+  <data name="Follow" xml:space="preserve"><value>追従</value></data>
+  <data name="ExecuteCommand" xml:space="preserve"><value>Execute command</value></data>
+  <data name="ClearCommandQueue" xml:space="preserve"><value>キューを消去</value></data>
+  <data name="ManageConnections" xml:space="preserve"><value>接続を管理</value></data>
+  <data name="CreateGhost" xml:space="preserve"><value>ゴーストを作成</value></data>
+  <data name="CreateGhosts" xml:space="preserve"><value>ゴーストを作成</value></data>
+  <data name="GhostProfile" xml:space="preserve"><value>ゴーストプロファイル</value></data>
+  <data name="Confirm" xml:space="preserve"><value>確認</value></data>
+  <data name="Cancel" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="AirborneDisarmTitle" xml:space="preserve"><value>ディスアームの確認</value></data>
+  <data name="AirborneDisarmWarning" xml:space="preserve"><value>機体は飛行中です。ディスアームしますか？</value></data>
+  <data name="AirborneDisarmConfirm" xml:space="preserve"><value>ディスアーム</value></data>
+  <data name="Delete" xml:space="preserve"><value>削除</value></data>
+  <data name="ClearSelection" xml:space="preserve"><value>選択を解除</value></data>
+  <data name="ManualProfile" xml:space="preserve"><value>プロファイル</value></data>
+  <data name="ManualController" xml:space="preserve"><value>コントローラー</value></data>
+  <data name="ManualUnit" xml:space="preserve"><value>ユニット</value></data>
+  <data name="ManualSession" xml:space="preserve"><value>セッション</value></data>
+  <data name="ManualAdvanced" xml:space="preserve"><value>詳細設定</value></data>
+  <data name="ManualDiagnostics" xml:space="preserve"><value>診断</value></data>
+  <data name="ManualConnected" xml:space="preserve"><value>接続済み</value></data>
+  <data name="ManualDisconnected" xml:space="preserve"><value>未接続</value></data>
+  <data name="ManualNoUnit" xml:space="preserve"><value>ユニット未選択</value></data>
+  <data name="ManualNoSession" xml:space="preserve"><value>手動操作セッションなし</value></data>
+  <data name="ManualNone" xml:space="preserve"><value>なし</value></data>
+  <data name="ManualNoControllers" xml:space="preserve"><value>コントローラーなし</value></data>
+  <data name="ManualNoController" xml:space="preserve"><value>コントローラー未選択</value></data>
+  <data name="ManualTakeControl" xml:space="preserve"><value>操作を開始</value></data>
+  <data name="ManualRelease" xml:space="preserve"><value>操作を解放</value></data>
+  <data name="ManualSafetyActive" xml:space="preserve"><value>安全機構有効</value></data>
+  <data name="ManualSafetyReleased" xml:space="preserve"><value>安全機構解除</value></data>
+  <data name="ManualNoLiveInput" xml:space="preserve"><value>ライブ入力なし</value></data>
+  <data name="ManualDeadZone" xml:space="preserve"><value>デッドゾーン</value></data>
+  <data name="ManualExpo" xml:space="preserve"><value>エクスポ</value></data>
+  <data name="ManualHorizontalSpeed" xml:space="preserve"><value>水平速度</value></data>
+  <data name="ManualVerticalSpeed" xml:space="preserve"><value>垂直速度</value></data>
+  <data name="ManualYawRate" xml:space="preserve"><value>ヨー速度</value></data>
+  <data name="ManualTakeoffAltitude" xml:space="preserve"><value>離陸高度</value></data>
+  <data name="ManualForwardAxis" xml:space="preserve"><value>前進軸</value></data>
+  <data name="ManualRightAxis" xml:space="preserve"><value>右軸</value></data>
+  <data name="ManualVerticalAxis" xml:space="preserve"><value>垂直軸</value></data>
+  <data name="ManualYawAxis" xml:space="preserve"><value>ヨー軸</value></data>
+  <data name="ManualSafetyButton" xml:space="preserve"><value>安全ボタン</value></data>
+  <data name="ManualArmButton" xml:space="preserve"><value>アームボタン</value></data>
+  <data name="ManualTakeoffButton" xml:space="preserve"><value>離陸ボタン</value></data>
+  <data name="ManualExecuteButton" xml:space="preserve"><value>実行ボタン</value></data>
+  <data name="ManualCancelButton" xml:space="preserve"><value>キャンセルボタン</value></data>
+  <data name="ManualReleaseButton" xml:space="preserve"><value>解放ボタン</value></data>
+  <data name="FormationLock" xml:space="preserve"><value>編隊をロック</value></data>
+  <data name="FormationUnlock" xml:space="preserve"><value>編隊のロックを解除</value></data>
+  <data name="FormationHold" xml:space="preserve"><value>ホールド</value></data>
+  <data name="TeamPosition" xml:space="preserve"><value>チーム位置</value></data>
+  <data name="FormationGoTo" xml:space="preserve"><value>編隊を移動</value></data>
+  <data name="FormationChangeAltitude" xml:space="preserve"><value>編隊高度を変更</value></data>
+  <data name="FormationRotate" xml:space="preserve"><value>編隊を回転</value></data>
+  <data name="FormationScale" xml:space="preserve"><value>編隊サイズ</value></data>
+  <data name="FormationAddUnit" xml:space="preserve"><value>ユニットを追加</value></data>
+  <data name="FormationRemoveUnit" xml:space="preserve"><value>ユニットを削除</value></data>
+  <data name="FlightMissionNew" xml:space="preserve"><value>新しいミッション</value></data>
+  <data name="FlightMissionRename" xml:space="preserve"><value>名前を変更</value></data>
+  <data name="FlightMissionDuplicate" xml:space="preserve"><value>複製</value></data>
+  <data name="FlightMissionValidate" xml:space="preserve"><value>検証</value></data>
+  <data name="FlightMissionImport" xml:space="preserve"><value>インポート</value></data>
+  <data name="FlightMissionExport" xml:space="preserve"><value>エクスポート</value></data>
+  <data name="FlightMissionDelete" xml:space="preserve"><value>削除</value></data>
+  <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
+  <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
+  <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
+  <data name="FlightMissionUpload" xml:space="preserve"><value>アップロード</value></data>
+  <data name="FlightMissionDownload" xml:space="preserve"><value>ダウンロード</value></data>
+  <data name="FlightMissionStart" xml:space="preserve"><value>ミッションを開始</value></data>
+  <data name="FlightMissionPause" xml:space="preserve"><value>一時停止</value></data>
+  <data name="FlightMissionResume" xml:space="preserve"><value>再開</value></data>
+  <data name="FlightMissionExecute" xml:space="preserve"><value>実行</value></data>
+  <data name="FlightMissionCancel" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="OperateDescription" xml:space="preserve"><value>地図、映像、テレメトリ、運用操作</value></data>
+  <data name="MapsDescription" xml:space="preserve"><value>オフライン地図パッケージ</value></data>
+  <data name="MapTopographic" xml:space="preserve"><value>地形図</value></data>
+  <data name="MapFitAll" xml:space="preserve"><value>すべて表示</value></data>
+  <data name="MapFollowSelected" xml:space="preserve"><value>選択対象を追従</value></data>
+  <data name="MapStopFollowing" xml:space="preserve"><value>追従を停止</value></data>
+  <data name="MapViews" xml:space="preserve"><value>ビュー</value></data>
+  <data name="MapLayers" xml:space="preserve"><value>レイヤー</value></data>
+  <data name="MapJumpToOperator" xml:space="preserve"><value>オペレーターへ移動</value></data>
+  <data name="MapOperatorUnavailable" xml:space="preserve"><value>オペレーター位置を利用できません</value></data>
+  <data name="MapWeatherRadar" xml:space="preserve"><value>天気</value></data>
+  <data name="MapHideWeather" xml:space="preserve"><value>天気を非表示</value></data>
+  <data name="MapWeatherOpacity" xml:space="preserve"><value>不透明度</value></data>
+  <data name="MapShowGeometries" xml:space="preserve"><value>ジオメトリを表示</value></data>
+  <data name="MapHideGeometries" xml:space="preserve"><value>ジオメトリを非表示</value></data>
+  <data name="MapShowTrails" xml:space="preserve"><value>軌跡を表示</value></data>
+  <data name="MapHideTrails" xml:space="preserve"><value>軌跡を非表示</value></data>
+  <data name="MapShowLabels" xml:space="preserve"><value>ラベルを表示</value></data>
+  <data name="MapHideLabels" xml:space="preserve"><value>ラベルを非表示</value></data>
+  <data name="UnitMeters" xml:space="preserve"><value>メートル</value></data>
+  <data name="UnitFeet" xml:space="preserve"><value>フィート</value></data>
+  <data name="UnitSquareMeters" xml:space="preserve"><value>平方メートル</value></data>
+  <data name="UnitSquareFeet" xml:space="preserve"><value>平方フィート</value></data>
+  <data name="UnitKilometersPerHour" xml:space="preserve"><value>km/h</value></data>
+  <data name="UnitMilesPerHour" xml:space="preserve"><value>mph</value></data>
+  <data name="UnitKnots" xml:space="preserve"><value>ノット</value></data>
+  <data name="UnitCelsius" xml:space="preserve"><value>摂氏</value></data>
+  <data name="UnitFahrenheit" xml:space="preserve"><value>華氏</value></data>
+  <data name="ManualTakingControl" xml:space="preserve"><value>操作を取得中</value></data>
+  <data name="ManualReleasingControl" xml:space="preserve"><value>操作を解放中</value></data>
+  <data name="FormationsDescription" xml:space="preserve"><value>再利用可能な編隊レイアウト</value></data>
+  <data name="FormationNamePlaceholder" xml:space="preserve"><value>編隊名</value></data>
+  <data name="FlightMissionDescription" xml:space="preserve"><value>ミッションの作成と管理</value></data>
+  <data name="GeometryDescription" xml:space="preserve"><value>再利用可能な地点、経路、ゾーン</value></data>
+  <data name="ConnectionsDescription" xml:space="preserve"><value>接続の作成と管理</value></data>
+  <data name="UnitNoSelected" xml:space="preserve"><value>ユニット未選択</value></data>
+  <data name="UnitSelectedCount" xml:space="preserve"><value>{0} 個のユニットを選択</value></data>
+  <data name="UnitConnectHint" xml:space="preserve"><value>ランタイムに接続してユニットを検出します。</value></data>
+  <data name="UnitKindGhost" xml:space="preserve"><value>ゴースト</value></data>
+  <data name="UnitOnline" xml:space="preserve"><value>オンライン</value></data>
+  <data name="UnitOffline" xml:space="preserve"><value>オフライン</value></data>
+  <data name="UnitDegraded" xml:space="preserve"><value>低下</value></data>
+  <data name="UnitReconnecting" xml:space="preserve"><value>再接続中</value></data>
+  <data name="UnitStale" xml:space="preserve"><value>古い情報</value></data>
+  <data name="UnitFaulted" xml:space="preserve"><value>障害</value></data>
+  <data name="UnitUnknown" xml:space="preserve"><value>不明</value></data>
+  <data name="UnitDisarmed" xml:space="preserve"><value>ディスアーム</value></data>
+  <data name="UnitLanded" xml:space="preserve"><value>着陸</value></data>
+  <data name="UnitFlying" xml:space="preserve"><value>飛行中</value></data>
+  <data name="UnitNoCurrentBlockers" xml:space="preserve"><value>現在のブロッカーなし</value></data>
+  <data name="UnitBlockerCount" xml:space="preserve"><value>ブロッカー {0} 件</value></data>
+  <data name="UnitDiagnosticsNotReported" xml:space="preserve"><value>診断情報なし</value></data>
+  <data name="UnitNotReported" xml:space="preserve"><value>未報告</value></data>
+  <data name="UnitAltitudeNotReported" xml:space="preserve"><value>高度未報告</value></data>
+  <data name="UnitBatteryNotReported" xml:space="preserve"><value>この機体からバッテリー残量が報告されていません。</value></data>
+  <data name="UnitBatteryTooltip" xml:space="preserve"><value>バッテリー {0}。{1} 公式機体診断。</value></data>
+  <data name="UnitBatteryTooltipShort" xml:space="preserve"><value>バッテリー {0}。</value></data>
+  <data name="UnitSignalNotReported" xml:space="preserve"><value>接続信号の測定値が報告されていません。</value></data>
+  <data name="UnitSignalQuality" xml:space="preserve"><value>接続信号品質。</value></data>
+  <data name="UnitSimulatorLinkQuality" xml:space="preserve"><value>シミュレーターリンク品質: 100%。</value></data>
+  <data name="UnitConnectionLabel" xml:space="preserve"><value>接続 {0} 件</value></data>
+  <data name="UnitLinkCount" xml:space="preserve"><value>リンク {0} 件</value></data>
+  <data name="UnitRouteItemProgress" xml:space="preserve"><value>ルート項目 {0}/{1}</value></data>
+  <data name="MapNoPackageSelected" xml:space="preserve"><value>パッケージ未選択</value></data>
+  <data name="MapNoPackageSelectedPeriod" xml:space="preserve"><value>パッケージが選択されていません。</value></data>
+  <data name="MapReady" xml:space="preserve"><value>準備完了。</value></data>
+  <data name="ConnectionState" xml:space="preserve"><value>状態</value></data>
+  <data name="ConnectionProtocol" xml:space="preserve"><value>プロトコル</value></data>
+  <data name="ConnectionConnected" xml:space="preserve"><value>接続</value></data>
+  <data name="ConnectionLinks" xml:space="preserve"><value>リンク</value></data>
+  <data name="ConnectionEvents" xml:space="preserve"><value>イベント</value></data>
+  <data name="ConnectionBaudRate" xml:space="preserve"><value>ボーレート</value></data>
+  <data name="ConnectionConnectedSince" xml:space="preserve"><value>接続開始</value></data>
+  <data name="ConnectionLastConnected" xml:space="preserve"><value>最終接続</value></data>
+  <data name="ConnectionLastSeen" xml:space="preserve"><value>最終確認</value></data>
+  <data name="ConnectionLastAttempt" xml:space="preserve"><value>最終試行</value></data>
+  <data name="MyTeamReady" xml:space="preserve"><value>準備完了</value></data>
+  <data name="MyTeamStopped" xml:space="preserve"><value>停止。</value></data>
+  <data name="MyTeamConnected" xml:space="preserve"><value>接続済み。</value></data>
+  <data name="MyTeamNoneFound" xml:space="preserve"><value>見つかりません。</value></data>
+  <data name="MyTeamPassphraseRequired" xml:space="preserve"><value>サーバーのパスフレーズを入力してから開始してください。</value></data>
+  <data name="MyTeamChecking" xml:space="preserve"><value>確認中...</value></data>
+  <data name="MyTeamConnecting" xml:space="preserve"><value>接続中...</value></data>
+  <data name="MyTeamEnterPassphrase" xml:space="preserve"><value>パスフレーズを入力してください。</value></data>
+  <data name="MyTeamAuthenticationEnabled" xml:space="preserve"><value>認証を有効にしました。</value></data>
+  <data name="MyTeamAuthenticationDisabled" xml:space="preserve"><value>認証を無効にしました。</value></data>
+  <data name="MyTeamServerPassphraseHint" xml:space="preserve"><value>セッションパスフレーズ</value></data>
+  <data name="SettingsLanguageDescription" xml:space="preserve"><value>ロボットコマンドのインターフェース言語を選択します。</value></data>
+  <data name="MyTeam" xml:space="preserve"><value>マイチーム</value></data>
+  <data name="MyTeamNearby" xml:space="preserve"><value>近くのロボットコマンド</value></data>
+  <data name="MyTeamRefreshNearby" xml:space="preserve"><value>更新</value></data>
+  <data name="MyTeamNoNearby" xml:space="preserve"><value>見つかりません。</value></data>
+  <data name="MyTeamConnect" xml:space="preserve"><value>接続</value></data>
+  <data name="MyTeamMirror" xml:space="preserve"><value>別のロボットコマンドをミラー</value></data>
+  <data name="MyTeamServer" xml:space="preserve"><value>チームオブザーバーサーバー</value></data>
+  <data name="MyTeamServerName" xml:space="preserve"><value>サーバー名</value></data>
+  <data name="MyTeamPort" xml:space="preserve"><value>ポート</value></data>
+  <data name="MyTeamMaximumClients" xml:space="preserve"><value>最大クライアント数</value></data>
+  <data name="MyTeamRequirePassphrase" xml:space="preserve"><value>パスフレーズを要求</value></data>
+  <data name="MyTeamRegeneratePassphrase" xml:space="preserve"><value>再生成</value></data>
+  <data name="MyTeamStart" xml:space="preserve"><value>サーバーを開始</value></data>
+  <data name="MyTeamStop" xml:space="preserve"><value>サーバーを停止</value></data>
+  <data name="MyTeamConnectedClients" xml:space="preserve"><value>接続中のオブザーバー</value></data>
+  <data name="MyTeamNoConnectedClients" xml:space="preserve"><value>接続中のオブザーバーはいません。</value></data>
+  <data name="MyTeamPendingRequests" xml:space="preserve"><value>保留中のアクセス要求</value></data>
+  <data name="MyTeamNoPendingRequests" xml:space="preserve"><value>保留中のアクセス要求はありません。</value></data>
+  <data name="MyTeamQrPairing" xml:space="preserve"><value>QR ペアリング</value></data>
+  <data name="MyTeamCreatePairingQr" xml:space="preserve"><value>ペアリング QR を更新</value></data>
+  <data name="MyTeamConnectWithPairingLink" xml:space="preserve"><value>ペアリングリンクで接続</value></data>
+  <data name="MyTeamPairingLinkPlaceholder" xml:space="preserve"><value>ロボットコマンドのペアリングリンクを貼り付け</value></data>
+  <data name="MyTeamPassphrasePlaceholder" xml:space="preserve"><value>サーバーセッションのパスフレーズ</value></data>
+  <data name="MyTeamOpenAccess" xml:space="preserve"><value>オープンアクセス。</value></data>
+  <data name="MyTeamCompatible" xml:space="preserve"><value>Team API v1 と互換</value></data>
+  <data name="MyTeamApprove" xml:space="preserve"><value>承認</value></data>
+  <data name="MyTeamReject" xml:space="preserve"><value>拒否</value></data>
+  <data name="MyTeamDisconnect" xml:space="preserve"><value>切断</value></data>
+  <data name="MyTeamEndpoint" xml:space="preserve"><value>LAN エンドポイント</value></data>
+  <data name="MyTeamFingerprint" xml:space="preserve"><value>TLS SHA-256 フィンガープリント</value></data>
+  <data name="MyTeamShareOperatorLocation" xml:space="preserve"><value>このセッションでオペレーター位置を共有</value></data>
+  <data name="MyTeamEnableAuthentication" xml:space="preserve"><value>認証を有効化</value></data>
+  <data name="MyTeamEnableAuthenticationReauth" xml:space="preserve"><value>認証と再認証要求を有効化</value></data>
+  <data name="MyTeamDisableAuthentication" xml:space="preserve"><value>認証を無効化</value></data>
+  <data name="MyTeamRequireReauthentication" xml:space="preserve"><value>今すぐ再認証を要求</value></data>
+  <data name="MyTeamStatusStopped" xml:space="preserve"><value>停止</value></data>
+  <data name="MyTeamStatusRunning" xml:space="preserve"><value>実行中</value></data>
+  <data name="MyTeamFirewallNotice" xml:space="preserve"><value>表示された場合はプライベートネットワークのファイアウォールアクセスを許可してください。</value></data>
+  <data name="MyTeamNearbySelected" xml:space="preserve"><value>{0} 件選択。</value></data>
+  <data name="UploadVisual" xml:space="preserve"><value>ビジュアルをアップロード</value></data>
+  <data name="RemoveVisual" xml:space="preserve"><value>ビジュアルを削除</value></data>
+  <data name="VisualAssetNone" xml:space="preserve"><value>ビジュアルなし</value></data>
+  <data name="VisualImported" xml:space="preserve"><value>ビジュアルをインポートしました。</value></data>
+  <data name="VisualRemoved" xml:space="preserve"><value>ビジュアルを削除しました。</value></data>
+  <data name="VisualUnavailable" xml:space="preserve"><value>ビジュアルファイルを利用できません。プレビューを復元するには再アップロードしてください。</value></data>
+  <data name="VisualPreviewFailed" xml:space="preserve"><value>ビジュアルを表示できませんでした。</value></data>
+  <data name="SettingsLanguageUkrainian" xml:space="preserve"><value>ウクライナ語</value></data>
+  <data name="SettingsMediaGStreamerNotInspected" xml:space="preserve"><value>GStreamer は未確認</value></data>
+  <data name="SettingsMediaGStreamerAvailable" xml:space="preserve"><value>GStreamer ランタイムを利用できます</value></data>
+  <data name="SettingsMediaGStreamerFaulted" xml:space="preserve"><value>GStreamer ランタイムエラー</value></data>
+  <data name="SettingsMediaPlaybackNotInspected" xml:space="preserve"><value>再生サーバーは未確認</value></data>
+  <data name="SettingsMediaPlaybackAvailable" xml:space="preserve"><value>再生サーバーを利用できます</value></data>
+  <data name="SettingsMediaLookbackValue" xml:space="preserve"><value>リモート遡及 {0} 時間</value></data>
+  <data name="SettingsMediaLookback" xml:space="preserve"><value>リモート遡及 (時間)</value></data>
+  <data name="SettingsMediaProfiles" xml:space="preserve"><value>設定済み録画プロファイル</value></data>
+  <data name="VideoOpenStreamHint" xml:space="preserve"><value>カメラストリームを開いて再生を開始します。</value></data>
+  <data name="VideoLocalRecordingStopped" xml:space="preserve"><value>ローカル録画停止</value></data>
+  <data name="VideoLocalRecordingHint" xml:space="preserve"><value>カメラストリームを開くとローリングバッファを開始します。</value></data>
+  <data name="VideoNativeStopped" xml:space="preserve"><value>ネイティブ映像停止</value></data>
+  <data name="VideoNoDecodedFrame" xml:space="preserve"><value>デコード済みフレームなし</value></data>
+  <data name="VideoNoRecordings" xml:space="preserve"><value>録画なし</value></data>
+  <data name="VideoOpenAutomatic" xml:space="preserve"><value>自動で開く</value></data>
+  <data name="VideoProtocolAutomatic" xml:space="preserve"><value>自動</value></data>
+  <data name="VideoProtocolRtsp" xml:space="preserve"><value>RTSP</value></data>
+  <data name="VideoProtocolHls" xml:space="preserve"><value>HLS</value></data>
+  <data name="VideoProtocolWebRtc" xml:space="preserve"><value>WebRTC/WHEP</value></data>
+  <data name="VideoNoPerceptionTracks" xml:space="preserve"><value>認識トラックなし</value></data>
+  <data name="VideoTracksOverlayed" xml:space="preserve"><value>{0} 件のトラックを重ねて表示</value></data>
+  <data name="VideoInspect" xml:space="preserve"><value>検査</value></data>
+  <data name="VideoTestPattern" xml:space="preserve"><value>テストパターン</value></data>
+  <data name="VideoTestFile" xml:space="preserve"><value>テストファイル</value></data>
+  <data name="VideoStopTest" xml:space="preserve"><value>テスト停止</value></data>
+  <data name="VideoIncludeOverlays" xml:space="preserve"><value>オーバーレイを含める</value></data>
+  <data name="ManualControlDescription" xml:space="preserve"><value>入力プロファイルを設定し、選択したユニットを手動操作します</value></data>
+  <data name="AutonomyDescription" xml:space="preserve"><value>再利用可能なジオメトリとミッション計画</value></data>
+  <data name="MissionDeferredDescription" xml:space="preserve"><value>ミッション計画は準備中です。ここで保存したジオメトリは今後の PX4、ArduPilot、Logos の計画で再利用できます。</value></data>
+  <data name="Behaviours" xml:space="preserve"><value>ビヘイビア</value></data>
+  <data name="BehavioursDescription" xml:space="preserve"><value>パッケージライブラリ、検証、展開、ジオメトリ関連付け</value></data>
+  <data name="Inspector" xml:space="preserve"><value>インスペクター</value></data>
+  <data name="InspectorDescription" xml:space="preserve"><value>ミッション、タスク、自律動作、ツリー、介入の状態</value></data>
+  <data name="Evidence" xml:space="preserve"><value>証跡</value></data>
+  <data name="EvidenceDescription" xml:space="preserve"><value>表示フレーム、書き出しクリップ、運用メタデータ</value></data>
+  <data name="Missions" xml:space="preserve"><value>ミッション</value></data>
+  <data name="MissionsDescription" xml:space="preserve"><value>ミッションパッケージ、割り当て、実行</value></data>
+  <data name="Tasks" xml:space="preserve"><value>タスク</value></data>
+  <data name="TasksDescription" xml:space="preserve"><value>タスクキューと車両ごとの作業</value></data>
+  <data name="ConnectionSdkCalls" xml:space="preserve"><value>SDK 呼び出し</value></data>
+  <data name="ConnectionLog" xml:space="preserve"><value>接続ログ</value></data>
+  <data name="UnitSquareKilometers" xml:space="preserve"><value>平方キロメートル</value></data>
+  <data name="UnitSquareMiles" xml:space="preserve"><value>平方マイル</value></data>
+  <data name="UnitHectares" xml:space="preserve"><value>ヘクタール</value></data>
+  <data name="UnitAcres" xml:space="preserve"><value>エーカー</value></data>
+  <data name="UnitMetersPerSecond" xml:space="preserve"><value>メートル/秒</value></data>
+  <data name="UnitFeetPerSecond" xml:space="preserve"><value>フィート/秒</value></data>
+  <data name="Release" xml:space="preserve"><value>解除</value></data>
+  <data name="ExecuteAllCommands" xml:space="preserve"><value>すべてのコマンドを実行</value></data>
+  <data name="CancelCommand" xml:space="preserve"><value>コマンドをキャンセル</value></data>
+  <data name="ClearAllQueuedCommands" xml:space="preserve"><value>保留中のコマンドをすべてクリア</value></data>
+  <data name="RemoveConnectionAssociation" xml:space="preserve"><value>接続の関連付けを削除</value></data>
+  <data name="UnitConnections" xml:space="preserve"><value>ユニット接続</value></data>
+  <data name="UnitConnectionsDescription" xml:space="preserve"><value>接続を 1 台の実機ユニットに関連付け、各役割の接続を選択します。</value></data>
+  <data name="UnitName" xml:space="preserve"><value>ユニット名</value></data>
+  <data name="AvailableConnectionObservations" xml:space="preserve"><value>利用可能な接続の観測</value></data>
+  <data name="CommandAuthority" xml:space="preserve"><value>コマンド権限</value></data>
+  <data name="TelemetryAuthority" xml:space="preserve"><value>テレメトリ権限</value></data>
+  <data name="DiagnosticsAuthority" xml:space="preserve"><value>診断権限</value></data>
+  <data name="SaveUnit" xml:space="preserve"><value>ユニットを保存</value></data>
+  <data name="NoUnitsDiscovered" xml:space="preserve"><value>ユニットが見つかりません。</value></data>
+  <data name="CreateGhostUnit" xml:space="preserve"><value>ゴーストを作成</value></data>
+  <data name="GhostModel" xml:space="preserve"><value>モデル</value></data>
+  <data name="GhostVehicleType" xml:space="preserve"><value>種類</value></data>
+  <data name="GhostSpeed" xml:space="preserve"><value>速度</value></data>
+  <data name="GhostClimbRate" xml:space="preserve"><value>上昇</value></data>
+  <data name="GhostDescentRate" xml:space="preserve"><value>降下</value></data>
+  <data name="GhostAltitudeLimit" xml:space="preserve"><value>高度</value></data>
+  <data name="GhostHorizontalAcceleration" xml:space="preserve"><value>加速度</value></data>
+  <data name="GhostVerticalAcceleration" xml:space="preserve"><value>垂直加速度</value></data>
+  <data name="GhostYawRate" xml:space="preserve"><value>ヨー</value></data>
+  <data name="GhostEndurance" xml:space="preserve"><value>飛行時間</value></data>
+  <data name="GhostWheelbase" xml:space="preserve"><value>ホイールベース</value></data>
+  <data name="GhostCount" xml:space="preserve"><value>数</value></data>
+  <data name="VehicleType" xml:space="preserve"><value>機体タイプ</value></data>
+  <data name="NumberOfGhosts" xml:space="preserve"><value>ゴースト数</value></data>
+  <data name="ManualMode" xml:space="preserve"><value>MANUAL MODE</value></data>
+  <data name="ControllerCommandPending" xml:space="preserve"><value>CONTROLLER COMMAND PENDING</value></data>
+  <data name="UnitPosition" xml:space="preserve"><value>位置</value></data>
+  <data name="UnitHeading" xml:space="preserve"><value>方位</value></data>
+  <data name="UnitVelocity" xml:space="preserve"><value>速度</value></data>
+  <data name="UnitVerticalSpeed" xml:space="preserve"><value>垂直速度</value></data>
+  <data name="UnitOperatorDistance" xml:space="preserve"><value>オペレーター距離</value></data>
+  <data name="UnitBattery" xml:space="preserve"><value>バッテリー</value></data>
+  <data name="Px4ParametersTitle" xml:space="preserve"><value>PX4 パラメーター</value></data>
+  <data name="Px4ParametersDescription" xml:space="preserve"><value>QGroundControl 互換の .params プロファイルをダウンロード、確認、比較、安全に統合します。適用前に機体を接続し、ディスアームしてください。</value></data>
+  <data name="Px4MavlinkUnit" xml:space="preserve"><value>PX4 MAVLink ユニット</value></data>
+  <data name="DownloadCurrent" xml:space="preserve"><value>現在値をダウンロード</value></data>
+  <data name="ImportProfile" xml:space="preserve"><value>プロファイルをインポート</value></data>
+  <data name="ExportProfile" xml:space="preserve"><value>プロファイルをエクスポート</value></data>
+  <data name="SavedProfile" xml:space="preserve"><value>保存済みプロファイル</value></data>
+  <data name="CompareWithLive" xml:space="preserve"><value>ライブ値と比較</value></data>
+  <data name="ApplyProfile" xml:space="preserve"><value>プロファイルを適用</value></data>
+  <data name="MyTeamStatusStarting" xml:space="preserve"><value>開始中</value></data>
+  <data name="MyTeamStatusStopping" xml:space="preserve"><value>停止中</value></data>
+  <data name="MyTeamStatusFaulted" xml:space="preserve"><value>エラー</value></data>
+  <data name="MyTeamMirrorDescription" xml:space="preserve"><value>読み取り専用ミラー。</value></data>
+  <data name="MyTeamProbe" xml:space="preserve"><value>確認</value></data>
+  <data name="MyTeamTrust" xml:space="preserve"><value>信頼</value></data>
+  <data name="MyTeamRequestReadOnlyAccess" xml:space="preserve"><value>読み取り専用アクセスを要求</value></data>
+  <data name="MyTeamNearbyDescription" xml:space="preserve"><value>近くのホスト。</value></data>
+  <data name="MyTeamUseNearby" xml:space="preserve"><value>接続</value></data>
+  <data name="MyTeamPassphraseHint" xml:space="preserve"><value>セッションパスフレーズ。</value></data>
+  <data name="MyTeamServerPassphrase" xml:space="preserve"><value>セッションパスフレーズ</value></data>
+  <data name="MyTeamRuntimeAuthentication" xml:space="preserve"><value>認証。</value></data>
+  <data name="MyTeamQrPairingDescription" xml:space="preserve"><value>スキャンしてペアリング。</value></data>
+  <data name="MyTeamPairingCode" xml:space="preserve"><value>短い確認コード</value></data>
+  <data name="MyTeamUsePairingLink" xml:space="preserve"><value>ペアリングリンクを使用</value></data>
+  <data name="ArduPilotParametersTitle" xml:space="preserve"><value>ArduPilot パラメーター</value></data>
+  <data name="ArduPilotParametersDescription" xml:space="preserve"><value>パラメータープロファイルは現在 ArduPilot に対応していません。このパネルは共有パラメーターサービス用です。</value></data>
+  <data name="ArduPilotParametersUnavailable" xml:space="preserve"><value>ArduPilot パラメーターは未対応</value></data>
+  <data name="ManualControlMappingDescription" xml:space="preserve"><value>選択したコントローラーの軸と安全ボタンを割り当てます。</value></data>
+  <data name="RecentAutopilotWarnings" xml:space="preserve"><value>最近のオートパイロット警告とエラー</value></data>
+  <data name="ManualControlSelectUnit" xml:space="preserve"><value>ユニット一覧でゴースト、PX4、または ArduPilot MAVLink ユニットを選択してください。</value></data>
+  <data name="InspectorOperations" xml:space="preserve"><value>操作</value></data>
+  <data name="MapApplySavedView" xml:space="preserve"><value>適用</value></data>
+  <data name="MapDeleteSavedView" xml:space="preserve"><value>削除</value></data>
+  <data name="MapViewName" xml:space="preserve"><value>ビュー名</value></data>
+  <data name="MapSaveCurrentView" xml:space="preserve"><value>ビューを保存</value></data>
+  <data name="MapResetNorth" xml:space="preserve"><value>北をリセット</value></data>
+  <data name="MapClearTrails" xml:space="preserve"><value>軌跡をクリア</value></data>
+  <data name="MapShowPolicy" xml:space="preserve"><value>ポリシーを表示</value></data>
+  <data name="MapHidePolicy" xml:space="preserve"><value>ポリシーを非表示</value></data>
+  <data name="MapShowGoTo" xml:space="preserve"><value>移動先を表示</value></data>
+  <data name="MapHideGoTo" xml:space="preserve"><value>移動先を非表示</value></data>
+  <data name="MapNorthUp" xml:space="preserve"><value>北を上</value></data>
+  <data name="MapCourseUp" xml:space="preserve"><value>進行方向を上</value></data>
+  <data name="Terminal" xml:space="preserve"><value>ターミナル</value></data>
+  <data name="TerminalToggleTooltip" xml:space="preserve"><value>Robot Command CLI を切り替え (Ctrl+`)</value></data>
+  <data name="TerminalTitle" xml:space="preserve"><value>ROBOT COMMAND CLI</value></data>
+  <data name="TerminalDescription" xml:space="preserve"><value>インタラクティブなランタイムセッション</value></data>
+  <data name="TerminalClear" xml:space="preserve"><value>クリア</value></data>
+  <data name="TerminalInputPlaceholder" xml:space="preserve"><value>Robot Command コマンドまたは help を入力</value></data>
+  <data name="TerminalRun" xml:space="preserve"><value>実行</value></data>
+  <data name="GeometryLocalTitle" xml:space="preserve"><value>ローカルジオメトリ</value></data>
+  <data name="GeometryTool" xml:space="preserve"><value>ジオメトリ</value></data>
+  <data name="GeometryToolDescription" xml:space="preserve"><value>再利用可能な地点、ウェイポイント列、ゾーンを作成します。機体や Logos に送信されません。</value></data>
+  <data name="GeometryDefaultAltitude" xml:space="preserve"><value>デフォルト高度</value></data>
+  <data name="GeometryNewPoi" xml:space="preserve"><value>新しい地点</value></data>
+  <data name="GeometrySelect" xml:space="preserve"><value>ジオメトリを選択</value></data>
+  <data name="GeometryExport" xml:space="preserve"><value>エクスポート</value></data>
+  <data name="GeometryDelete" xml:space="preserve"><value>削除</value></data>
+  <data name="GeometryRename" xml:space="preserve"><value>名前を変更</value></data>
+  <data name="GeometryNewWaypointSequence" xml:space="preserve"><value>新しいウェイポイント列</value></data>
+  <data name="GeometryNewZone" xml:space="preserve"><value>新しいゾーン</value></data>
+  <data name="GeometryDeleteSelected" xml:space="preserve"><value>選択項目を削除</value></data>
+  <data name="GeometryConfirmDelete" xml:space="preserve"><value>削除を確認</value></data>
+  <data name="GeometryDraft" xml:space="preserve"><value>ローカル下書き</value></data>
+  <data name="GeometryName" xml:space="preserve"><value>名前</value></data>
+  <data name="GeometryGroups" xml:space="preserve"><value>グループ</value></data>
+  <data name="GeometryOptionalGroups" xml:space="preserve"><value>任意のグループ、カンマ区切り</value></data>
+  <data name="GeometryUndo" xml:space="preserve"><value>元に戻す</value></data>
+  <data name="GeometryRedo" xml:space="preserve"><value>やり直す</value></data>
+  <data name="GeometryRemoveVertex" xml:space="preserve"><value>頂点を削除</value></data>
+  <data name="GeometryFinish" xml:space="preserve"><value>完了</value></data>
+  <data name="GeometrySave" xml:space="preserve"><value>ジオメトリを保存</value></data>
+  <data name="GeometryCancel" xml:space="preserve"><value>キャンセル</value></data>
+  <data name="AutonomyLandingDescription" xml:space="preserve"><value>再利用可能なローカルジオメトリを作成、整理します。</value></data>
+  <data name="GeometrySearch" xml:space="preserve"><value>ジオメトリを検索</value></data>
+  <data name="GeometryGroupFilter" xml:space="preserve"><value>グループフィルター</value></data>
+  <data name="GeometryImportExport" xml:space="preserve"><value>インポートとエクスポート</value></data>
+  <data name="GeometryFilePath" xml:space="preserve"><value>ジオメトリ JSON ファイルパス</value></data>
+  <data name="GeometrySetFilePath" xml:space="preserve"><value>ジオメトリセットのファイルパス</value></data>
+  <data name="GeometryImport" xml:space="preserve"><value>ジオメトリをインポート</value></data>
+  <data name="GeometryImportSet" xml:space="preserve"><value>セットをインポート</value></data>
+  <data name="GeometryExportSet" xml:space="preserve"><value>ライブラリセットをエクスポート</value></data>
+  <data name="GeometryNewGroup" xml:space="preserve"><value>新しいグループ名</value></data>
+  <data name="GeometryCreateGroup" xml:space="preserve"><value>グループを作成</value></data>
+  <data name="GeometryAddSelected" xml:space="preserve"><value>選択項目を追加</value></data>
+  <data name="GeometryRemoveSelected" xml:space="preserve"><value>選択項目を削除</value></data>
+  <data name="GeometryDeleteGroup" xml:space="preserve"><value>グループを削除</value></data>
+  <data name="FlightMissionName" xml:space="preserve"><value>ミッション名</value></data>
+  <data name="FlightMissionDefaultName" xml:space="preserve"><value>新しいミッション</value></data>
+  <data name="FlightMissionAddGeometry" xml:space="preserve"><value>ジオメトリを追加</value></data>
+  <data name="FlightMissionSetAltitude" xml:space="preserve"><value>高度を設定</value></data>
+  <data name="FlightMissionSetSpeed" xml:space="preserve"><value>速度を設定</value></data>
+  <data name="FlightMissionSetFence" xml:space="preserve"><value>フェンスを設定</value></data>
+  <data name="FlightMissionSetEnd" xml:space="preserve"><value>ミッション終了を設定</value></data>
+  <data name="FlightMissionEndHold" xml:space="preserve"><value>Hold</value></data>
+  <data name="FlightMissionEndRtl" xml:space="preserve"><value>RTL</value></data>
+  <data name="FlightMissionContinue" xml:space="preserve"><value>続行</value></data>
+  <data name="FlightMissionRetain" xml:space="preserve"><value>保持</value></data>
+  <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>削除</value></data>
+  <data name="FlightMissionStatus" xml:space="preserve"><value>ミッション状態</value></data>
+  <data name="FlightMissionPreview" xml:space="preserve"><value>ミッションプレビュー</value></data>
+  <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>測量線間隔 (m)</value></data>
+  <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>測量方位 (°)</value></data>
+  <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>測量旋回 (m)</value></data>
+  <data name="FlightMissionSurveyReverse" xml:space="preserve"><value>逆方向から進入</value></data>
+  <data name="FlightMissionLoiterSeconds" xml:space="preserve"><value>滞空時間 (秒)</value></data>
+  <data name="FlightMissionCameraMode" xml:space="preserve"><value>カメラ撮影モード</value></data>
+  <data name="FlightMissionCameraDistance" xml:space="preserve"><value>カメラトリガー距離 (m)</value></data>
+  <data name="FlightMissionCameraInterval" xml:space="preserve"><value>カメラトリガー間隔 (秒)</value></data>
+  <data name="FlightMissionSetStep" xml:space="preserve"><value>ステップ設定を適用</value></data>
+  <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>相対高度 (m)</value></data>
+  <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>巡航速度 (m/s)</value></data>
+  <data name="FlightMissionTerrain" xml:space="preserve"><value>地形追従</value></data>
+  <data name="FlightMissionSurvey" xml:space="preserve"><value>測量ゾーン</value></data>
+  <data name="FlightMissionCorridor" xml:space="preserve"><value>回廊スキャン</value></data>
+  <data name="FlightMissionCorridorWidth" xml:space="preserve"><value>回廊幅 (m)</value></data>
+  <data name="FlightMissionCorridorSpacing" xml:space="preserve"><value>通過間隔 (m)</value></data>
+  <data name="FlightMissionCorridorTurnaround" xml:space="preserve"><value>旋回距離 (m)</value></data>
+  <data name="FlightMissionCorridorFrontLap" xml:space="preserve"><value>前方ラップ (%)</value></data>
+  <data name="FlightMissionCorridorSideLap" xml:space="preserve"><value>側方ラップ (%)</value></data>
+  <data name="FlightMissionCorridorReverse" xml:space="preserve"><value>逆方向</value></data>
+  <data name="FlightMissionCorridorEntryRight" xml:space="preserve"><value>右側から進入</value></data>
+  <data name="FlightMissionCorridorImagesInTurns" xml:space="preserve"><value>旋回中も撮影</value></data>
+  <data name="Px4Fences" xml:space="preserve"><value>PX4 フェンス</value></data>
+  <data name="Px4FenceCreate" xml:space="preserve"><value>フェンスを作成</value></data>
+  <data name="Px4FenceDelete" xml:space="preserve"><value>フェンスを削除</value></data>
+  <data name="Px4FenceUpload" xml:space="preserve"><value>フェンスをアップロード</value></data>
+  <data name="Px4FenceDownload" xml:space="preserve"><value>フェンスをダウンロード</value></data>
+  <data name="Px4FenceClear" xml:space="preserve"><value>フェンスをクリア</value></data>
+  <data name="FlightMissionLoiter" xml:space="preserve"><value>時間指定滞空</value></data>
+  <data name="FlightMissionCameraIntent" xml:space="preserve"><value>カメラ意図</value></data>
+  <data name="FlightMissionMoveUp" xml:space="preserve"><value>上へ</value></data>
+  <data name="FlightMissionMoveDown" xml:space="preserve"><value>下へ</value></data>
+  <data name="FlightMissionRemoveStep" xml:space="preserve"><value>ステップを削除</value></data>
+  <data name="TeamStatusSelectCommandable" xml:space="preserve"><value>コマンド可能なユニットを 1 台以上選択してください。</value></data>
+  <data name="TeamStatusSelectUnits" xml:space="preserve"><value>ユニットを 1 台以上選択してください。</value></data>
+  <data name="TeamStatusCreated" xml:space="preserve"><value>{0} を作成しました。</value></data>
+  <data name="TeamStatusMembershipCleared" xml:space="preserve"><value>チームのメンバーをクリアしました。</value></data>
+  <data name="TeamTooltip" xml:space="preserve"><value>{0}、{2} 台中 {1} 台目。ドラッグはこのチーム内でのみ可能です。</value></data>
+  <data name="FormationLatitude" xml:space="preserve"><value>緯度</value></data>
+  <data name="FormationLongitude" xml:space="preserve"><value>経度</value></data>
+  <data name="FormationAltitudeAgl" xml:space="preserve"><value>AGL 高度 (m)</value></data>
+  <data name="FormationRotationDegrees" xml:space="preserve"><value>回転 (°)</value></data>
+  <data name="FormationScalePercent" xml:space="preserve"><value>サイズ (%)</value></data>
+  <data name="ThreeD" xml:space="preserve"><value>3D</value></data>
+  <data name="ManualInvertForward" xml:space="preserve"><value>前進を反転</value></data>
+  <data name="ManualInvertRight" xml:space="preserve"><value>右を反転</value></data>
+  <data name="ManualInvertVertical" xml:space="preserve"><value>上下を反転</value></data>
+  <data name="ManualInvertYaw" xml:space="preserve"><value>ヨーを反転</value></data>
+  <data name="ManualHorizontalAcceleration" xml:space="preserve"><value>水平加速度</value></data>
+  <data name="ManualVerticalAcceleration" xml:space="preserve"><value>垂直加速度</value></data>
+  <data name="ManualYawAcceleration" xml:space="preserve"><value>ヨー加速度</value></data>
+  <data name="ConnectionSerialDevice" xml:space="preserve"><value>シリアル / SiK デバイス</value></data>
+  <data name="ConnectionDetectDevices" xml:space="preserve"><value>デバイスを検出</value></data>
+  <data name="ConnectionLikelySikRadio" xml:space="preserve"><value>SiK 無線の可能性</value></data>
+  <data name="ConnectionRadioSetup" xml:space="preserve"><value>SiK 無線設定</value></data>
+  <data name="ConnectionProbeRadio" xml:space="preserve"><value>無線を確認</value></data>
+  <data name="ConnectionPairRadios" xml:space="preserve"><value>無線をペアリング</value></data>
+  <data name="ConnectionSourceRadio" xml:space="preserve"><value>ソース無線</value></data>
+  <data name="ConnectionTargetRadio" xml:space="preserve"><value>対象無線</value></data>
+  <data name="ConnectionShowAdvancedRadioSettings" xml:space="preserve"><value>詳細な S0-S14 設定を表示</value></data>
+  <data name="ConnectionReviewLocalChanges" xml:space="preserve"><value>ローカル変更を確認</value></data>
+  <data name="ConnectionReviewPairedChanges" xml:space="preserve"><value>ペアリング変更を確認</value></data>
+</root>

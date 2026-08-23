@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:shell="using:RobotCommand.Views.Shell"
+             xmlns:workspaces="using:RobotCommand.Views.Workspaces"
+             xmlns:loc="using:RobotCommand.Localization"
+             x:Class="RobotCommand.Views.Shell.OperateInspectorView"
+             x:DataType="vm:OperateViewModel"
+             x:Name="Root">
+  <Grid Classes="operateInspector" RowDefinitions="1.6*,8,*">
+    <Border Grid.Row="0" Classes="operateInspectorSection">
+      <Grid RowDefinitions="Auto,*">
+        <Border Classes="operateInspectorHeader">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="sectionTitle" Text="{Binding UnitsHeaderText}" />
+            <Button Grid.Column="1"
+                    Classes="toolbarButton"
+                    Content="{loc:Loc Key=ClearSelection}"
+                    Command="{Binding Units.ClearSelectionCommand}" />
+          </Grid>
+        </Border>
+        <shell:UnitsPanelView Grid.Row="1" ShowHeader="False" DataContext="{Binding Units}" />
+      </Grid>
+    </Border>
+
+    <GridSplitter Grid.Row="1"
+                  Classes="operateInspectorSplitter"
+                  ResizeDirection="Rows"
+                  ResizeBehavior="PreviousAndNext"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch" />
+
+    <Border Grid.Row="2" Classes="operateOperationsSurface">
+      <Grid RowDefinitions="Auto,*">
+        <Border Classes="operateInspectorHeader">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Classes="sectionTitle" Text="{Binding OperationsHeaderText}" />
+            <Border Grid.Column="1" Classes="queueIndicator" IsVisible="{Binding Controls.HasQueuedCommand}">
+              <TextBlock Text="!" />
+            </Border>
+          </Grid>
+        </Border>
+        <workspaces:QuickRunPanel Grid.Row="1"
+                                  Margin="14,12,14,0"
+                                  IsVisible="{Binding !DataContext.Units.IsTeamSelected, ElementName=Root}"
+                                  DataContext="{Binding Controls}" />
+        <workspaces:TeamFormationOperationsView Grid.Row="1"
+                                                 Margin="14,12,14,0"
+                                                 IsVisible="{Binding DataContext.Units.IsTeamSelected, ElementName=Root}"
+                                                 DataContext="{Binding Units}" />
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

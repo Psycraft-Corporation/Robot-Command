@@ -1,0 +1,211 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:loc="using:RobotCommand.Localization"
+             x:Class="RobotCommand.Views.Workspaces.MyTeamView"
+             x:DataType="vm:MyTeamViewModel">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Spacing="14" MaxWidth="920">
+      <StackPanel Spacing="4">
+        <TextBlock Classes="workspaceTitle" Text="{Binding Title}" />
+      </StackPanel>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=MyTeamNearby}" />
+            <Button Grid.Column="1" Content="{loc:Loc Key=MyTeamRefreshNearby}" Command="{Binding RefreshNearbyCommand}" />
+          </Grid>
+          <TextBlock Classes="muted" IsVisible="{Binding !HasNearbyServers}" Text="{loc:Loc Key=MyTeamNoNearby}" />
+          <ItemsControl ItemsSource="{Binding NearbyServers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="listRow" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <StackPanel>
+                      <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                      <TextBlock Classes="muted" Text="{Binding Endpoint}" />
+                      <TextBlock Classes="muted" Text="{Binding ApiVersion}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="primary" Content="{loc:Loc Key=MyTeamConnect}" Click="OnUseNearbyServer" Tag="{Binding}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Classes="muted" Text="{Binding DiscoveryStatus}" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=MyTeamMirror}" />
+          <Grid ColumnDefinitions="*,180,Auto" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+            <TextBox PlaceholderText="https://laptop-name:7443" Text="{Binding RemoteEndpoint}" />
+            <TextBox Grid.Column="1" PlaceholderText="This computer name" Text="{Binding RemoteDisplayName}" />
+            <Button Grid.Column="2" Classes="primary" Content="{loc:Loc Key=MyTeamConnect}" Command="{Binding ObserveRemoteCommand}" />
+            <TextBox Grid.Row="1" Grid.ColumnSpan="3" IsVisible="{Binding RemoteRequiresPassphrase}" PlaceholderText="{loc:Loc Key=MyTeamPassphrasePlaceholder}" Text="{Binding RemotePassphrase}" />
+            <TextBox Grid.Row="2" Grid.ColumnSpan="2" PlaceholderText="{loc:Loc Key=MyTeamPairingLinkPlaceholder}" Text="{Binding RemotePairingLink}" />
+            <Button Grid.Row="2" Grid.Column="2" Content="{loc:Loc Key=MyTeamConnectWithPairingLink}" Command="{Binding UsePairingLinkCommand}" />
+          </Grid>
+          <TextBlock Classes="muted" Text="{Binding RemoteStatus}" TextWrapping="Wrap" />
+          <ItemsControl ItemsSource="{Binding RemoteObservers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="listRow" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <StackPanel><TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" /><TextBlock Classes="muted" Text="{Binding Endpoint}" /><TextBlock Classes="muted" Text="{Binding Status}" /></StackPanel>
+                    <Button Grid.Column="1" Content="{loc:Loc Key=MyTeamDisconnect}" Click="OnDisconnectRemote" Tag="{Binding}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=MyTeamServer}" />
+          <Grid ColumnDefinitions="*,130,130" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="muted" Text="{loc:Loc Key=MyTeamServerName}" />
+              <TextBox Text="{Binding ServerName}" IsEnabled="{Binding IsStopped}" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4">
+              <TextBlock Classes="muted" Text="{loc:Loc Key=MyTeamPort}" />
+              <TextBox Text="{Binding Port}" IsEnabled="{Binding IsStopped}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+              <TextBlock Classes="muted" Text="{loc:Loc Key=MyTeamMaximumClients}" />
+              <TextBox Text="{Binding MaximumClients}" IsEnabled="{Binding IsStopped}" />
+            </StackPanel>
+            <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Spacing="4">
+              <ToggleSwitch Content="{loc:Loc Key=MyTeamRequirePassphrase}" IsChecked="{Binding RequirePassphrase}" IsEnabled="{Binding IsStopped}" />
+              <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding RequirePassphrase}">
+                <TextBox Width="280" Text="{Binding ServerPassphrase}" IsEnabled="{Binding IsStopped}" />
+                <Button Content="{loc:Loc Key=MyTeamRegeneratePassphrase}" Command="{Binding RegeneratePassphraseCommand}" />
+              </StackPanel>
+              <StackPanel IsVisible="{Binding IsRunning}" Spacing="6">
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding !IsAuthenticationEnabled}">
+                  <Button Classes="primary" Content="{loc:Loc Key=MyTeamEnableAuthentication}" Command="{Binding EnableAuthenticationCommand}" />
+                  <Button Content="{loc:Loc Key=MyTeamEnableAuthenticationReauth}" Command="{Binding EnableAuthenticationAndReauthenticateCommand}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsAuthenticationEnabled}">
+                  <Button Content="{loc:Loc Key=MyTeamDisableAuthentication}" Command="{Binding DisableAuthenticationCommand}" />
+                  <Button Content="{loc:Loc Key=MyTeamRequireReauthentication}" Command="{Binding RequireReauthenticationCommand}" />
+                </StackPanel>
+              </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8">
+              <Button Classes="primary" Content="{loc:Loc Key=MyTeamStart}" Command="{Binding StartCommand}" />
+              <Button Content="{loc:Loc Key=MyTeamStop}" Command="{Binding StopCommand}" />
+              <TextBlock VerticalAlignment="Center" Text="{Binding Status}" />
+            </StackPanel>
+          </Grid>
+          <TextBlock Classes="errorText" IsVisible="{Binding HasError}" Text="{Binding Error}" TextWrapping="Wrap" />
+          <TextBlock Classes="muted" Text="{Binding FirewallNotice}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel" IsVisible="{Binding IsRunning}">
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+          <TextBlock Text="{loc:Loc Key=MyTeamEndpoint}" />
+          <TextBox Grid.Column="1" IsReadOnly="True" Text="{Binding Endpoint}" />
+          <TextBlock Grid.Row="1" Text="{loc:Loc Key=MyTeamFingerprint}" />
+          <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="True" Text="{Binding CertificateFingerprint}" />
+          <ToggleSwitch Grid.Row="2" Grid.ColumnSpan="2"
+                        Content="{loc:Loc Key=MyTeamShareOperatorLocation}"
+                        IsChecked="{Binding ShareOperatorLocation}" />
+        </Grid>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <StackPanel Spacing="3">
+              <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=MyTeamQrPairing}" />
+            </StackPanel>
+            <Button Grid.Column="1" Content="{loc:Loc Key=MyTeamCreatePairingQr}" Command="{Binding CreatePairingCommand}" />
+          </Grid>
+          <Grid IsVisible="{Binding HasPairingInvitation}" ColumnDefinitions="Auto,*" ColumnSpacing="14">
+            <Border Background="#FFFFFF" Padding="6" VerticalAlignment="Top">
+              <Image Width="184" Height="184" Source="{Binding PairingQrCode}" />
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="6">
+              <StackPanel IsVisible="{Binding RequirePassphrase}" Spacing="3">
+                <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=MyTeamServerPassphrase}" />
+                <TextBlock FontSize="24" FontWeight="Bold" Text="{Binding ServerPassphrase}" />
+              </StackPanel>
+              <TextBlock IsVisible="{Binding !RequirePassphrase}" Classes="muted" Text="{loc:Loc Key=MyTeamOpenAccess}" />
+              <TextBlock Classes="muted" Text="{Binding PairingExpires}" TextWrapping="Wrap" />
+              <TextBox IsReadOnly="True" Text="{Binding PairingLink}" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=MyTeamPendingRequests}" />
+          <TextBlock Classes="muted" IsVisible="{Binding !HasPendingRequests}" Text="{loc:Loc Key=MyTeamNoPendingRequests}" />
+          <ItemsControl ItemsSource="{Binding PendingRequests}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="listRow" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <StackPanel>
+                      <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                      <TextBlock Classes="muted" Text="{Binding ApplicationName}" />
+                      <TextBlock Classes="muted" Text="{Binding ApplicationVersion}" />
+                      <TextBlock Classes="muted" Text="{Binding SdkVersion}" />
+                      <TextBlock Classes="muted" Text="{Binding ApiVersion}" />
+                      <TextBlock Classes="muted" Text="{Binding RequestedAt}" />
+                      <TextBlock Classes="muted" IsVisible="{Binding Compatible}" Text="{loc:Loc Key=MyTeamCompatible}" />
+                      <TextBlock Classes="muted" IsVisible="{Binding PairingVerified}" Text="{Binding PairingSummary}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                      <Button Classes="primary" Content="{loc:Loc Key=MyTeamApprove}"
+                              Command="{Binding $parent[UserControl].DataContext.ApproveCommand}"
+                              CommandParameter="{Binding}" />
+                      <Button Content="{loc:Loc Key=MyTeamReject}"
+                              Command="{Binding $parent[UserControl].DataContext.RejectCommand}"
+                              CommandParameter="{Binding}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="panel">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=MyTeamConnectedClients}" />
+          <TextBlock Classes="muted" IsVisible="{Binding !HasConnectedClients}" Text="{loc:Loc Key=MyTeamNoConnectedClients}" />
+          <ItemsControl ItemsSource="{Binding ConnectedClients}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Classes="listRow" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <StackPanel>
+                      <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                      <TextBlock Classes="muted" Text="{Binding ApplicationName}" />
+                      <TextBlock Classes="muted" Text="{Binding ApplicationVersion}" />
+                      <TextBlock Classes="muted" Text="{Binding ConnectedAt}" />
+                      <TextBlock Classes="muted" Text="{Binding LastActivityAt}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Content="{loc:Loc Key=MyTeamDisconnect}"
+                            Command="{Binding $parent[UserControl].DataContext.DisconnectCommand}"
+                            CommandParameter="{Binding}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Windows.Forms.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Windows.Forms.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitle" xml:space="preserve"><value>Robot Command</value></data>
+  <data name="AppSubtitle" xml:space="preserve"><value>Оперативний наземний пункт керування</value></data>
+  <data name="WorkspaceHeader" xml:space="preserve"><value>РОБОЧІ ПРОСТОРИ</value></data>
+  <data name="WorkspaceSummary" xml:space="preserve"><value>Операції флоту, місії, телеметрія, відео та аудит</value></data>
+  <data name="UnitsHeader" xml:space="preserve"><value>ЮНІТИ</value></data>
+  <data name="Units" xml:space="preserve"><value>Юніти</value></data>
+  <data name="Ghosts" xml:space="preserve"><value>Привиди</value></data>
+  <data name="NewProfile" xml:space="preserve"><value>Новий профіль</value></data>
+  <data name="EditProfile" xml:space="preserve"><value>Змінити профіль</value></data>
+  <data name="DeleteProfile" xml:space="preserve"><value>Видалити профіль</value></data>
+  <data name="SaveProfile" xml:space="preserve"><value>Зберегти профіль</value></data>
+  <data name="ProfileName" xml:space="preserve"><value>Назва профілю</value></data>
+  <data name="BuiltInProfileReadOnly" xml:space="preserve"><value>Вбудований профіль · лише читання</value></data>
+  <data name="ProfileSaved" xml:space="preserve"><value>Профіль збережено.</value></data>
+  <data name="ProfileDeleted" xml:space="preserve"><value>Профіль видалено.</value></data>
+  <data name="UploadVisual" xml:space="preserve"><value>Імпортувати зображення</value></data>
+  <data name="RemoveVisual" xml:space="preserve"><value>Видалити зображення</value></data>
+  <data name="VisualAssetNone" xml:space="preserve"><value>Немає зображення</value></data>
+  <data name="VisualImported" xml:space="preserve"><value>Зображення імпортовано.</value></data>
+  <data name="VisualRemoved" xml:space="preserve"><value>Зображення видалено.</value></data>
+  <data name="VisualUnavailable" xml:space="preserve"><value>Файл зображення недоступний. Імпортуйте його знову для відновлення перегляду.</value></data>
+  <data name="VisualPreviewFailed" xml:space="preserve"><value>Не вдалося показати зображення.</value></data>
+  <data name="ConnectedClients" xml:space="preserve"><value>ПІДКЛЮЧЕНІ КЛІЄНТИ</value></data>
+  <data name="Operators" xml:space="preserve"><value>ОПЕРАТОРИ</value></data>
+  <data name="SelectedClient" xml:space="preserve"><value>ВИБРАНИЙ КЛІЄНТ</value></data>
+  <data name="Settings" xml:space="preserve"><value>Налаштування</value></data>
+  <data name="SettingsDescription" xml:space="preserve"><value>Параметри програми та доступність</value></data>
+  <data name="SettingsAccessibility" xml:space="preserve"><value>Доступність</value></data>
+  <data name="SettingsLanguage" xml:space="preserve"><value>Мова</value></data>
+  <data name="SettingsLanguageDescription" xml:space="preserve"><value>Виберіть мову елементів керування та повідомлень Robot Command.</value></data>
+  <data name="SettingsLanguageEnglish" xml:space="preserve"><value>Англійська</value></data>
+  <data name="SettingsLanguageFrench" xml:space="preserve"><value>Французька</value></data>
+  <data name="SettingsLanguageUkrainian" xml:space="preserve"><value>Українська</value></data>
+  <data name="SettingsLanguageKorean" xml:space="preserve"><value>Корейська</value></data>
+  <data name="BrightMode" xml:space="preserve"><value>Світлий режим</value></data>
+  <data name="Operate" xml:space="preserve"><value>Операції</value></data>
+  <data name="InputDevices" xml:space="preserve"><value>Пристрої введення</value></data>
+  <data name="Planning" xml:space="preserve"><value>Планування</value></data>
+  <data name="OperateDescription" xml:space="preserve"><value>Карта, відео, телеметрія та оперативне керування</value></data>
+  <data name="ManualControl" xml:space="preserve"><value>Ручне керування</value></data>
+  <data name="ManualControlDescription" xml:space="preserve"><value>Керування юнітами Ghost, PX4 та ArduPilot MAVLink через контролер</value></data>
+  <data name="Maps" xml:space="preserve"><value>Карти</value></data>
+  <data name="MapsDescription" xml:space="preserve"><value>Офлайн-пакети, покриття, перевірка та сховище</value></data>
+  <data name="Autonomy" xml:space="preserve"><value>Автономність</value></data>
+  <data name="AutonomyDescription" xml:space="preserve"><value>Багаторазова геометрія та майбутнє планування місій</value></data>
+  <data name="Geometry" xml:space="preserve"><value>Геометрія</value></data>
+  <data name="GeometryDescription" xml:space="preserve"><value>Локальні точки інтересу, послідовності маршрутних точок, зони та групи</value></data>
+  <data name="Mission" xml:space="preserve"><value>Місія</value></data>
+  <data name="MissionDeferredDescription" xml:space="preserve"><value>Планування місій буде додано пізніше. Збережені геометричні об’єкти можна буде використовувати в планах PX4, ArduPilot та Logos.</value></data>
+  <data name="Behaviours" xml:space="preserve"><value>Поведінки</value></data>
+  <data name="BehavioursDescription" xml:space="preserve"><value>Бібліотека пакетів, перевірка Logos, розгортання та прив’язки геометрії</value></data>
+  <data name="Inspector" xml:space="preserve"><value>Інспектор</value></data>
+  <data name="InspectorDescription" xml:space="preserve"><value>Авторитетний стан місій, завдань, автономності, дерев та втручань</value></data>
+  <data name="Evidence" xml:space="preserve"><value>Докази</value></data>
+  <data name="EvidenceDescription" xml:space="preserve"><value>Кадри, експортовані кліпи та оперативні метадані</value></data>
+  <data name="Missions" xml:space="preserve"><value>Місії</value></data>
+  <data name="MissionsDescription" xml:space="preserve"><value>Пакети місій, призначення та виконання</value></data>
+  <data name="Tasks" xml:space="preserve"><value>Завдання</value></data>
+  <data name="TasksDescription" xml:space="preserve"><value>Черга завдань і робота окремих апаратів</value></data>
+  <data name="Events" xml:space="preserve"><value>Події</value></data>
+  <data name="EventsDescription" xml:space="preserve"><value>Потік оперативних подій і контекст аудиту</value></data>
+  <data name="Commands" xml:space="preserve"><value>Команди</value></data>
+  <data name="CommandsDescription" xml:space="preserve"><value>Цілі команд, політика та історія аудиту</value></data>
+  <data name="History" xml:space="preserve"><value>Історія</value></data>
+  <data name="HistoryDescription" xml:space="preserve"><value>Історія команд і оперативних подій</value></data>
+  <data name="Connections" xml:space="preserve"><value>З’єднання</value></data>
+  <data name="ConnectionsDescription" xml:space="preserve"><value>Створення, моніторинг і перевірка з’єднань Logos</value></data>
+  <data name="SettingsUnits" xml:space="preserve"><value>Одиниці</value></data>
+  <data name="SettingsHorizontalDistance" xml:space="preserve"><value>Горизонтальна відстань</value></data>
+  <data name="SettingsVerticalDistance" xml:space="preserve"><value>Вертикальна відстань</value></data>
+  <data name="SettingsArea" xml:space="preserve"><value>Площа</value></data>
+  <data name="SettingsSpeed" xml:space="preserve"><value>Швидкість</value></data>
+  <data name="SettingsTemperature" xml:space="preserve"><value>Температура</value></data>
+  <data name="UnitMeters" xml:space="preserve"><value>Метри</value></data>
+  <data name="UnitFeet" xml:space="preserve"><value>Фути</value></data>
+  <data name="UnitSquareMeters" xml:space="preserve"><value>Квадратні метри</value></data>
+  <data name="UnitSquareFeet" xml:space="preserve"><value>Квадратні фути</value></data>
+  <data name="UnitSquareKilometers" xml:space="preserve"><value>Квадратні кілометри</value></data>
+  <data name="UnitSquareMiles" xml:space="preserve"><value>Квадратні милі</value></data>
+  <data name="UnitHectares" xml:space="preserve"><value>Гектари</value></data>
+  <data name="UnitAcres" xml:space="preserve"><value>Акри</value></data>
+  <data name="UnitMetersPerSecond" xml:space="preserve"><value>Метри/секунду</value></data>
+  <data name="UnitFeetPerSecond" xml:space="preserve"><value>Фути/секунду</value></data>
+  <data name="UnitKilometersPerHour" xml:space="preserve"><value>Кілометри/годину</value></data>
+  <data name="UnitMilesPerHour" xml:space="preserve"><value>Милі/годину</value></data>
+  <data name="UnitKnots" xml:space="preserve"><value>Вузли</value></data>
+  <data name="UnitCelsius" xml:space="preserve"><value>Цельсій</value></data>
+  <data name="UnitFahrenheit" xml:space="preserve"><value>Фаренгейт</value></data>
+  <data name="Release" xml:space="preserve"><value>Реліз</value></data>
+  <data name="SelectedUnits" xml:space="preserve"><value>Вибрані юніти</value></data>
+  <data name="SelectedUnit" xml:space="preserve"><value>Вибраний юніт</value></data>
+  <data name="JumpTo" xml:space="preserve"><value>Перейти до</value></data>
+  <data name="Follow" xml:space="preserve"><value>Стежити</value></data>
+  <data name="ExecuteAllCommands" xml:space="preserve"><value>Виконати всі команди</value></data>
+  <data name="CancelCommand" xml:space="preserve"><value>Скасувати команду</value></data>
+  <data name="ClearAllQueuedCommands" xml:space="preserve"><value>Очистити всі команди в черзі</value></data>
+  <data name="ExecuteCommand" xml:space="preserve"><value>Виконати команду</value></data>
+  <data name="ClearCommandQueue" xml:space="preserve"><value>Очистити чергу команд</value></data>
+  <data name="ManageConnections" xml:space="preserve"><value>Керувати з’єднаннями...</value></data>
+  <data name="RemoveConnectionAssociation" xml:space="preserve"><value>Видалити зв’язок із з’єднанням</value></data>
+  <data name="UnitConnections" xml:space="preserve"><value>З’єднання юніта</value></data>
+  <data name="UnitConnectionsDescription" xml:space="preserve"><value>Пов’яжіть ці з’єднання з одним фізичним юнітом, а потім виберіть авторитетне з’єднання для кожної ролі.</value></data>
+  <data name="UnitName" xml:space="preserve"><value>Назва юніта</value></data>
+  <data name="AvailableConnectionObservations" xml:space="preserve"><value>Доступні спостереження з’єднань</value></data>
+  <data name="CommandAuthority" xml:space="preserve"><value>Авторитет для команд</value></data>
+  <data name="TelemetryAuthority" xml:space="preserve"><value>Авторитет для телеметрії</value></data>
+  <data name="DiagnosticsAuthority" xml:space="preserve"><value>Авторитет для діагностики</value></data>
+  <data name="SaveUnit" xml:space="preserve"><value>Зберегти юніт</value></data>
+  <data name="CreateGhost" xml:space="preserve"><value>Створити привид...</value></data>
+  <data name="NoUnitsDiscovered" xml:space="preserve"><value>Юніти не знайдено.</value></data>
+  <data name="CreateGhostUnit" xml:space="preserve"><value>Створити юніт-привид</value></data>
+  <data name="GhostProfile" xml:space="preserve"><value>Профіль привида</value></data>
+  <data name="GhostModel" xml:space="preserve"><value>Модель</value></data>
+  <data name="GhostVehicleType" xml:space="preserve"><value>Тип</value></data>
+  <data name="GhostSpeed" xml:space="preserve"><value>Швидкість</value></data>
+  <data name="GhostClimbRate" xml:space="preserve"><value>Набір висоти</value></data>
+  <data name="GhostDescentRate" xml:space="preserve"><value>Зниження</value></data>
+  <data name="GhostAltitudeLimit" xml:space="preserve"><value>Висота</value></data>
+  <data name="GhostHorizontalAcceleration" xml:space="preserve"><value>Прискорення</value></data>
+  <data name="GhostVerticalAcceleration" xml:space="preserve"><value>Вертикальне прискорення</value></data>
+  <data name="GhostYawRate" xml:space="preserve"><value>Рискання</value></data>
+  <data name="GhostEndurance" xml:space="preserve"><value>Тривалість польоту</value></data>
+  <data name="GhostWheelbase" xml:space="preserve"><value>Колісна база</value></data>
+  <data name="CreateGhosts" xml:space="preserve"><value>Створити привидів</value></data>
+  <data name="GhostCount" xml:space="preserve"><value>Кількість</value></data>
+  <data name="VehicleType" xml:space="preserve"><value>Тип апарата</value></data>
+  <data name="NumberOfGhosts" xml:space="preserve"><value>Кількість привидів</value></data>
+  <data name="Confirm" xml:space="preserve"><value>Підтвердити</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Скасувати</value></data>
+  <data name="Delete" xml:space="preserve"><value>Видалити</value></data>
+  <data name="ClearSelection" xml:space="preserve"><value>Очистити вибір</value></data>
+  <data name="ManualMode" xml:space="preserve"><value>РУЧНИЙ РЕЖИМ</value></data>
+  <data name="ControllerCommandPending" xml:space="preserve"><value>КОМАНДА КОНТРОЛЕРА ОЧІКУЄ</value></data>
+  <data name="UnitPosition" xml:space="preserve"><value>Позиція</value></data>
+  <data name="UnitHeading" xml:space="preserve"><value>Курс</value></data>
+  <data name="UnitVelocity" xml:space="preserve"><value>Швидкість</value></data>
+  <data name="UnitVerticalSpeed" xml:space="preserve"><value>Вертикальна швидкість</value></data>
+  <data name="UnitOperatorDistance" xml:space="preserve"><value>Відстань до оператора</value></data>
+  <data name="UnitBattery" xml:space="preserve"><value>Акумулятор</value></data>
+  <data name="Px4ParametersTitle" xml:space="preserve"><value>Параметри PX4</value></data>
+  <data name="Px4ParametersDescription" xml:space="preserve"><value>Завантажуйте, переглядайте, порівнюйте та безпечно об’єднуйте профілі .params, сумісні з QGroundControl. Перед застосуванням апарат має бути підключений і роззброєний.</value></data>
+  <data name="Px4MavlinkUnit" xml:space="preserve"><value>Юніт PX4 MAVLink</value></data>
+  <data name="DownloadCurrent" xml:space="preserve"><value>Завантажити поточні</value></data>
+  <data name="ImportProfile" xml:space="preserve"><value>Імпортувати профіль</value></data>
+  <data name="ExportProfile" xml:space="preserve"><value>Експортувати профіль</value></data>
+  <data name="SavedProfile" xml:space="preserve"><value>Збережений профіль</value></data>
+  <data name="CompareWithLive" xml:space="preserve"><value>Порівняти з апаратом</value></data>
+  <data name="ApplyProfile" xml:space="preserve"><value>Застосувати профіль</value></data>
+  <data name="MyTeam" xml:space="preserve"><value>Моя команда</value></data>
+  <data name="MyTeamDescription" xml:space="preserve"><value>Діліться інформацією лише для читання про юніти та карту з дозволеними спостерігачами LAN.</value></data>
+  <data name="MyTeamServer" xml:space="preserve"><value>Сервер спостерігачів команди</value></data>
+  <data name="MyTeamServerName" xml:space="preserve"><value>Назва сервера</value></data>
+  <data name="MyTeamPort" xml:space="preserve"><value>Порт</value></data>
+  <data name="MyTeamMaximumClients" xml:space="preserve"><value>Максимум клієнтів</value></data>
+  <data name="MyTeamStart" xml:space="preserve"><value>Запустити сервер</value></data>
+  <data name="MyTeamStop" xml:space="preserve"><value>Зупинити сервер</value></data>
+  <data name="MyTeamEndpoint" xml:space="preserve"><value>Кінцева точка LAN</value></data>
+  <data name="MyTeamFingerprint" xml:space="preserve"><value>Відбиток TLS SHA-256</value></data>
+  <data name="MyTeamShareOperatorLocation" xml:space="preserve"><value>Ділитися місцезнаходженням оператора цього сеансу</value></data>
+  <data name="MyTeamPendingRequests" xml:space="preserve"><value>Очікувані запити доступу</value></data>
+  <data name="MyTeamNoPendingRequests" xml:space="preserve"><value>Немає очікуваних запитів доступу.</value></data>
+  <data name="MyTeamConnectedClients" xml:space="preserve"><value>Підключені спостерігачі</value></data>
+  <data name="MyTeamNoConnectedClients" xml:space="preserve"><value>Немає підключених спостерігачів.</value></data>
+  <data name="MyTeamApprove" xml:space="preserve"><value>Схвалити</value></data>
+  <data name="MyTeamReject" xml:space="preserve"><value>Відхилити</value></data>
+  <data name="MyTeamDisconnect" xml:space="preserve"><value>Відключити</value></data>
+  <data name="MyTeamFirewallNotice" xml:space="preserve"><value>Слухач працює. Windows може попросити дозволити Robot Command у приватних мережах.</value></data>
+  <data name="MyTeamCompatible" xml:space="preserve"><value>Сумісний із Team API v1</value></data>
+  <data name="MyTeamStatusStopped" xml:space="preserve"><value>Зупинено</value></data>
+  <data name="MyTeamStatusStarting" xml:space="preserve"><value>Запуск</value></data>
+  <data name="MyTeamStatusRunning" xml:space="preserve"><value>Працює</value></data>
+  <data name="MyTeamStatusStopping" xml:space="preserve"><value>Зупинка</value></data>
+  <data name="MyTeamStatusFaulted" xml:space="preserve"><value>Помилка</value></data>
+  <data name="MyTeamMirror" xml:space="preserve"><value>Дзеркало іншого Robot Command</value></data>
+  <data name="MyTeamMirrorDescription" xml:space="preserve"><value>Запросити сеансове дзеркало лише для читання юнітів і карти іншого Robot Command.</value></data>
+  <data name="MyTeamProbe" xml:space="preserve"><value>Перевірити</value></data>
+  <data name="MyTeamTrust" xml:space="preserve"><value>Довіряти</value></data>
+  <data name="MyTeamRequestReadOnlyAccess" xml:space="preserve"><value>Запросити доступ лише для читання</value></data>
+  <data name="MyTeamNearby" xml:space="preserve"><value>Найближчі Robot Command</value></data>
+  <data name="MyTeamNearbyDescription" xml:space="preserve"><value>Екземпляри Robot Command, знайдені у вашій локальній мережі. Виберіть «Підключитися», введіть сеансову фразу хоста та дочекайтеся схвалення.</value></data>
+  <data name="MyTeamRefreshNearby" xml:space="preserve"><value>Оновити</value></data>
+  <data name="MyTeamNoNearby" xml:space="preserve"><value>Поблизу Robot Command не знайдено. Нижче можна ввести кінцеву точку вручну.</value></data>
+  <data name="MyTeamUseNearby" xml:space="preserve"><value>Підключитися</value></data>
+  <data name="MyTeamConnect" xml:space="preserve"><value>Підключитися</value></data>
+  <data name="MyTeamPassphrasePlaceholder" xml:space="preserve"><value>Сеансова фраза сервера</value></data>
+  <data name="MyTeamPassphraseHint" xml:space="preserve"><value>Введіть двослівну фразу, показану хостом.</value></data>
+  <data name="MyTeamServerPassphrase" xml:space="preserve"><value>Сеансова фраза</value></data>
+  <data name="MyTeamRequirePassphrase" xml:space="preserve"><value>Вимагати фразу</value></data>
+  <data name="MyTeamRegeneratePassphrase" xml:space="preserve"><value>Згенерувати знову</value></data>
+  <data name="MyTeamOpenAccess" xml:space="preserve"><value>Відкритий доступ увімкнено. Сумісні спостерігачі приймаються без фрази.</value></data>
+  <data name="MyTeamServerPassphraseHint" xml:space="preserve"><value>Якщо ввімкнено, клієнти мають ввести фразу лише для цього сеансу. Якщо вимкнено, сервер приймає з’єднання без фрази. Фраза не зберігається.</value></data>
+  <data name="MyTeamRuntimeAuthentication" xml:space="preserve"><value>Змінити автентифікацію під час роботи сервера. Поточні сеанси можуть залишитися підключеними або пройти автентифікацію знову.</value></data>
+  <data name="MyTeamEnableAuthentication" xml:space="preserve"><value>Увімкнути автентифікацію</value></data>
+  <data name="MyTeamEnableAuthenticationReauth" xml:space="preserve"><value>Увімкнути та вимагати повторну автентифікацію</value></data>
+  <data name="MyTeamDisableAuthentication" xml:space="preserve"><value>Вимкнути автентифікацію</value></data>
+  <data name="MyTeamRequireReauthentication" xml:space="preserve"><value>Вимагати повторну автентифікацію зараз</value></data>
+  <data name="MyTeamNearbySelected" xml:space="preserve"><value>Вибрано: {0}. Введіть сеансову фразу та підключіться.</value></data>
+  <data name="MyTeamQrPairing" xml:space="preserve"><value>Сполучення QR</value></data>
+  <data name="MyTeamQrPairingDescription" xml:space="preserve"><value>QR-код містить кінцеву точку та сеансову фразу для швидкого сполучення з мобільним або сумісним клієнтом. Хост усе одно схвалює кожного спостерігача.</value></data>
+  <data name="MyTeamCreatePairingQr" xml:space="preserve"><value>Оновити QR сполучення</value></data>
+  <data name="MyTeamPairingCode" xml:space="preserve"><value>Короткий код підтвердження</value></data>
+  <data name="MyTeamPairingLinkPlaceholder" xml:space="preserve"><value>Вставте посилання сполучення Robot Command</value></data>
+  <data name="MyTeamUsePairingLink" xml:space="preserve"><value>Використати посилання сполучення</value></data>
+  <data name="MyTeamConnectWithPairingLink" xml:space="preserve"><value>Підключитися за посиланням сполучення</value></data>
+  <data name="MapTopographic" xml:space="preserve"><value>Топографічна</value></data>
+  <data name="ArduPilotParametersTitle" xml:space="preserve"><value>Параметри ArduPilot</value></data>
+  <data name="ArduPilotParametersDescription" xml:space="preserve"><value>Профілі параметрів ArduPilot ще не підтримуються. Ця панель призначена для спільної служби параметрів.</value></data>
+  <data name="ArduPilotParametersUnavailable" xml:space="preserve"><value>Параметри ArduPilot ще не підтримуються</value></data>
+  <data name="ManualControlMappingDescription" xml:space="preserve"><value>Допоміжний режим 2: лівий стік набирає висоту та повертає; правий рухає вперед і праворуч. PX4 та ArduPilot використовують свої шляхи ручного введення MAVLink, а не Offboard. Використовуйте призначені кнопки для черги або виконання операцій апарата.</value></data>
+  <data name="RecentAutopilotWarnings" xml:space="preserve"><value>ОСТАННІ ПОПЕРЕДЖЕННЯ ТА ПОМИЛКИ АВТОПІЛОТА</value></data>
+  <data name="ManualControlSelectUnit" xml:space="preserve"><value>Спочатку виберіть юніт Ghost, PX4 або ArduPilot MAVLink у панелі юнітів.</value></data>
+  <data name="InspectorOperations" xml:space="preserve"><value>Операції</value></data>
+  <data name="MapFitAll" xml:space="preserve"><value>Показати все</value></data>
+  <data name="MapFollowSelected" xml:space="preserve"><value>Стежити за вибраним</value></data>
+  <data name="MapStopFollowing" xml:space="preserve"><value>Зупинити стеження</value></data>
+  <data name="MapViews" xml:space="preserve"><value>Види</value></data>
+  <data name="MapLayers" xml:space="preserve"><value>Шари</value></data>
+  <data name="MapApplySavedView" xml:space="preserve"><value>Застосувати</value></data>
+  <data name="MapDeleteSavedView" xml:space="preserve"><value>Видалити</value></data>
+  <data name="MapViewName" xml:space="preserve"><value>Назва виду</value></data>
+  <data name="MapSaveCurrentView" xml:space="preserve"><value>Зберегти вид</value></data>
+  <data name="MapResetNorth" xml:space="preserve"><value>Скинути на північ</value></data>
+  <data name="MapClearTrails" xml:space="preserve"><value>Очистити сліди</value></data>
+  <data name="Terminal" xml:space="preserve"><value>Термінал</value></data>
+  <data name="TerminalToggleTooltip" xml:space="preserve"><value>Перемкнути CLI Robot Command (Ctrl+`)</value></data>
+  <data name="TerminalTitle" xml:space="preserve"><value>CLI ROBOT COMMAND</value></data>
+  <data name="TerminalDescription" xml:space="preserve"><value>Інтерактивний сеанс Runtime</value></data>
+  <data name="TerminalClear" xml:space="preserve"><value>Очистити</value></data>
+  <data name="TerminalInputPlaceholder" xml:space="preserve"><value>Введіть команду Robot Command або help</value></data>
+  <data name="TerminalRun" xml:space="preserve"><value>Запустити</value></data>
+  <data name="GeometryLocalTitle" xml:space="preserve"><value>Локальна геометрія</value></data>
+  <data name="GeometryTool" xml:space="preserve"><value>Геометрія</value></data>
+  <data name="GeometryToolDescription" xml:space="preserve"><value>Створюйте багаторазові локальні точки інтересу, послідовності маршрутних точок і зони. Вони не надсилаються апарату або Logos.</value></data>
+  <data name="GeometryDefaultAltitude" xml:space="preserve"><value>Типова висота</value></data>
+  <data name="GeometryNewPoi" xml:space="preserve"><value>Нова точка інтересу</value></data>
+  <data name="GeometrySelect" xml:space="preserve"><value>Вибрати геометрію</value></data>
+  <data name="GeometryExport" xml:space="preserve"><value>Експортувати</value></data>
+  <data name="GeometryDelete" xml:space="preserve"><value>Видалити</value></data>
+  <data name="GeometryRename" xml:space="preserve"><value>Перейменувати</value></data>
+  <data name="GeometryNewWaypointSequence" xml:space="preserve"><value>Нова послідовність маршрутних точок</value></data>
+  <data name="GeometryNewZone" xml:space="preserve"><value>Нова зона</value></data>
+  <data name="GeometryDeleteSelected" xml:space="preserve"><value>Видалити вибране</value></data>
+  <data name="GeometryConfirmDelete" xml:space="preserve"><value>Підтвердити видалення</value></data>
+  <data name="GeometryDraft" xml:space="preserve"><value>Локальний чернетковий документ</value></data>
+  <data name="GeometryName" xml:space="preserve"><value>Назва</value></data>
+  <data name="GeometryGroups" xml:space="preserve"><value>Групи</value></data>
+  <data name="GeometryOptionalGroups" xml:space="preserve"><value>Необов’язкові групи через кому</value></data>
+  <data name="GeometryUndo" xml:space="preserve"><value>Скасувати</value></data>
+  <data name="GeometryRedo" xml:space="preserve"><value>Повторити</value></data>
+  <data name="GeometryRemoveVertex" xml:space="preserve"><value>Видалити вершину</value></data>
+  <data name="GeometryFinish" xml:space="preserve"><value>Завершити</value></data>
+  <data name="GeometrySave" xml:space="preserve"><value>Зберегти геометрію</value></data>
+  <data name="GeometryCancel" xml:space="preserve"><value>Скасувати</value></data>
+  <data name="GeometryLibraryDescription" xml:space="preserve"><value>Багаторазові локальні точки інтересу, послідовності маршрутних точок і зони. Створюйте геометрію за допомогою інструмента геометрії карти.</value></data>
+  <data name="AutonomyLandingDescription" xml:space="preserve"><value>Створюйте та впорядковуйте багаторазову локальну геометрію. Планування місій буде додано пізніше.</value></data>
+  <data name="GeometrySearch" xml:space="preserve"><value>Шукати геометрію</value></data>
+  <data name="GeometryGroupFilter" xml:space="preserve"><value>Фільтр групи</value></data>
+  <data name="GeometryImportExport" xml:space="preserve"><value>Імпорт та експорт</value></data>
+  <data name="GeometryFilePath" xml:space="preserve"><value>Шлях до JSON геометрії</value></data>
+  <data name="GeometrySetFilePath" xml:space="preserve"><value>Шлях до набору геометрії</value></data>
+  <data name="GeometryImport" xml:space="preserve"><value>Імпортувати геометрію</value></data>
+  <data name="GeometryImportSet" xml:space="preserve"><value>Імпортувати набір</value></data>
+  <data name="GeometryExportSet" xml:space="preserve"><value>Експортувати набір бібліотеки</value></data>
+  <data name="GeometryNewGroup" xml:space="preserve"><value>Назва нової групи</value></data>
+  <data name="GeometryCreateGroup" xml:space="preserve"><value>Створити групу</value></data>
+  <data name="GeometryAddSelected" xml:space="preserve"><value>Додати вибране</value></data>
+  <data name="GeometryRemoveSelected" xml:space="preserve"><value>Вилучити вибране</value></data>
+  <data name="GeometryDeleteGroup" xml:space="preserve"><value>Видалити групу</value></data>
+  <data name="FlightMissionDescription" xml:space="preserve"><value>Створюйте, перевіряйте та запускайте збережені польотні місії.</value></data>
+  <data name="FlightMissionName" xml:space="preserve"><value>Назва місії</value></data>
+  <data name="FlightMissionNew" xml:space="preserve"><value>Нова</value></data>
+  <data name="FlightMissionRename" xml:space="preserve"><value>Перейменувати</value></data>
+  <data name="FlightMissionDuplicate" xml:space="preserve"><value>Дублювати</value></data>
+  <data name="FlightMissionValidate" xml:space="preserve"><value>Перевірити</value></data>
+  <data name="FlightMissionImport" xml:space="preserve"><value>Імпортувати</value></data>
+  <data name="FlightMissionExport" xml:space="preserve"><value>Експортувати</value></data>
+  <data name="FlightMissionDelete" xml:space="preserve"><value>Видалити</value></data>
+  <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
+  <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
+  <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
+  <data name="FlightMissionAddGeometry" xml:space="preserve"><value>Додати геометрію</value></data>
+  <data name="FlightMissionSetAltitude" xml:space="preserve"><value>Встановити висоту</value></data>
+  <data name="FlightMissionSetSpeed" xml:space="preserve"><value>Встановити швидкість</value></data>
+  <data name="FlightMissionSetFence" xml:space="preserve"><value>Встановити геозону</value></data>
+  <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>Відстань між лініями зйомки (м)</value></data>
+  <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>Курс зйомки (°)</value></data>
+  <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>Розворот зйомки (м)</value></data>
+  <data name="FlightMissionSurveyReverse" xml:space="preserve"><value>Зворотний вхід</value></data>
+  <data name="FlightMissionLoiterSeconds" xml:space="preserve"><value>Тривалість очікування (с)</value></data>
+  <data name="FlightMissionCameraMode" xml:space="preserve"><value>Режим зйомки камерою</value></data>
+  <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Відстань спрацювання камери (м)</value></data>
+  <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Інтервал спрацювання камери (с)</value></data>
+  <data name="FlightMissionSetStep" xml:space="preserve"><value>Застосувати параметри кроку</value></data>
+  <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>Відносна висота (м)</value></data>
+  <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>Крейсерська швидкість (м/с)</value></data>
+  <data name="FlightMissionTerrain" xml:space="preserve"><value>Стежити за рельєфом</value></data>
+  <data name="FlightMissionSurvey" xml:space="preserve"><value>Зона зйомки</value></data>
+  <data name="FlightMissionCorridor" xml:space="preserve"><value>Сканування коридору</value></data>
+  <data name="FlightMissionCorridorWidth" xml:space="preserve"><value>Ширина коридору (м)</value></data>
+  <data name="FlightMissionCorridorSpacing" xml:space="preserve"><value>Відстань між проходами (м)</value></data>
+  <data name="FlightMissionCorridorTurnaround" xml:space="preserve"><value>Відстань розвороту (м)</value></data>
+  <data name="FlightMissionCorridorFrontLap" xml:space="preserve"><value>Поздовжнє перекриття (%)</value></data>
+  <data name="FlightMissionCorridorSideLap" xml:space="preserve"><value>Бічне перекриття (%)</value></data>
+  <data name="FlightMissionCorridorReverse" xml:space="preserve"><value>Зворотний напрямок</value></data>
+  <data name="FlightMissionCorridorEntryRight" xml:space="preserve"><value>Вхід праворуч</value></data>
+  <data name="FlightMissionCorridorImagesInTurns" xml:space="preserve"><value>Знімати під час розворотів</value></data>
+  <data name="Px4Fences" xml:space="preserve"><value>Геозони PX4</value></data>
+  <data name="Px4FenceCreate" xml:space="preserve"><value>Створити геозону</value></data>
+  <data name="Px4FenceDelete" xml:space="preserve"><value>Видалити геозону</value></data>
+  <data name="Px4FenceUpload" xml:space="preserve"><value>Завантажити геозону</value></data>
+  <data name="Px4FenceDownload" xml:space="preserve"><value>Завантажити геозони</value></data>
+  <data name="Px4FenceClear" xml:space="preserve"><value>Очистити геозони</value></data>
+  <data name="FlightMissionLoiter" xml:space="preserve"><value>Очікування за часом</value></data>
+  <data name="FlightMissionCameraIntent" xml:space="preserve"><value>Сценарій камери</value></data>
+  <data name="FlightMissionMoveUp" xml:space="preserve"><value>Вгору</value></data>
+  <data name="FlightMissionMoveDown" xml:space="preserve"><value>Вниз</value></data>
+  <data name="FlightMissionRemoveStep" xml:space="preserve"><value>Видалити крок</value></data>
+  <data name="FlightMissionUpload" xml:space="preserve"><value>Завантажити</value></data>
+  <data name="FlightMissionDownload" xml:space="preserve"><value>Завантажити з апарата</value></data>
+  <data name="FlightMissionStart" xml:space="preserve"><value>Запустити місію</value></data>
+  <data name="FlightMissionPause" xml:space="preserve"><value>Пауза</value></data>
+  <data name="FlightMissionResume" xml:space="preserve"><value>Продовжити</value></data>
+  <data name="FlightMissionExecute" xml:space="preserve"><value>Виконати операцію</value></data>
+  <data name="FlightMissionCancel" xml:space="preserve"><value>Скасувати</value></data>
+  <data name="TeamStatusSelectCommandable" xml:space="preserve"><value>Спочатку виберіть один або кілька доступних для команд юнітів.</value></data>
+  <data name="TeamStatusSelectUnits" xml:space="preserve"><value>Спочатку виберіть один або кілька юнітів.</value></data>
+  <data name="TeamStatusCreated" xml:space="preserve"><value>{0} створено.</value></data>
+  <data name="TeamStatusMembershipCleared" xml:space="preserve"><value>Склад команди очищено.</value></data>
+  <data name="TeamTooltip" xml:space="preserve"><value>{0}; учасник {1} із {2}. Перетягуйте лише в межах цієї команди.</value></data>
+  <data name="FormationLock" xml:space="preserve"><value>Заблокувати формацію</value></data>
+  <data name="FormationUnlock" xml:space="preserve"><value>Розблокувати формацію</value></data>
+  <data name="FormationHold" xml:space="preserve"><value>Утримувати формацію</value></data>
+  <data name="TeamPosition" xml:space="preserve"><value>Позиція команди</value></data>
+  <data name="FormationGoTo" xml:space="preserve"><value>Перемістити формацію</value></data>
+  <data name="FormationChangeAltitude" xml:space="preserve"><value>Змінити висоту формації</value></data>
+  <data name="FormationLatitude" xml:space="preserve"><value>Широта</value></data>
+  <data name="FormationLongitude" xml:space="preserve"><value>Довгота</value></data>
+  <data name="FormationAltitudeAgl" xml:space="preserve"><value>Висота AGL (м)</value></data>
+  <data name="FormationRotationDegrees" xml:space="preserve"><value>Поворот (°)</value></data>
+  <data name="FormationRotate" xml:space="preserve"><value>Повернути формацію</value></data>
+  <data name="FormationScalePercent" xml:space="preserve"><value>Розмір (%)</value></data>
+  <data name="FormationScale" xml:space="preserve"><value>Змінити розмір формації</value></data>
+  <data name="ThreeD" xml:space="preserve"><value>3D</value></data>
+  <data name="Formations" xml:space="preserve"><value>Формації</value></data>
+  <data name="FormationsDescription" xml:space="preserve"><value>Багаторазові 3D-компонування юнітів</value></data>
+
+  <data name="UnitSaved" xml:space="preserve"><value>Юніт збережено.</value></data>
+  <data name="UnitDeleted" xml:space="preserve"><value>Юніт видалено.</value></data>
+  <data name="UnitsNew" xml:space="preserve"><value>Новий</value></data>
+  <data name="UnitsEdit" xml:space="preserve"><value>Змінити</value></data>
+  <data name="UnitsDelete" xml:space="preserve"><value>Видалити</value></data>
+  <data name="UnitsSavedAssociation" xml:space="preserve"><value>Збережений зв’язок</value></data>
+  <data name="UnitsConnections" xml:space="preserve"><value>З’єднання</value></data>
+  <data name="UnitsCameraSources" xml:space="preserve"><value>Джерела камер</value></data>
+  <data name="UnitsSave" xml:space="preserve"><value>Зберегти</value></data>
+  <data name="UnitsCancel" xml:space="preserve"><value>Скасувати</value></data>
+  <data name="UnitsNamePlaceholder" xml:space="preserve"><value>Назва юніта</value></data>
+  <data name="SettingsLanguageJapanese" xml:space="preserve"><value>日本語</value></data>
+  <data name="SettingsMedia" xml:space="preserve"><value>Медіа</value></data>
+  <data name="SettingsMediaRuntime" xml:space="preserve"><value>Середовище виконання</value></data>
+  <data name="SettingsMediaPlaybackServer" xml:space="preserve"><value>Сервер відтворення</value></data>
+  <data name="SettingsMediaGStreamerNotInspected" xml:space="preserve"><value>GStreamer не перевірено</value></data>
+  <data name="SettingsMediaGStreamerUnavailable" xml:space="preserve"><value>Середовище GStreamer не знайдено</value></data>
+  <data name="SettingsMediaGStreamerAvailable" xml:space="preserve"><value>Середовище GStreamer доступне</value></data>
+  <data name="SettingsMediaGStreamerFaulted" xml:space="preserve"><value>Помилка GStreamer</value></data>
+  <data name="SettingsMediaPlaybackNotInspected" xml:space="preserve"><value>Сервер відтворення не перевірено</value></data>
+  <data name="SettingsMediaPlaybackUnavailable" xml:space="preserve"><value>Сервер відтворення недоступний</value></data>
+  <data name="SettingsMediaPlaybackAvailable" xml:space="preserve"><value>Сервер відтворення доступний</value></data>
+  <data name="SettingsMediaLookbackValue" xml:space="preserve"><value>Віддалений перегляд за {0} год</value></data>
+  <data name="SettingsMediaProtocol" xml:space="preserve"><value>Протокол</value></data>
+  <data name="SettingsMediaRtspTransport" xml:space="preserve"><value>Транспорт RTSP</value></data>
+  <data name="SettingsMediaLatency" xml:space="preserve"><value>Затримка (мс)</value></data>
+  <data name="SettingsMediaReconnect" xml:space="preserve"><value>Спроби повторного підключення</value></data>
+  <data name="SettingsMediaRecording" xml:space="preserve"><value>Локальний запис</value></data>
+  <data name="SettingsMediaBuffer" xml:space="preserve"><value>Кільцевий буфер (хв)</value></data>
+  <data name="SettingsMediaSegment" xml:space="preserve"><value>Сегмент (с)</value></data>
+  <data name="SettingsMediaStorage" xml:space="preserve"><value>Сховище (ГБ)</value></data>
+  <data name="SettingsMediaBitrate" xml:space="preserve"><value>Бітрейт (кбіт/с)</value></data>
+  <data name="SettingsMediaLookback" xml:space="preserve"><value>Віддалений перегляд (год)</value></data>
+  <data name="SettingsMediaRescan" xml:space="preserve"><value>Повторно сканувати</value></data>
+  <data name="SettingsMediaProfiles" xml:space="preserve"><value>Налаштовані профілі запису</value></data>
+  <data name="VideoOpen" xml:space="preserve"><value>Відкрити потік</value></data>
+  <data name="VideoNoStream" xml:space="preserve"><value>Немає потоку</value></data>
+  <data name="VideoOpenStreamHint" xml:space="preserve"><value>Відкрийте потік камери, щоб почати відтворення.</value></data>
+  <data name="VideoLocalRecordingStopped" xml:space="preserve"><value>Локальний запис зупинено</value></data>
+  <data name="VideoLocalRecordingHint" xml:space="preserve"><value>Відкрийте потік камери, щоб запустити кільцевий буфер.</value></data>
+  <data name="VideoNativeStopped" xml:space="preserve"><value>Власне відео зупинено</value></data>
+  <data name="VideoNoDecodedFrame" xml:space="preserve"><value>Немає декодованого кадру</value></data>
+  <data name="VideoNoRecordings" xml:space="preserve"><value>Немає записів</value></data>
+  <data name="VideoOpenAutomatic" xml:space="preserve"><value>Відкрити автоматично</value></data>
+  <data name="VideoProtocolAutomatic" xml:space="preserve"><value>Автоматично</value></data>
+  <data name="VideoProtocolRtsp" xml:space="preserve"><value>RTSP</value></data>
+  <data name="VideoProtocolHls" xml:space="preserve"><value>HLS</value></data>
+  <data name="VideoProtocolWebRtc" xml:space="preserve"><value>WebRTC/WHEP</value></data>
+  <data name="VideoCamera" xml:space="preserve"><value>Камера</value></data>
+  <data name="VideoNoCameraSource" xml:space="preserve"><value>Джерело камери недоступне</value></data>
+  <data name="VideoNoPerceptionTracks" xml:space="preserve"><value>Немає треків сприйняття</value></data>
+  <data name="VideoTracksOverlayed" xml:space="preserve"><value>Накладено треків: {0}</value></data>
+  <data name="VideoInspect" xml:space="preserve"><value>Перевірити</value></data>
+  <data name="VideoTestPattern" xml:space="preserve"><value>Тестовий шаблон</value></data>
+  <data name="VideoTestFile" xml:space="preserve"><value>Тестовий файл</value></data>
+  <data name="VideoStopTest" xml:space="preserve"><value>Зупинити тест</value></data>
+  <data name="VideoIncludeOverlays" xml:space="preserve"><value>Включити накладки</value></data>
+  <data name="VideoRetry" xml:space="preserve"><value>Повторити потік</value></data>
+  <data name="VideoClose" xml:space="preserve"><value>Закрити потік</value></data>
+  <data name="VideoRefresh" xml:space="preserve"><value>Оновити часову шкалу</value></data>
+  <data name="VideoPlay" xml:space="preserve"><value>Відтворити</value></data>
+  <data name="VideoPause" xml:space="preserve"><value>Пауза</value></data>
+  <data name="VideoResume" xml:space="preserve"><value>Продовжити</value></data>
+  <data name="VideoCache" xml:space="preserve"><value>Кешувати запис</value></data>
+  <data name="VideoRetain" xml:space="preserve"><value>Зберегти запис</value></data>
+  <data name="VideoExport" xml:space="preserve"><value>Експортувати кліп</value></data>
+  <data name="VideoLive" xml:space="preserve"><value>До прямого ефіру</value></data>
+  <data name="VideoCaptureFrame" xml:space="preserve"><value>Захопити кадр</value></data>
+  <data name="VideoCaptureSource" xml:space="preserve"><value>Захопити зображення джерела</value></data>
+  <data name="OperateMap" xml:space="preserve"><value>Карта</value></data>
+  <data name="OperateVideo" xml:space="preserve"><value>Відео</value></data>
+  <data name="OperateUnit" xml:space="preserve"><value>Юніт</value></data>
+  <data name="MapInstalledMaps" xml:space="preserve"><value>Встановлені карти</value></data>
+  <data name="MapInstall" xml:space="preserve"><value>Встановити карту</value></data>
+  <data name="MapInstallFolder" xml:space="preserve"><value>Встановити теку</value></data>
+  <data name="MapRefresh" xml:space="preserve"><value>Оновити</value></data>
+  <data name="MapNoInstalledMaps" xml:space="preserve"><value>Немає встановлених карт.</value></data>
+  <data name="MapOpenDirectory" xml:space="preserve"><value>Відкрити теку</value></data>
+  <data name="MapActivate" xml:space="preserve"><value>Активувати</value></data>
+  <data name="MapRemove" xml:space="preserve"><value>Видалити</value></data>
+  <data name="MapNoActivePackage" xml:space="preserve"><value>Немає активного пакета</value></data>
+  <data name="HistoryCommandHistory" xml:space="preserve"><value>Історія команд</value></data>
+  <data name="HistoryEventStream" xml:space="preserve"><value>Потік подій</value></data>
+  <data name="HistoryNoCommands" xml:space="preserve"><value>Команди ще не записані</value></data>
+  <data name="HistoryNoEvents" xml:space="preserve"><value>Подій ще не отримано</value></data>
+  <data name="ConnectionsNew" xml:space="preserve"><value>Нове з’єднання</value></data>
+  <data name="ConnectionsEmpty" xml:space="preserve"><value>Немає з’єднань.</value></data>
+  <data name="ConnectionDetails" xml:space="preserve"><value>Деталі з’єднання</value></data>
+  <data name="ConnectionName" xml:space="preserve"><value>Назва</value></data>
+  <data name="ConnectionTarget" xml:space="preserve"><value>Ціль</value></data>
+  <data name="ConnectionType" xml:space="preserve"><value>Тип з’єднання</value></data>
+  <data name="ConnectionTransport" xml:space="preserve"><value>Транспорт</value></data>
+  <data name="ConnectionAutoReconnect" xml:space="preserve"><value>Автоматично підключатися повторно</value></data>
+  <data name="ConnectionAdd" xml:space="preserve"><value>Додати з’єднання</value></data>
+  <data name="ConnectionControls" xml:space="preserve"><value>Керування з’єднанням</value></data>
+  <data name="ConnectionInformation" xml:space="preserve"><value>Інформація про з’єднання</value></data>
+  <data name="ConnectionSdkCalls" xml:space="preserve"><value>Виклики SDK</value></data>
+  <data name="ConnectionLog" xml:space="preserve"><value>Журнал з’єднання</value></data>
+  <data name="AirborneDisarmTitle" xml:space="preserve"><value>Підтвердити роззброєння</value></data>
+  <data name="AirborneDisarmWarning" xml:space="preserve"><value>Апарат у повітрі. Все одно роззброїти?</value></data>
+  <data name="AirborneDisarmConfirm" xml:space="preserve"><value>Роззброїти</value></data>
+  <data name="MapJumpToOperator" xml:space="preserve"><value>Перейти до оператора</value></data>
+  <data name="MapOperatorUnavailable" xml:space="preserve"><value>Місцезнаходження оператора недоступне</value></data>
+  <data name="MapShowGeometries" xml:space="preserve"><value>Показати геометрію</value></data>
+  <data name="MapHideGeometries" xml:space="preserve"><value>Сховати геометрію</value></data>
+  <data name="MapShowPolicy" xml:space="preserve"><value>Показати політику</value></data>
+  <data name="MapHidePolicy" xml:space="preserve"><value>Сховати політику</value></data>
+  <data name="MapShowTrails" xml:space="preserve"><value>Показати сліди</value></data>
+  <data name="MapHideTrails" xml:space="preserve"><value>Сховати сліди</value></data>
+  <data name="MapShowGoTo" xml:space="preserve"><value>Показати Go To</value></data>
+  <data name="MapHideGoTo" xml:space="preserve"><value>Сховати Go To</value></data>
+  <data name="MapShowLabels" xml:space="preserve"><value>Показати підписи</value></data>
+  <data name="MapHideLabels" xml:space="preserve"><value>Сховати підписи</value></data>
+  <data name="MapNorthUp" xml:space="preserve"><value>Північ угорі</value></data>
+  <data name="MapCourseUp" xml:space="preserve"><value>Курс угорі</value></data>
+  <data name="MapHideWeather" xml:space="preserve"><value>Сховати погоду</value></data>
+  <data name="MapWeatherRadar" xml:space="preserve"><value>Погода</value></data>
+  <data name="MapWeatherOpacity" xml:space="preserve"><value>Непрозорість</value></data>
+  <data name="FlightMissionDefaultName" xml:space="preserve"><value>Нова місія</value></data>
+  <data name="FlightMissionSetEnd" xml:space="preserve"><value>Задати завершення місії</value></data>
+  <data name="FlightMissionEndHold" xml:space="preserve"><value>Hold</value></data>
+  <data name="FlightMissionEndRtl" xml:space="preserve"><value>RTL</value></data>
+  <data name="FlightMissionContinue" xml:space="preserve"><value>Продовжити</value></data>
+  <data name="FlightMissionRetain" xml:space="preserve"><value>Зберегти</value></data>
+  <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>Видалити</value></data>
+  <data name="FlightMissionStatus" xml:space="preserve"><value>Стан місії</value></data>
+  <data name="FlightMissionPreview" xml:space="preserve"><value>Попередній перегляд місії</value></data>
+  <data name="FormationNamePlaceholder" xml:space="preserve"><value>Назва формації</value></data>
+  <data name="FormationAddUnit" xml:space="preserve"><value>Додати юніт</value></data>
+  <data name="FormationRemoveUnit" xml:space="preserve"><value>Видалити юніт</value></data>
+  <data name="ManualProfile" xml:space="preserve"><value>Профіль</value></data>
+  <data name="ManualController" xml:space="preserve"><value>Контролер</value></data>
+  <data name="ManualUnit" xml:space="preserve"><value>Юніт</value></data>
+  <data name="ManualSession" xml:space="preserve"><value>Сеанс</value></data>
+  <data name="ManualAdvanced" xml:space="preserve"><value>Розширені</value></data>
+  <data name="ManualDiagnostics" xml:space="preserve"><value>Діагностика</value></data>
+  <data name="ManualConnected" xml:space="preserve"><value>Підключено</value></data>
+  <data name="ManualDisconnected" xml:space="preserve"><value>Відключено</value></data>
+  <data name="ManualNoUnit" xml:space="preserve"><value>Юніт не вибрано</value></data>
+  <data name="ManualNoSession" xml:space="preserve"><value>Немає сеансу ручного керування.</value></data>
+  <data name="ManualNone" xml:space="preserve"><value>Немає</value></data>
+  <data name="ManualNoControllers" xml:space="preserve"><value>Немає контролерів.</value></data>
+  <data name="ManualNoController" xml:space="preserve"><value>Контролер не вибрано</value></data>
+  <data name="ManualTakeControl" xml:space="preserve"><value>Взяти керування</value></data>
+  <data name="ManualRelease" xml:space="preserve"><value>Передати керування</value></data>
+  <data name="ManualTakingControl" xml:space="preserve"><value>Отримання керування…</value></data>
+  <data name="ManualReleasingControl" xml:space="preserve"><value>Передача керування…</value></data>
+  <data name="ManualSafetyActive" xml:space="preserve"><value>Безпека активна</value></data>
+  <data name="ManualSafetyReleased" xml:space="preserve"><value>Безпеку вимкнено</value></data>
+  <data name="ManualNoLiveInput" xml:space="preserve"><value>Немає поточного введення</value></data>
+  <data name="ManualDeadZone" xml:space="preserve"><value>Мертва зона</value></data>
+  <data name="ManualExpo" xml:space="preserve"><value>Expo</value></data>
+  <data name="ManualHorizontalSpeed" xml:space="preserve"><value>Горизонтальна швидкість</value></data>
+  <data name="ManualVerticalSpeed" xml:space="preserve"><value>Вертикальна швидкість</value></data>
+  <data name="ManualYawRate" xml:space="preserve"><value>Швидкість рискання</value></data>
+  <data name="ManualTakeoffAltitude" xml:space="preserve"><value>Висота Takeoff</value></data>
+  <data name="ManualForwardAxis" xml:space="preserve"><value>Вісь вперед</value></data>
+  <data name="ManualRightAxis" xml:space="preserve"><value>Вісь праворуч</value></data>
+  <data name="ManualVerticalAxis" xml:space="preserve"><value>Вертикальна вісь</value></data>
+  <data name="ManualYawAxis" xml:space="preserve"><value>Вісь рискання</value></data>
+  <data name="ManualInvertForward" xml:space="preserve"><value>Інвертувати вперед</value></data>
+  <data name="ManualInvertRight" xml:space="preserve"><value>Інвертувати праворуч</value></data>
+  <data name="ManualInvertVertical" xml:space="preserve"><value>Інвертувати вертикаль</value></data>
+  <data name="ManualInvertYaw" xml:space="preserve"><value>Інвертувати рискання</value></data>
+  <data name="ManualSafetyButton" xml:space="preserve"><value>Кнопка безпеки</value></data>
+  <data name="ManualArmButton" xml:space="preserve"><value>Кнопка Arm</value></data>
+  <data name="ManualTakeoffButton" xml:space="preserve"><value>Кнопка Takeoff</value></data>
+  <data name="ManualExecuteButton" xml:space="preserve"><value>Кнопка Execute</value></data>
+  <data name="ManualCancelButton" xml:space="preserve"><value>Кнопка Cancel</value></data>
+  <data name="ManualReleaseButton" xml:space="preserve"><value>Кнопка Release</value></data>
+  <data name="ManualHorizontalAcceleration" xml:space="preserve"><value>Горизонтальне прискорення</value></data>
+  <data name="ManualVerticalAcceleration" xml:space="preserve"><value>Вертикальне прискорення</value></data>
+  <data name="ManualYawAcceleration" xml:space="preserve"><value>Прискорення рискання</value></data>
+  <data name="UnitNoSelected" xml:space="preserve"><value>Юніт не вибрано</value></data>
+  <data name="UnitSelectedCount" xml:space="preserve"><value>Вибрано юнітів: {0}</value></data>
+  <data name="UnitConnectHint" xml:space="preserve"><value>Підключіть середовище виконання, щоб знайти юніти.</value></data>
+  <data name="UnitKindGhost" xml:space="preserve"><value>Ghost</value></data>
+  <data name="UnitOnline" xml:space="preserve"><value>У мережі</value></data>
+  <data name="UnitOffline" xml:space="preserve"><value>Не в мережі</value></data>
+  <data name="UnitDegraded" xml:space="preserve"><value>Погіршений стан</value></data>
+  <data name="UnitReconnecting" xml:space="preserve"><value>Повторне підключення</value></data>
+  <data name="UnitStale" xml:space="preserve"><value>Застарілий</value></data>
+  <data name="UnitFaulted" xml:space="preserve"><value>Помилка</value></data>
+  <data name="UnitUnknown" xml:space="preserve"><value>Невідомо</value></data>
+  <data name="UnitDisarmed" xml:space="preserve"><value>Роззброєно</value></data>
+  <data name="UnitLanded" xml:space="preserve"><value>На землі</value></data>
+  <data name="UnitFlying" xml:space="preserve"><value>У польоті</value></data>
+  <data name="UnitNoCurrentBlockers" xml:space="preserve"><value>Поточних блокувань немає</value></data>
+  <data name="UnitBlockerCount" xml:space="preserve"><value>Блокувань: {0}</value></data>
+  <data name="UnitDiagnosticsNotReported" xml:space="preserve"><value>Діагностику не повідомлено</value></data>
+  <data name="UnitNotReported" xml:space="preserve"><value>Не повідомлено</value></data>
+  <data name="UnitAltitudeNotReported" xml:space="preserve"><value>Висоту не повідомлено</value></data>
+  <data name="UnitBatteryNotReported" xml:space="preserve"><value>Цей апарат не повідомив відсоток заряду.</value></data>
+  <data name="UnitBatteryTooltip" xml:space="preserve"><value>Акумулятор {0}.{1} Джерело: авторитетна діагностика апарата.</value></data>
+  <data name="UnitBatteryTooltipShort" xml:space="preserve"><value>Акумулятор {0}.</value></data>
+  <data name="UnitSignalNotReported" xml:space="preserve"><value>Метрики сигналу з’єднання не повідомлено.</value></data>
+  <data name="UnitSignalQuality" xml:space="preserve"><value>Якість сигналу з’єднання.</value></data>
+  <data name="UnitSimulatorLinkQuality" xml:space="preserve"><value>Якість каналу симулятора: 100%.</value></data>
+  <data name="UnitConnectionLabel" xml:space="preserve"><value>З’єднань: {0}</value></data>
+  <data name="UnitLinkCount" xml:space="preserve"><value>Каналів: {0}</value></data>
+  <data name="UnitRouteItemProgress" xml:space="preserve"><value>Елемент маршруту {0} із {1}</value></data>
+  <data name="MapNoPackageSelected" xml:space="preserve"><value>Пакет не вибрано</value></data>
+  <data name="MapNoPackageSelectedPeriod" xml:space="preserve"><value>Пакет не вибрано.</value></data>
+  <data name="MapReady" xml:space="preserve"><value>Готово.</value></data>
+  <data name="ConnectionState" xml:space="preserve"><value>Стан</value></data>
+  <data name="ConnectionProtocol" xml:space="preserve"><value>Протокол</value></data>
+  <data name="ConnectionConnected" xml:space="preserve"><value>Підключено</value></data>
+  <data name="ConnectionLinks" xml:space="preserve"><value>Канали</value></data>
+  <data name="ConnectionEvents" xml:space="preserve"><value>Події</value></data>
+  <data name="ConnectionBaudRate" xml:space="preserve"><value>Швидкість порту</value></data>
+  <data name="ConnectionConnectedSince" xml:space="preserve"><value>Підключено з</value></data>
+  <data name="ConnectionLastConnected" xml:space="preserve"><value>Останнє підключення</value></data>
+  <data name="ConnectionLastSeen" xml:space="preserve"><value>Остання активність</value></data>
+  <data name="ConnectionLastAttempt" xml:space="preserve"><value>Остання спроба</value></data>
+  <data name="MyTeamReady" xml:space="preserve"><value>Готово</value></data>
+  <data name="MyTeamStopped" xml:space="preserve"><value>Зупинено.</value></data>
+  <data name="MyTeamConnected" xml:space="preserve"><value>Підключено.</value></data>
+  <data name="MyTeamNoneFound" xml:space="preserve"><value>Нічого не знайдено.</value></data>
+  <data name="MyTeamPassphraseRequired" xml:space="preserve"><value>Введіть парольну фразу сервера перед запуском.</value></data>
+  <data name="MyTeamChecking" xml:space="preserve"><value>Перевірка...</value></data>
+  <data name="MyTeamConnecting" xml:space="preserve"><value>Підключення...</value></data>
+  <data name="MyTeamEnterPassphrase" xml:space="preserve"><value>Введіть парольну фразу.</value></data>
+  <data name="MyTeamAuthenticationEnabled" xml:space="preserve"><value>Автентифікацію ввімкнено.</value></data>
+  <data name="MyTeamAuthenticationDisabled" xml:space="preserve"><value>Автентифікацію вимкнено.</value></data>
+  <data name="ConnectionSerialDevice" xml:space="preserve"><value>Послідовний / SiK пристрій</value></data>
+  <data name="ConnectionDetectDevices" xml:space="preserve"><value>Виявити пристрої</value></data>
+  <data name="ConnectionLikelySikRadio" xml:space="preserve"><value>Ймовірно радіо SiK</value></data>
+  <data name="ConnectionRadioSetup" xml:space="preserve"><value>Налаштування радіо SiK</value></data>
+  <data name="ConnectionProbeRadio" xml:space="preserve"><value>Перевірити радіо</value></data>
+  <data name="ConnectionPairRadios" xml:space="preserve"><value>З’єднати радіо</value></data>
+  <data name="ConnectionSourceRadio" xml:space="preserve"><value>Вихідне радіо</value></data>
+  <data name="ConnectionTargetRadio" xml:space="preserve"><value>Цільове радіо</value></data>
+  <data name="ConnectionShowAdvancedRadioSettings" xml:space="preserve"><value>Показати розширені параметри S0-S14</value></data>
+  <data name="ConnectionReviewLocalChanges" xml:space="preserve"><value>Переглянути локальні зміни</value></data>
+  <data name="ConnectionReviewPairedChanges" xml:space="preserve"><value>Переглянути зміни з’єднання</value></data>
+</root>

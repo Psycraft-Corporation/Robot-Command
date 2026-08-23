@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>RobotCommand.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../..\src\app\RobotCommand\RobotCommand.csproj" />
+    <ProjectReference Include="../..\src\cli\RobotCommand.Cli\RobotCommand.Cli.csproj" />
+    <ProjectReference Include="../..\src\sdk\RobotCommand.Sdk\RobotCommand.Sdk.csproj" />
+    <ProjectReference Include="../..\src\simulation\RobotCommand.Simulation\RobotCommand.Simulation.csproj" />
+    <ProjectReference Include="../..\src\rendering\RobotCommand.Rendering\RobotCommand.Rendering.csproj" />
+    <ProjectReference Include="../..\src\rendering\RobotCommand.Rendering.Veldrid\RobotCommand.Rendering.Veldrid.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+</Project>

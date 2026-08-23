@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:RobotCommand.Localization"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             x:Class="RobotCommand.Views.Workspaces.HistoryView"
+             x:DataType="vm:HistoryViewModel">
+  <Grid RowDefinitions="Auto,*" RowSpacing="14">
+    <StackPanel>
+      <TextBlock Classes="workspaceTitle" Text="{loc:Loc Key=History}" />
+    </StackPanel>
+
+    <TabControl Grid.Row="1">
+      <TabItem Header="{loc:Loc Key=Commands}">
+        <ContentControl Content="{Binding Commands}" />
+      </TabItem>
+      <TabItem Header="{loc:Loc Key=Events}">
+        <ContentControl Content="{Binding Events}" />
+      </TabItem>
+    </TabControl>
+  </Grid>
+</UserControl>

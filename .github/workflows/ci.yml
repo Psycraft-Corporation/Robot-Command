@@ -1,0 +1,109 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-validation:
+    name: Windows validation
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore from public NuGet.org
+        run: dotnet restore RobotCommand.sln --configfile NuGet.config.template
+
+      - name: Build Release
+        run: dotnet build RobotCommand.sln -c Release --no-restore
+
+      - name: Run deterministic tests
+        run: dotnet test RobotCommand.sln -c Release --no-restore --no-build --filter "Category!=SITL&Category!=Hardware"
+
+      - name: Check formatting
+        run: |
+          dotnet format RobotCommand.sln whitespace --verify-no-changes --no-restore
+          dotnet format RobotCommand.sln style --verify-no-changes --no-restore
+
+      - name: Validate source tree
+        shell: pwsh
+        run: ./build/validate-source-tree.ps1 -SourceOnly
+
+      - name: Validate documentation and dependency inventory
+        shell: pwsh
+        run: |
+          ./tools/validate-docs.ps1
+          ./build/validate-dependency-inventory.ps1
+
+      - name: Install Gitleaks CLI
+        shell: pwsh
+        run: |
+          choco install gitleaks --version 8.30.1 --yes --no-progress
+          gitleaks version
+
+      - name: Scan source for secrets
+        shell: pwsh
+        run: ./build/scan-secrets.ps1 -SourceOnly
+
+      - name: Smoke-test CLI help
+        run: dotnet run --project src/cli/RobotCommand.Cli/RobotCommand.Cli.csproj -c Release --no-restore -- --help
+
+  portable-validation:
+    name: Portable build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore portable project graph
+        run: dotnet restore RobotCommand.sln --configfile NuGet.config.template -p:EnableWindowsTargeting=true
+
+      - name: Restore MeshProbe
+        run: dotnet restore tools/RobotCommand.MeshProbe/RobotCommand.MeshProbe.csproj --configfile NuGet.config.template
+
+      - name: Build portable libraries and tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          projects=(
+            src/core/RobotCommand.Core/RobotCommand.Core.csproj
+            src/sdk/RobotCommand.Sdk/RobotCommand.Sdk.csproj
+            src/rendering/RobotCommand.Rendering/RobotCommand.Rendering.csproj
+            src/rendering/RobotCommand.Rendering.Veldrid/RobotCommand.Rendering.Veldrid.csproj
+            src/simulation/RobotCommand.Simulation/RobotCommand.Simulation.csproj
+            src/simulation/RobotCommand.Simulator/RobotCommand.Simulator.csproj
+            examples/RobotCommand.Observer/RobotCommand.Observer.csproj
+            tools/RobotCommand.MeshProbe/RobotCommand.MeshProbe.csproj
+            src/runtime/RobotCommand.Runtime/RobotCommand.Runtime.csproj
+            src/cli/RobotCommand.Cli/RobotCommand.Cli.csproj
+          )
+          for project in "${projects[@]}"; do
+            dotnet build "$project" -c Release --no-restore -p:EnableWindowsTargeting=true
+          done
+
+      - name: Cross-build test assembly
+        shell: bash
+        run: dotnet build tests/RobotCommand.Tests/RobotCommand.Tests.csproj -c Release --no-restore -p:EnableWindowsTargeting=true

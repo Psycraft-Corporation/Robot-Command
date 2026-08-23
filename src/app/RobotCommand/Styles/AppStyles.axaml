@@ -1,0 +1,1039 @@
+<Styles xmlns="https://github.com/avaloniaui">
+  <Design.PreviewWith>
+    <Border Padding="20">
+      <TextBlock Text="Robot Command" />
+    </Border>
+  </Design.PreviewWith>
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="#0D1117" />
+  </Style>
+
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="#8B949E" />
+  </Style>
+
+  <Style Selector="TextBlock.eyebrow">
+    <Setter Property="Foreground" Value="#AEB6C2" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="TextBlock.workspaceTitle">
+    <Setter Property="FontSize" Value="24" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="TextBlock.sectionTitle">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,0,0,8" />
+  </Style>
+
+  <Style Selector="TextBlock.countBadge">
+    <Setter Property="Foreground" Value="#C9D1D9" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="TextBlock.emptyState">
+    <Setter Property="Foreground" Value="#6E7681" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Margin" Value="4,2,0,0" />
+  </Style>
+
+  <Style Selector="Border.topBar">
+    <Setter Property="Background" Value="#010409" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="16,10" />
+  </Style>
+
+  <Style Selector="Border.sideRail">
+    <Setter Property="Background" Value="#0A0E14" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+  </Style>
+
+  <Style Selector="Expander.sideRailOperators">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Expander.sideRailOperators /template/ ToggleButton#expanderHeader">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="MinHeight" Value="40" />
+  </Style>
+
+  <Style Selector="Border.sideRailClient">
+    <Setter Property="Background" Value="#161B22" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="8,6" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+
+  <Style Selector="Border.sideRailClientDetails">
+    <Setter Property="Background" Value="#1B2430" />
+    <Setter Property="BorderBrush" Value="#4A627B" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+
+  <Style Selector="ListBox.sideRailClients">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <Style Selector="ListBox.sideRailClients > ListBoxItem">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.sideRailClients > ListBoxItem:selected">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.sideRailClients > ListBoxItem:selected Border.sideRailClient">
+    <Setter Property="Background" Value="#8F1020" />
+    <Setter Property="BorderBrush" Value="#F05A67" />
+  </Style>
+
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="#161B22" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="14" />
+  </Style>
+
+  <Style Selector="Border.mapSurface">
+    <Setter Property="Background" Value="#111820" />
+    <Setter Property="BorderBrush" Value="#38424D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+
+  <Style Selector="Border.videoSurface">
+    <Setter Property="Background" Value="#05070A" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="MinHeight" Value="260" />
+  </Style>
+
+  <Style Selector="Border.statusPill">
+    <Setter Property="Background" Value="#2A1C1A" />
+    <Setter Property="BorderBrush" Value="#6D302B" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="9,4" />
+  </Style>
+
+  <Style Selector="Border.statusBar">
+    <Setter Property="Background" Value="#010409" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="12,5" />
+  </Style>
+
+
+
+  <Style Selector="Border.toolbarGroup">
+    <Setter Property="Background" Value="#11161D" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="4" />
+  </Style>
+
+  <Style Selector="Border.surfaceHeader">
+    <Setter Property="Background" Value="#0A0F15" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="Padding" Value="10" />
+  </Style>
+
+  <Style Selector="Border.surfaceFooter">
+    <Setter Property="Background" Value="#0A0F15" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="9" />
+  </Style>
+
+  <Style Selector="Border.smallPill">
+    <Setter Property="Background" Value="#151C24" />
+    <Setter Property="BorderBrush" Value="#38424D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="Padding" Value="7,3" />
+  </Style>
+
+  <Style Selector="TextBox">
+    <Setter Property="MinHeight" Value="32" />
+  </Style>
+
+
+
+  <Style Selector="Button.toolbarButton">
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="9,4" />
+    <Setter Property="FontSize" Value="11" />
+  </Style>
+
+  <Style Selector="Button.railToggle">
+    <Setter Property="Background" Value="#161B22" />
+    <Setter Property="Foreground" Value="#A8B3C0" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="MinWidth" Value="24" />
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Border.railHandleZone,
+                         Border.bottomHandleZone">
+    <Setter Property="Background" Value="#0A0E14" />
+    <Setter Property="BorderBrush" Value="#252D38" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.bottomHandleZone:pointerover">
+    <Setter Property="Background" Value="#26313D" />
+    <Setter Property="BorderBrush" Value="#8EA2B8" />
+  </Style>
+
+  <Style Selector="TextBlock.railGlyph">
+    <Setter Property="Foreground" Value="#D6DEE8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.railToggle:pointerover TextBlock.railGlyph,
+                         Button.railToggle:pressed TextBlock.railGlyph,
+                         Button.railToggle:focus TextBlock.railGlyph">
+    <Setter Property="Foreground" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="Button.railToggle:pointerover,
+                         Button.railToggle:pressed,
+                         Button.railToggle:focus">
+    <Setter Property="Background" Value="#26313D" />
+    <Setter Property="Foreground" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#8EA2B8" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.drawerToggle">
+    <Setter Property="Background" Value="#161B22" />
+    <Setter Property="Foreground" Value="#C9D1D9" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="Margin" Value="0,0,0,8" />
+    <Setter Property="MinWidth" Value="34" />
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+
+  <Style Selector="Button.mapCompassButton,
+                         Button.mapCompassButton:pointerover,
+                         Button.mapCompassButton:pressed,
+                         Button.mapCompassButton:focus">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="56" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.mapRotationButton">
+    <Setter Property="Background" Value="#2A303A" />
+    <Setter Property="Foreground" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#A7B6C6" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.mapRotationButton:pointerover,
+                         Button.mapRotationButton:focus,
+                         Button.mapRotationButton:pressed">
+    <Setter Property="Background" Value="#465465" />
+    <Setter Property="Foreground" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#FFFFFF" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.primary">
+    <Setter Property="Background" Value="#B93D33" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+
+  <Style Selector="Border.commandPlanPanel">
+    <Setter Property="Background" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#4B5968" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Padding" Value="10" />
+  </Style>
+
+  <Style Selector="Border.noticePanel">
+    <Setter Property="Background" Value="#161B22" />
+    <Setter Property="BorderBrush" Value="#8B6F2F" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="10" />
+  </Style>
+
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="#7A211B" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="ListBox.workspaceNav">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="ListBox.topWorkspaceNav">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <Style Selector="ListBox.topWorkspaceNav ListBoxItem">
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="Margin" Value="1,0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="#D6DEE8" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="ListBox.topWorkspaceNav ListBoxItem:pointerover">
+    <Setter Property="Background" Value="#1B2633" />
+    <Setter Property="Foreground" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="ListBox.topWorkspaceNav ListBoxItem:selected">
+    <Setter Property="Background" Value="#8F0B19" />
+    <Setter Property="Foreground" Value="#FFFFFF" />
+  </Style>
+
+  <Style Selector="ListBox.compactList">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <!-- Unit rows own their Team border. Remove the theme container spacing so
+       adjacent Team members form one continuous outline. Selection is painted
+       inside the row border instead of behind it. -->
+  <Style Selector="ListBox.unitList > ListBoxItem">
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.unitList > ListBoxItem:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.unitList > ListBoxItem:selected">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="ListBox.unitList > ListBoxItem:selected > Border.unitRow">
+    <Setter Property="Background" Value="#8F0B19" />
+  </Style>
+
+  <Style Selector="ListBox.unitList > ListBoxItem:pointerover > Border.unitRow">
+    <Setter Property="Background" Value="#1B2633" />
+  </Style>
+
+  <Style Selector="Border.teamLabel">
+    <Setter Property="Background" Value="#161B22" />
+    <Setter Property="Padding" Value="4,1" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Margin" Value="0,0,0,2" />
+  </Style>
+
+  <Style Selector="Button.teamHeaderButton">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="4,1" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="MinHeight" Value="22" />
+  </Style>
+
+  <Style Selector="Button.teamHeaderButton:pointerover">
+    <Setter Property="Background" Value="#26384A" />
+  </Style>
+
+  <Style Selector="ListBox.unitList > ListBoxItem:selected /template/ Border#selectionIndicator,
+                         ListBox.unitList > ListBoxItem:pointerover /template/ Border#pointeroverIndicator">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="Window.brightMode ListBox.unitList > ListBoxItem:selected /template/ Border#selectionIndicator,
+                         Window.brightMode ListBox.unitList > ListBoxItem:pointerover /template/ Border#pointeroverIndicator">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <Style Selector="Button.commandExecuteReady">
+    <Setter Property="Background" Value="#238636" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.commandExecuteReady:pointerover">
+    <Setter Property="Background" Value="#2EA043" />
+  </Style>
+
+  <Style Selector="Button.commandExecuteBlocked">
+    <Setter Property="Background" Value="#B62324" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.commandExecuteBlocked:pointerover">
+    <Setter Property="Background" Value="#DA3633" />
+  </Style>
+
+  <Style Selector="Border.findingItem">
+    <Setter Property="Background" Value="#241A1A" />
+    <Setter Property="BorderBrush" Value="#B62324" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="3" />
+  </Style>
+
+  <Style Selector="Border.commandRejectionPanel">
+    <Setter Property="Background" Value="#241A1A" />
+    <Setter Property="BorderBrush" Value="#B62324" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Padding" Value="10" />
+  </Style>
+
+  <Style Selector="Button.compactDismissButton">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="MinWidth" Value="24" />
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="FontSize" Value="16" />
+  </Style>
+
+  <Style Selector="Border.manualControlPanel">
+    <Setter Property="Background" Value="#10212C" />
+    <Setter Property="BorderBrush" Value="#347B9D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="7" />
+    <Setter Property="Padding" Value="10" />
+  </Style>
+
+  <Style Selector="Border.manualPendingPanel">
+    <Setter Property="Background" Value="#2A2212" />
+    <Setter Property="BorderBrush" Value="#B5812A" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
+  <Style Selector="Button.unitDragHandle">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="MinWidth" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="Background" Value="#252B33" />
+    <Setter Property="BorderBrush" Value="#56616D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Opacity" Value="0.85" />
+  </Style>
+
+  <Style Selector="Button.unitDragHandle:pointerover">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <!-- Semantic application surfaces. These keep state colors centralized so the
+       high-contrast theme can change meaning without editing every view. -->
+  <Style Selector="Border.quickRunShell">
+    <Setter Property="Background" Value="#15181D" />
+    <Setter Property="BorderBrush" Value="#3B414A" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.quickRunStatus">
+    <Setter Property="Background" Value="#20242B" />
+  </Style>
+
+  <Style Selector="Border.quickRunGeometry,
+                         Border.quickRunParameter,
+                         Border.quickRunPreparation,
+                         Border.quickRunResultStep">
+    <Setter Property="Background" Value="#1A2027" />
+    <Setter Property="BorderBrush" Value="#3B414A" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.quickRunWarnings">
+    <Setter Property="Background" Value="#2B281A" />
+    <Setter Property="BorderBrush" Value="#746632" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.quickRunBlockers">
+    <Setter Property="Background" Value="#301C1E" />
+    <Setter Property="BorderBrush" Value="#8A4148" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.quickRunResult">
+    <Setter Property="Background" Value="#1C2527" />
+    <Setter Property="BorderBrush" Value="#3D6A70" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="TextBlock.errorText">
+    <Setter Property="Foreground" Value="#E8A0A8" />
+  </Style>
+
+  <Style Selector="TextBlock.infoText">
+    <Setter Property="Foreground" Value="#7CC7D4" />
+  </Style>
+
+  <Style Selector="TextBlock.successText">
+    <Setter Property="Foreground" Value="#32D583" />
+  </Style>
+
+  <Style Selector="TextBlock.warningText">
+    <Setter Property="Foreground" Value="#F5C451" />
+  </Style>
+
+  <Style Selector="Border.errorPanel">
+    <Setter Property="Background" Value="#301C1E" />
+    <Setter Property="BorderBrush" Value="#8A4148" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Border.errorDivider">
+    <Setter Property="BorderBrush" Value="#5A3440" />
+  </Style>
+
+  <Style Selector="Border.appLogo">
+    <Setter Property="Background" Value="#D24C3F" />
+  </Style>
+
+  <Style Selector="Border.contentSurface">
+    <Setter Property="Background" Value="#0D1117" />
+  </Style>
+
+  <Style Selector="Border.mapOverlay">
+    <Setter Property="Background" Value="#D912171D" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+
+  <Style Selector="Grid.operateInspector">
+    <Setter Property="Margin" Value="10" />
+  </Style>
+
+  <Style Selector="Border.operateInspectorSection,
+                         Border.operateOperationsSurface">
+    <Setter Property="Background" Value="#0D1117" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Border.operateInspectorHeader">
+    <Setter Property="Background" Value="#05070A" />
+    <Setter Property="Padding" Value="14,10" />
+  </Style>
+
+  <Style Selector="GridSplitter.operateInspectorSplitter">
+    <Setter Property="Height" Value="8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Cursor" Value="SizeNorthSouth" />
+  </Style>
+
+  <Style Selector="GridSplitter.operateInspectorSplitter:pointerover">
+    <Setter Property="Background" Value="#6E7681" />
+  </Style>
+
+  <Style Selector="GridSplitter.embeddedTerminalSplitter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Cursor" Value="SizeNorthSouth" />
+  </Style>
+
+  <Style Selector="GridSplitter.embeddedTerminalSplitter:pointerover">
+    <Setter Property="Background" Value="#58A6FF" />
+  </Style>
+
+  <Style Selector="Border.embeddedTerminal">
+    <Setter Property="Background" Value="#0D1117" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="1,1,1,0" />
+    <Setter Property="CornerRadius" Value="6,6,0,0" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Border.embeddedTerminalHeader">
+    <Setter Property="Background" Value="#05070A" />
+    <Setter Property="Padding" Value="10,6" />
+  </Style>
+
+  <Style Selector="TextBox.embeddedTerminalOutput">
+    <Setter Property="Background" Value="#0D1117" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, monospace" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style Selector="Border.embeddedTerminalInput">
+    <Setter Property="Background" Value="#161B22" />
+    <Setter Property="BorderBrush" Value="#30363D" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+    <Setter Property="Padding" Value="6" />
+  </Style>
+
+  <Style Selector="Border.operateOperationsSurface">
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <Style Selector="Border.queueIndicator">
+    <Setter Property="Background" Value="#B93D33" />
+    <Setter Property="CornerRadius" Value="999" />
+    <Setter Property="MinWidth" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.targetScopeBadge">
+    <Setter Property="Background" Value="#18384A" />
+    <Setter Property="BorderBrush" Value="#60C4E8" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="Padding" Value="7,4" />
+  </Style>
+
+  <!-- Bright mode applies to Robot Command controls and chrome only. Native map
+       and video pixels are not styled here. -->
+  <Style Selector="Window.brightMode">
+    <Setter Property="Background" Value="#F4F7F9" />
+  </Style>
+
+  <!-- Bright outdoor palette: light, low-glare surfaces; near-black text and
+       structure; yellow focus/action; blue information; green success; amber
+       warning; red error. -->
+  <Style Selector="Window.brightMode Border.appLogo,
+                         Window.brightMode Border.contentSurface">
+    <Setter Property="Background" Value="#F4F7F9" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.mapOverlay">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBlock">
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBlock.muted">
+    <Setter Property="Foreground" Value="#263746" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBlock.eyebrow">
+    <Setter Property="Foreground" Value="#263746" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBlock.countBadge,
+                         Window.brightMode TextBlock.emptyState">
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.topBar,
+                         Window.brightMode Border.sideRail,
+                         Window.brightMode Border.statusBar,
+                         Window.brightMode Border.panel,
+                         Window.brightMode Border.toolbarGroup,
+                         Window.brightMode Border.surfaceHeader,
+                         Window.brightMode Border.surfaceFooter,
+                         Window.brightMode Border.commandPlanPanel,
+                         Window.brightMode Border.noticePanel,
+                         Window.brightMode Border.manualControlPanel,
+                         Window.brightMode Border.manualPendingPanel">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.operateInspectorSection,
+                         Window.brightMode Border.operateOperationsSurface,
+                         Window.brightMode Border.embeddedTerminal">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.operateInspectorHeader,
+                         Window.brightMode Border.embeddedTerminalHeader,
+                         Window.brightMode Border.embeddedTerminalInput,
+                         Window.brightMode Border.railHandleZone,
+                         Window.brightMode Border.bottomHandleZone">
+    <Setter Property="Background" Value="#E8EEF2" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+  </Style>
+
+  <Style Selector="Window.brightMode GridSplitter.operateInspectorSplitter,
+                         Window.brightMode GridSplitter.embeddedTerminalSplitter">
+    <Setter Property="Background" Value="#C7D3DB" />
+  </Style>
+
+  <Style Selector="Window.brightMode GridSplitter.operateInspectorSplitter:pointerover,
+                         Window.brightMode GridSplitter.embeddedTerminalSplitter:pointerover">
+    <Setter Property="Background" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBox.embeddedTerminalOutput">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.drawerToggle,
+                         Window.brightMode Button.mapRotationButton">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.drawerToggle:pointerover,
+                         Window.brightMode Button.drawerToggle:focus,
+                         Window.brightMode Button.mapRotationButton:pointerover,
+                         Window.brightMode Button.mapRotationButton:focus,
+                         Window.brightMode Button.mapRotationButton:pressed">
+    <Setter Property="Background" Value="#FFD400" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.statusPill,
+                         Window.brightMode Border.smallPill">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.quickRunShell,
+                         Window.brightMode Border.quickRunStatus,
+                         Window.brightMode Border.quickRunGeometry,
+                         Window.brightMode Border.quickRunParameter,
+                         Window.brightMode Border.quickRunPreparation,
+                         Window.brightMode Border.quickRunResultStep,
+                         Window.brightMode Border.quickRunResult">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.quickRunWarnings">
+    <Setter Property="Background" Value="#FFF3CD" />
+    <Setter Property="BorderBrush" Value="#8A5300" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.quickRunBlockers">
+    <Setter Property="Background" Value="#FDE8E7" />
+    <Setter Property="BorderBrush" Value="#B42318" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.errorPanel">
+    <Setter Property="Background" Value="#FDE8E7" />
+    <Setter Property="BorderBrush" Value="#B42318" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.errorDivider">
+    <Setter Property="BorderBrush" Value="#B42318" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBlock.errorText">
+    <Setter Property="Foreground" Value="#B42318" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBlock.infoText">
+    <Setter Property="Foreground" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBlock.successText">
+    <Setter Property="Foreground" Value="#087443" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBlock.warningText">
+    <Setter Property="Foreground" Value="#8A5300" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button:pointerover,
+                         Window.brightMode Button:focus">
+    <Setter Property="Background" Value="#FFD400" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button:disabled,
+                         Window.brightMode TextBox:disabled,
+                         Window.brightMode ComboBox:disabled,
+                         Window.brightMode NumericUpDown:disabled,
+                         Window.brightMode CheckBox:disabled,
+                         Window.brightMode ToggleSwitch:disabled">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="Foreground" Value="#596773" />
+    <Setter Property="Background" Value="#E5EAEE" />
+    <Setter Property="BorderBrush" Value="#82909B" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.primary">
+    <Setter Property="Background" Value="#FFD400" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.danger">
+    <Setter Property="Background" Value="#B42318" />
+    <Setter Property="Foreground" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#7A1610" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBox,
+                         Window.brightMode ComboBox,
+                         Window.brightMode NumericUpDown,
+                         Window.brightMode ToggleSwitch,
+                         Window.brightMode CheckBox">
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBox,
+                         Window.brightMode ComboBox,
+                         Window.brightMode NumericUpDown">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBox:focus,
+                         Window.brightMode ComboBox:focus,
+                         Window.brightMode NumericUpDown:focus,
+                         Window.brightMode CheckBox:focus,
+                         Window.brightMode ToggleSwitch:focus">
+    <Setter Property="BorderBrush" Value="#005A9C" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <Style Selector="Window.brightMode ListBox,
+                         Window.brightMode TabControl,
+                         Window.brightMode TabItem">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode ListBoxItem:selected,
+                         Window.brightMode ListBoxItem:pointerover,
+                         Window.brightMode TabItem:selected">
+    <Setter Property="Background" Value="#FFD400" />
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode ListBoxItem:selected:pointerover,
+                         Window.brightMode ListBoxItem:selected:focus">
+    <Setter Property="Background" Value="#FFD400" />
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode ListBoxItem:selected TextBlock,
+                         Window.brightMode ListBoxItem:pointerover TextBlock,
+                         Window.brightMode TabItem:selected TextBlock">
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode ListBoxItem:selected /template/ Border#selectionIndicator,
+                         Window.brightMode ListBoxItem:pointerover /template/ Border#pointeroverIndicator">
+    <Setter Property="Background" Value="#FFD400" />
+    <Setter Property="BorderBrush" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode Border.manualControlPanel,
+                         Window.brightMode Border.manualPendingPanel">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.railToggle,
+                         Window.brightMode Button.unitDragHandle">
+    <Setter Property="Background" Value="#FFFFFF" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#182B3A" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <!-- Keep unit selection inside the bound row background in bright mode too;
+       this must follow the global bright-mode ListBoxItem styles. -->
+  <Style Selector="Window.brightMode ListBox.unitList > ListBoxItem:selected,
+                         Window.brightMode ListBox.unitList > ListBoxItem:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Window.brightMode ListBox.unitList > ListBoxItem:selected /template/ Border#selectionIndicator,
+                         Window.brightMode ListBox.unitList > ListBoxItem:pointerover /template/ Border#pointeroverIndicator">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="IsVisible" Value="False" />
+  </Style>
+
+  <!-- Keep the native ListBoxItem container transparent. The visible
+       selection is the row's bound Background, never the ListBoxItem. -->
+  <Style Selector="ListBox.unitList ListBoxItem:selected,
+                         ListBox.unitList ListBoxItem:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Window.brightMode ListBox.unitList ListBoxItem:selected,
+                         Window.brightMode ListBox.unitList ListBoxItem:pointerover">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="Transparent" />
+  </Style>
+
+  <!-- Bright-mode interaction colors stay distinct from the white surfaces.
+       Keep dark text and outlines readable while controls are hovered or focused. -->
+  <Style Selector="Window.brightMode Button:pointerover,
+                         Window.brightMode Button:focus,
+                         Window.brightMode CheckBox:pointerover,
+                         Window.brightMode ToggleSwitch:pointerover">
+    <Setter Property="Background" Value="#D9EDF7" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button:pointerover TextBlock,
+                         Window.brightMode Button:focus TextBlock,
+                         Window.brightMode CheckBox:pointerover TextBlock,
+                         Window.brightMode ToggleSwitch:pointerover TextBlock">
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.primary:pointerover,
+                         Window.brightMode Button.primary:focus">
+    <Setter Property="Background" Value="#BFE3F5" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.danger:pointerover,
+                         Window.brightMode Button.danger:focus">
+    <Setter Property="Background" Value="#FADBD8" />
+    <Setter Property="Foreground" Value="#7A1610" />
+    <Setter Property="BorderBrush" Value="#B42318" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBox:pointerover,
+                         Window.brightMode ComboBox:pointerover,
+                         Window.brightMode NumericUpDown:pointerover">
+    <Setter Property="Background" Value="#EDF6FB" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBox:focus,
+                         Window.brightMode ComboBox:focus,
+                         Window.brightMode NumericUpDown:focus">
+    <Setter Property="Background" Value="#FFF4CC" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <!-- Fluent renders the visible surface inside the control template. Keep
+       the theme's pointer-over/focus resources from restoring dark colors. -->
+  <Style Selector="Window.brightMode Button:pointerover /template/ ContentPresenter,
+                         Window.brightMode Button:focus /template/ ContentPresenter">
+    <Setter Property="Background" Value="#D9EDF7" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.primary:pointerover /template/ ContentPresenter,
+                         Window.brightMode Button.primary:focus /template/ ContentPresenter">
+    <Setter Property="Background" Value="#BFE3F5" />
+    <Setter Property="Foreground" Value="#101820" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button.danger:pointerover /template/ ContentPresenter,
+                         Window.brightMode Button.danger:focus /template/ ContentPresenter">
+    <Setter Property="Background" Value="#FADBD8" />
+    <Setter Property="Foreground" Value="#7A1610" />
+    <Setter Property="BorderBrush" Value="#B42318" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBox:pointerover /template/ Border#PART_BorderElement,
+                         Window.brightMode ComboBox:pointerover /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#EDF6FB" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode TextBox:focus /template/ Border#PART_BorderElement,
+                         Window.brightMode ComboBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#FFF4CC" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <Style Selector="Window.brightMode NumericUpDown /template/ TextBox#PART_TextBox:pointerover,
+                         Window.brightMode NumericUpDown /template/ TextBox#PART_TextBox:focus">
+    <Setter Property="Background" Value="#FFF4CC" />
+    <Setter Property="Foreground" Value="#101820" />
+  </Style>
+
+  <Style Selector="Window.brightMode NumericUpDown /template/ TextBox#PART_TextBox:pointerover /template/ Border#PART_BorderElement,
+                         Window.brightMode NumericUpDown /template/ TextBox#PART_TextBox:focus /template/ Border#PART_BorderElement">
+    <Setter Property="Background" Value="#FFF4CC" />
+    <Setter Property="BorderBrush" Value="#005A9C" />
+  </Style>
+
+  <!-- Fluent hides disabled button content in its template. Keep disabled
+       toolbar actions visible so operators can still see the available flow. -->
+  <Style Selector="Window.brightMode Button:disabled /template/ ContentPresenter">
+    <Setter Property="Opacity" Value="1" />
+    <Setter Property="Background" Value="#E5EAEE" />
+    <Setter Property="Foreground" Value="#596773" />
+    <Setter Property="BorderBrush" Value="#82909B" />
+  </Style>
+
+  <Style Selector="Window.brightMode Button:disabled /template/ ContentPresenter TextBlock">
+    <Setter Property="Foreground" Value="#596773" />
+  </Style>
+</Styles>

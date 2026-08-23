@@ -1,0 +1,188 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RobotCommand.ViewModels"
+        xmlns:shell="using:RobotCommand.Views.Shell"
+        xmlns:loc="using:RobotCommand.Localization"
+        x:Class="RobotCommand.Views.MainWindow"
+        x:DataType="vm:ShellViewModel"
+        x:Name="Root"
+        Title="{loc:Loc Key=AppTitle}"
+        Width="1480"
+        Height="900"
+        MinWidth="1120"
+        MinHeight="700">
+  <Grid RowDefinitions="64,*,32">
+    <Border Grid.Row="0" Classes="topBar">
+      <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center" ZIndex="2">
+          <Border Classes="appLogo" Width="34" Height="34" CornerRadius="8">
+            <TextBlock HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       FontSize="18"
+                       FontWeight="Bold"
+                       Text="R" />
+          </Border>
+        </StackPanel>
+
+        <ListBox Grid.Column="0"
+                 Grid.ColumnSpan="3"
+                 Classes="topWorkspaceNav"
+                 ItemsSource="{Binding Workspaces}"
+                 SelectedItem="{Binding SelectedWorkspace}"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center"
+                 ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                 ScrollViewer.VerticalScrollBarVisibility="Hidden">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Title}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" ZIndex="2">
+          <Border Classes="statusPill" IsVisible="{Binding ManualControl.HasControlStatus}">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <TextBlock Text="{Binding ManualControl.Session.TargetName}" />
+              <TextBlock Text="{Binding ManualControl.Session.State}" />
+              <Button Content="{Binding ManualControl.ControlButtonText}" Command="{Binding ManualControl.ToggleControlCommand}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="{Binding LeftRailWidth}" />
+        <ColumnDefinition Width="30" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="30" />
+        <ColumnDefinition Width="{Binding RightRailWidth}" />
+      </Grid.ColumnDefinitions>
+      <Border Grid.Column="0" Classes="sideRail" BorderThickness="0,0,1,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Hidden">
+          <StackPanel Margin="12,14" Spacing="8">
+            <TextBlock Classes="eyebrow" Text="{loc:Loc Key=Operators}" />
+            <Border Classes="sideRailClientDetails"
+                    IsVisible="{Binding MyTeam.HasSelectedConnectedClient}">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="eyebrow" Text="{loc:Loc Key=SelectedClient}" />
+                <TextBlock FontSize="16"
+                           FontWeight="SemiBold"
+                           Text="{Binding MyTeam.SelectedConnectedClient.DisplayName}" />
+                <TextBlock Classes="muted" Text="{Binding MyTeam.SelectedConnectedClient.ApplicationName}" />
+                <TextBlock Classes="muted" Text="{Binding MyTeam.SelectedConnectedClient.ApplicationVersion}" />
+                <TextBlock Classes="muted" Text="{Binding MyTeam.SelectedConnectedClient.ConnectedAt}" />
+                <TextBlock Classes="muted" Text="{Binding MyTeam.SelectedConnectedClient.LastActivityAt}" />
+              </StackPanel>
+            </Border>
+            <ScrollViewer MaxHeight="360"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Hidden">
+              <ListBox Classes="sideRailClients"
+                       ItemsSource="{Binding MyTeam.ConnectedClients}"
+                       SelectedItem="{Binding MyTeam.SelectedConnectedClient, Mode=TwoWay}"
+                       SelectionMode="Single">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <Border Classes="sideRailClient">
+                      <StackPanel Spacing="2">
+                        <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                        <TextBlock Classes="muted" Text="{Binding ApplicationName}" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </ScrollViewer>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <Border Grid.Column="1" Classes="railHandleZone" ZIndex="20"><Grid><Button
+              Classes="railToggle"
+              Content="{Binding LeftRailGlyph}"
+              Command="{Binding ToggleLeftRailCommand}"
+              HorizontalContentAlignment="Center"
+              VerticalContentAlignment="Center"
+              Foreground="#D6DEE8" />
+        </Grid></Border>
+
+      <Border Grid.Column="2" Classes="contentSurface" Padding="16">
+        <Grid x:Name="ContentSurfaceGrid" ClipToBounds="True">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="18" />
+            <RowDefinition Height="{Binding TerminalHeight}" />
+          </Grid.RowDefinitions>
+          <ContentControl Content="{Binding CurrentWorkspace}" />
+          <Border Grid.Row="1"
+                x:Name="TerminalHandle"
+                Classes="bottomHandleZone"
+                Cursor="SizeNorthSouth"
+                ZIndex="20"
+                PointerPressed="OnTerminalHandlePressed"
+                PointerMoved="OnTerminalHandleMoved"
+                PointerReleased="OnTerminalHandleReleased" />
+          <shell:EmbeddedTerminalView x:Name="EmbeddedTerminal"
+                                       Grid.Row="2"
+                                      IsVisible="{Binding DataContext.TerminalOpen, ElementName=Root}"
+                                      DataContext="{Binding Terminal}" />
+        </Grid>
+      </Border>
+
+      <Border Grid.Column="3" Classes="railHandleZone" ZIndex="20"><Grid><Button
+              Classes="railToggle"
+              Content="{Binding RightRailGlyph}"
+              Command="{Binding ToggleRightRailCommand}"
+              HorizontalContentAlignment="Center"
+              VerticalContentAlignment="Center"
+              Foreground="#D6DEE8" />
+        </Grid></Border>
+
+      <Border Grid.Column="4" Classes="sideRail" BorderThickness="1,0,0,0">
+        <shell:OperateInspectorView DataContext="{Binding Operate}" />
+      </Border>
+    </Grid>
+
+    <shell:ApplicationStatusBar Grid.Row="2" DataContext="{Binding Status}" />
+
+    <Border Grid.Row="0"
+            Grid.RowSpan="3"
+            ZIndex="100"
+            Background="#99000000"
+            IsVisible="{Binding Operate.Controls.IsAirborneDisarmConfirmationVisible}">
+      <Border Width="560"
+              Padding="24"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Background="#151B23"
+              BorderBrush="#D83B3B"
+              BorderThickness="2"
+              CornerRadius="8">
+        <StackPanel Spacing="14">
+          <TextBlock FontSize="20"
+                     FontWeight="SemiBold"
+                     Text="{loc:Loc Key=AirborneDisarmTitle}" />
+          <TextBlock TextWrapping="Wrap"
+                     Text="{loc:Loc Key=AirborneDisarmWarning}" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button Classes="toolbarButton"
+                    Content="{loc:Loc Key=Cancel}"
+                    Command="{Binding Operate.Controls.CancelAirborneDisarmCommand}" />
+            <Button Classes="danger"
+                    Content="{loc:Loc Key=AirborneDisarmConfirm}"
+                    Command="{Binding Operate.Controls.ConfirmAirborneDisarmCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Grid>
+</Window>

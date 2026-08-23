@@ -1,0 +1,238 @@
+<UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:vm="using:RobotCommand.ViewModels" xmlns:loc="using:RobotCommand.Localization" x:Class="RobotCommand.Views.Shell.UnitsPanelView" x:DataType="vm:UnitsPanelViewModel" x:Name="Root">
+  <Grid RowDefinitions="Auto,*" Margin="16">
+    <Grid ColumnDefinitions="*,Auto"
+          IsVisible="{Binding ShowHeader, ElementName=Root}">
+      <TextBlock Classes="eyebrow" Text="{loc:Loc Key=UnitsHeader}" />
+      <Button Grid.Column="1"
+              Classes="toolbarButton"
+              Content="{loc:Loc Key=ClearSelection}"
+              Command="{Binding ClearSelectionCommand}" />
+    </Grid>
+    <ScrollViewer Grid.Row="1" Margin="0,12">
+      <StackPanel Margin="0,0,14,0" Spacing="14">
+        <Border Classes="panel teamSelectionCard" IsVisible="{Binding IsTeamSelected}">
+          <StackPanel Spacing="7">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding SelectedTeamTitle}" />
+              <TextBlock Classes="tag" VerticalAlignment="Center" Text="TEAM" />
+            </StackPanel>
+            <TextBlock Text="{Binding SelectedTeamMemberSummary}" />
+            <TextBlock Text="{Binding SelectedTeamOnlineSummary}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Classes="statusValue" Text="{Binding SelectedTeamReadiness}" />
+              <TextBlock Classes="muted" Text="{Binding SelectedTeamBlockers}" />
+            </StackPanel>
+            <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SelectedTeamMembers}" />
+            <TextBlock Classes="muted" IsVisible="{Binding IsTeamFormationLocked}" Text="{Binding TeamFormationStatus}" />
+            <TextBlock Classes="muted" IsVisible="{Binding IsTeamFormationLocked}" Text="{Binding TeamFormationPosition}" />
+            <TextBlock Classes="muted" IsVisible="{Binding IsTeamFormationLocked}" Text="{Binding TeamFormationTransform}" />
+          </StackPanel>
+        </Border>
+        <Border Classes="panel" IsVisible="{Binding HasMultipleSelectedUnits}">
+          <StackPanel Spacing="7">
+            <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=SelectedUnits}" />
+            <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding SelectionSummary}" />
+            <TextBlock Text="{Binding SelectedQueuedAction, StringFormat='Queued action: {0}'}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding SelectedQueuedAvailability, StringFormat='Queue status: {0}'}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding SelectedManualControlStatus}" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button Content="{loc:Loc Key=JumpTo}"
+                      Command="{Binding MapNavigation.JumpToSelectedCommand}" />
+              <Button Content="{loc:Loc Key=Follow}"
+                      Command="{Binding MapNavigation.FollowSelectedCommand}" />
+              <Button Classes="primary"
+                      Content="{loc:Loc Key=ExecuteAllCommands}"
+                      Command="{Binding ExecuteQueuedCommandsCommand}" />
+              <Button IsVisible="{Binding HasExecutingCommand}"
+                      Content="{loc:Loc Key=CancelCommand}"
+                      Command="{Binding CancelExecutingCommandsCommand}" />
+              <Button Content="{loc:Loc Key=ClearAllQueuedCommands}"
+                      IsVisible="{Binding ShowClearQueuedCommand}"
+                      Command="{Binding ClearQueuedCommandsCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Classes="panel" IsVisible="{Binding HasSingleSelectedUnit}">
+          <StackPanel Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding SelectedTitle}" />
+              <TextBlock Classes="tag" VerticalAlignment="Center" Text="{Binding SelectedSubtitle}" />
+            </StackPanel>
+            <TextBlock Classes="warningText" IsVisible="{Binding IsSelectedRemoteObserver}" Text="Read-only mirror from another Robot Command" />
+            <ItemsControl ItemsSource="{Binding SelectedStatusIndicators}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="smallPill" Margin="0,0,5,4" ToolTip.Tip="{Binding Tooltip}">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                      <TextBlock FontWeight="SemiBold" Foreground="{Binding Brush}" Text="{Binding Symbol}" />
+                      <TextBlock Text="{Binding Value}" />
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl IsVisible="{Binding HasSelectedConnectionChips}" ItemsSource="{Binding SelectedConnectionChips}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="smallPill" Margin="0,0,5,4" BorderBrush="{Binding Brush}" ToolTip.Tip="{Binding Tooltip}">
+                    <TextBlock Text="{Binding Label}" />
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="5">
+              <StackPanel Grid.Row="0" Grid.Column="0">
+                <TextBlock Classes="muted" Text="{loc:Loc Key=UnitPosition}" />
+                <TextBlock Text="{Binding SelectedPosition}" TextWrapping="Wrap" />
+              </StackPanel>
+              <StackPanel Grid.Row="0" Grid.Column="1">
+                <TextBlock Classes="muted" Text="{loc:Loc Key=UnitHeading}" />
+                <TextBlock Text="{Binding SelectedHeading}" />
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="0">
+                <TextBlock Classes="muted" Text="{loc:Loc Key=UnitVelocity}" />
+                <TextBlock Text="{Binding SelectedVelocity}" />
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="1">
+                <TextBlock Classes="muted" Text="{loc:Loc Key=UnitVerticalSpeed}" />
+                <TextBlock Text="{Binding SelectedVerticalSpeed}" />
+              </StackPanel>
+              <StackPanel Grid.Row="2" Grid.Column="0">
+                <TextBlock Classes="muted" Text="{loc:Loc Key=UnitOperatorDistance}" />
+                <TextBlock Text="{Binding SelectedOperatorDistance}" />
+              </StackPanel>
+              <StackPanel Grid.Row="2" Grid.Column="1">
+                <TextBlock Classes="muted" Text="{loc:Loc Key=UnitBattery}" ToolTip.Tip="{Binding SelectedBatteryTooltip}" />
+                <TextBlock Text="{Binding SelectedBattery}" ToolTip.Tip="{Binding SelectedBatteryTooltip}" />
+              </StackPanel>
+            </Grid>
+            <Border Classes="panel" IsVisible="{Binding HasSelectedMissionExecution}">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="sectionTitle" Text="Mission" />
+                <TextBlock FontWeight="SemiBold" Text="{Binding SelectedMissionExecutionState}" />
+                <TextBlock TextWrapping="Wrap" Text="{Binding SelectedMissionExecutionSummary}" />
+                <TextBlock Classes="muted" Text="{Binding SelectedMissionExecutionProgress}" />
+                <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SelectedMissionExecutionStep}" />
+              </StackPanel>
+            </Border>
+            <Border Classes="panel manualControlPanel"
+                    IsVisible="{Binding IsSelectedUnitUnderManualControl}">
+              <StackPanel Spacing="5">
+                <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ManualMode}" />
+                <TextBlock FontWeight="SemiBold" Text="{Binding SelectedManualControlMode}" />
+                <TextBlock Classes="muted" Text="{Binding SelectedManualControlDetail}" TextWrapping="Wrap" />
+                <Border Classes="manualPendingPanel"
+                        IsVisible="{Binding HasSelectedManualPendingCommand}">
+                  <StackPanel Spacing="2">
+                    <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=ControllerCommandPending}" />
+                    <TextBlock Text="{Binding SelectedManualPendingAction}" TextWrapping="Wrap" />
+                    <TextBlock Classes="muted" Text="{Binding SelectedManualPendingExpiry}" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </Border>
+            <TextBlock Text="{Binding SelectedQueuedAction, StringFormat='Queued action: {0}'}" TextWrapping="Wrap" />
+            <TextBlock Text="{Binding SelectedQueuedAvailability, StringFormat='Queue status: {0}'}" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button Content="{loc:Loc Key=JumpTo}"
+                      Command="{Binding MapNavigation.JumpToSelectedCommand}" />
+              <Button Content="{loc:Loc Key=Follow}"
+                      Command="{Binding MapNavigation.FollowSelectedCommand}" />
+            </StackPanel>
+            <Button Classes="primary"
+                    Content="{loc:Loc Key=ExecuteCommand}"
+                    IsVisible="{Binding HasQueuedCommandsForSelection}"
+                    Command="{Binding ExecuteQueuedCommandsCommand}" />
+            <Button Content="{loc:Loc Key=CancelCommand}"
+                    IsVisible="{Binding HasExecutingCommand}"
+                    Command="{Binding CancelExecutingCommandsCommand}" />
+            <Button Content="{loc:Loc Key=ClearCommandQueue}"
+                    IsVisible="{Binding ShowClearQueuedCommand}"
+                    Command="{Binding ClearQueuedCommandsCommand}" />
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button Content="{loc:Loc Key=ManageConnections}"
+                      IsVisible="{Binding CanManageUnitConnections}"
+                      Command="{Binding ManageUnitConnectionsCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <ListBox x:Name="UnitList" Classes="compactList unitList" IsVisible="{Binding HasUnits}" SelectionMode="Multiple" ItemsSource="{Binding Units}">
+          <ListBox.ItemTemplate><DataTemplate>
+            <Border Classes="unitRow" Margin="0" Padding="5,3" ClipToBounds="True" Background="{Binding RowBackground}" BorderBrush="{Binding TeamBorderBrush}" BorderThickness="{Binding TeamBorderThickness}" CornerRadius="{Binding TeamCornerRadius}" ToolTip.Tip="{Binding TeamTooltip}">
+              <Grid RowDefinitions="Auto,Auto">
+                <Border Grid.Row="0" IsVisible="{Binding IsTeamFirst}" Classes="teamLabel">
+                  <Button Classes="teamHeaderButton"
+                          Content="{Binding TeamName}"
+                          Command="{Binding $parent[UserControl].DataContext.SelectTeamCommand}"
+                          CommandParameter="{Binding TeamId}"
+                          ToolTip.Tip="Select this Team" />
+                </Border>
+                <Grid Grid.Row="1" Margin="0" ColumnDefinitions="Auto,*,Auto,Auto">
+              <Button Classes="unitDragHandle" VerticalAlignment="Center" Margin="0,0,8,0"
+                      Content="☷" ToolTip.Tip="Drag to reorder" Focusable="False" />
+              <StackPanel Grid.Column="1">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                  <TextBlock Classes="tag" Text="{Binding KindLabel}" />
+                  <TextBlock IsVisible="{Binding IsRemoteObserver}" Classes="tag" Text="REMOTE" />
+                  <TextBlock IsVisible="{Binding IsManuallyDefined}" Classes="tag" Text="ASSOCIATED" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding ListStatusIndicators}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel Orientation="Horizontal" /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Classes="smallPill" Margin="0,2,5,0" ToolTip.Tip="{Binding Tooltip}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                          <TextBlock FontWeight="SemiBold" Foreground="{Binding Brush}" Text="{Binding Symbol}" />
+                          <TextBlock Text="{Binding Value}" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ComboBox Width="96"
+                          IsVisible="{Binding HasFormationSlots}"
+                          ItemsSource="{Binding FormationSlots}"
+                          SelectedItem="{Binding SelectedFormationSlot, Mode=TwoWay}"
+                          ToolTip.Tip="Assigned formation slot" />
+              </StackPanel>
+              <TextBlock Grid.Column="2" Classes="muted" VerticalAlignment="Center" Text="{Binding State}" />
+              <Button Grid.Column="3" IsVisible="{Binding IsGhost}" Content="{loc:Loc Key=Delete}" Command="{Binding $parent[UserControl].DataContext.DeleteGhostCommand}" CommandParameter="{Binding}" />
+                </Grid>
+              </Grid>
+            </Border>
+          </DataTemplate></ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock Classes="warningText" IsVisible="{Binding HasTeamStatus}" Text="{Binding TeamStatus}" TextWrapping="Wrap" />
+        <Button Classes="primary" Content="{loc:Loc Key=CreateGhost}" Command="{Binding CreateGhostCommand}" />
+        <Border x:Name="GhostCreationPanel" Classes="panel" IsVisible="{Binding IsCreatingGhost}">
+          <StackPanel Spacing="7">
+            <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=CreateGhostUnit}" />
+            <TextBlock Classes="muted" Text="{loc:Loc Key=GhostProfile}" />
+            <ComboBox ItemsSource="{Binding GhostProfiles}" SelectedItem="{Binding SelectedGhostProfile}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Classes="muted" Text="{loc:Loc Key=NumberOfGhosts}" />
+            <NumericUpDown Value="{Binding GhostCount, Mode=TwoWay}" Minimum="1" Maximum="20" Increment="1" FormatString="0" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="primary" Content="{loc:Loc Key=Confirm}" Command="{Binding ConfirmCreateGhostCommand}" />
+              <Button Content="{loc:Loc Key=Cancel}" Command="{Binding CancelCreateGhostCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

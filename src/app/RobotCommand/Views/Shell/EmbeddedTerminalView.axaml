@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:loc="using:RobotCommand.Localization"
+             x:Class="RobotCommand.Views.Shell.EmbeddedTerminalView"
+             x:DataType="vm:EmbeddedTerminalViewModel">
+  <Border Classes="embeddedTerminal">
+    <Grid RowDefinitions="Auto,*,Auto">
+      <Border Classes="embeddedTerminalHeader">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=TerminalTitle}" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="toolbarButton" Command="{Binding ClearCommand}" Content="{loc:Loc Key=TerminalClear}" />
+        </Grid>
+      </Border>
+      <TextBox x:Name="OutputBox"
+               Grid.Row="1"
+               Classes="embeddedTerminalOutput"
+               Text="{Binding OutputText}"
+               IsReadOnly="True"
+               TextWrapping="Wrap"
+               AcceptsReturn="True" />
+      <Border Grid.Row="2" Classes="embeddedTerminalInput">
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <TextBlock VerticalAlignment="Center" Margin="8,0" Text=">" />
+          <TextBox x:Name="InputBox"
+                   Grid.Column="1"
+                   Text="{Binding Input, Mode=TwoWay}"
+                   PlaceholderText="{loc:Loc Key=TerminalInputPlaceholder}"
+                   KeyDown="OnInputKeyDown" />
+          <Button Grid.Column="2" Classes="primary" Command="{Binding ExecuteCommand}" Content="{loc:Loc Key=TerminalRun}" />
+        </Grid>
+      </Border>
+    </Grid>
+  </Border>
+</UserControl>

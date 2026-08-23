@@ -1,0 +1,123 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:loc="using:RobotCommand.Localization"
+             x:Class="RobotCommand.Views.Workspaces.UnitsLibraryView"
+             x:DataType="vm:UnitsLibraryViewModel">
+  <Grid ColumnDefinitions="260,*" ColumnSpacing="12" Margin="16">
+    <StackPanel Grid.Column="0" Spacing="8">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="{loc:Loc Key=UnitsNew}" Command="{Binding NewUnitCommand}" />
+        <Button Content="{loc:Loc Key=UnitsEdit}" Command="{Binding EditUnitCommand}" />
+        <Button Classes="danger" Content="{loc:Loc Key=UnitsDelete}" Command="{Binding DeleteUnitCommand}" />
+      </StackPanel>
+      <Border Classes="panel" Padding="8">
+        <ListBox ItemsSource="{Binding Units}" SelectedItem="{Binding SelectedUnit}">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Spacing="2" Margin="4">
+                <TextBlock FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                <TextBlock Classes="muted" FontSize="11" Text="{Binding ConnectionIds.Count, StringFormat='Connections: {0}'}" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Border>
+    </StackPanel>
+
+    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="10">
+        <Border Classes="panel" Padding="14" IsVisible="{Binding IsViewing}">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="sectionTitle" Text="{Binding SelectedUnit.DisplayName}" />
+            <TextBlock Classes="muted" Text="{Binding SelectedConnectionSummary}" />
+          </StackPanel>
+        </Border>
+
+        <Border Classes="panel" Padding="14" IsVisible="{Binding IsMavlinkParameterPanel}">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="sectionTitle" Text="{Binding ParameterTitle}" />
+            <ComboBox ItemsSource="{Binding ParameterTargets}" SelectedItem="{Binding SelectedParameterTarget}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding DisplayName}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Button Classes="primary" Content="{loc:Loc Key=DownloadCurrent}" Command="{Binding DownloadParametersCommand}" />
+              <Button Content="{loc:Loc Key=ImportProfile}" Click="ImportParameters_Click" />
+              <Button Content="{loc:Loc Key=ExportProfile}" Click="ExportParameters_Click" />
+            </StackPanel>
+            <ComboBox ItemsSource="{Binding ParameterProfiles}" SelectedItem="{Binding SelectedParameterProfile}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <Button Content="{loc:Loc Key=CompareWithLive}" Command="{Binding CompareParametersCommand}" />
+              <Button Classes="primary" Content="{loc:Loc Key=ApplyProfile}" Command="{Binding ApplyParametersCommand}" />
+            </StackPanel>
+            <TextBlock Classes="muted" Text="{Binding ParameterStatus}" TextWrapping="Wrap" />
+            <ItemsControl ItemsSource="{Binding ParameterDiffs}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Margin="0,2">
+                    <StackPanel>
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Profile.Name}" />
+                      <TextBlock Classes="muted" Text="{Binding Detail}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding Kind}" />
+                    <StackPanel Grid.Column="2">
+                      <TextBlock Text="{Binding Profile.Value}" />
+                      <TextBlock Classes="muted" Text="{Binding LiveValue}" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <Border Classes="panel" Padding="14" IsVisible="{Binding IsEditing}">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=UnitName}" />
+            <TextBox PlaceholderText="{loc:Loc Key=UnitsNamePlaceholder}" Text="{Binding UnitName, Mode=TwoWay}" />
+            <TextBlock Classes="muted" Text="{loc:Loc Key=UnitsConnections}" />
+            <ItemsControl ItemsSource="{Binding AvailableConnections}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}">
+                    <StackPanel Spacing="1">
+                      <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                  </CheckBox>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Classes="muted" Text="{loc:Loc Key=UnitsCameraSources}" />
+            <ItemsControl ItemsSource="{Binding AvailableCameras}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}">
+                    <StackPanel>
+                      <TextBlock Text="{Binding Label}" />
+                      <TextBlock Classes="muted" FontSize="11" Text="{Binding Detail}" />
+                    </StackPanel>
+                  </CheckBox>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="primary" Content="{loc:Loc Key=UnitsSave}" Command="{Binding SaveUnitCommand}" />
+              <Button Content="{loc:Loc Key=UnitsCancel}" Command="{Binding CancelUnitCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <TextBlock Classes="warningText" IsVisible="{Binding HasStatus}" Text="{Binding Status}" TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

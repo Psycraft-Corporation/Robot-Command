@@ -1,0 +1,156 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release source
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Validate authoritative tag
+        id: version
+        shell: pwsh
+        run: |
+          $version = ./build/validate-release-tag.ps1 -Tag $env:GITHUB_REF_NAME
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Restore public dependencies
+        run: dotnet restore RobotCommand.sln --configfile NuGet.config.template
+
+      - name: Build and test
+        run: |
+          dotnet build RobotCommand.sln -c Release --no-restore
+          dotnet test RobotCommand.sln -c Release --no-restore --no-build --filter "Category!=SITL&Category!=Hardware"
+
+      - name: Validate release inputs
+        shell: pwsh
+        run: |
+          ./build/validate-source-tree.ps1 -SourceOnly
+          ./build/validate-dependency-inventory.ps1
+          ./tools/validate-docs.ps1
+
+      - name: Install Gitleaks CLI
+        shell: pwsh
+        run: |
+          choco install gitleaks --version 8.30.1 --yes --no-progress
+          gitleaks version
+
+      - name: Scan source for secrets
+        shell: pwsh
+        run: ./build/scan-secrets.ps1 -SourceOnly
+
+  package-windows:
+    name: Package Windows application and CLI
+    needs: validate
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache verified GStreamer runtime
+        uses: actions/cache@v4
+        with:
+          path: artifacts/cache/gstreamer
+          key: gstreamer-win-x64-1.26.11
+
+      - name: Restore public dependencies
+        run: dotnet restore RobotCommand.sln --configfile NuGet.config.template --runtime win-x64
+
+      - name: Package Windows application
+        shell: pwsh
+        run: |
+          Remove-Item -Recurse -Force artifacts/packages -ErrorAction SilentlyContinue
+          ./build/package.ps1 -Runtime win-x64 -Version "${{ needs.validate.outputs.version }}" -SourceRevisionId "$env:GITHUB_SHA" -SkipGStreamer
+
+      - name: Package Windows CLI
+        shell: pwsh
+        run: ./build/package-cli.ps1 -Runtime win-x64 -Version "${{ needs.validate.outputs.version }}" -SourceRevisionId "$env:GITHUB_SHA"
+
+      - name: Generate manifest and checksums
+        shell: pwsh
+        run: ./build/write-release-manifest.ps1 -Version "${{ needs.validate.outputs.version }}" -Commit "$env:GITHUB_SHA"
+
+      - name: Validate package contents
+        shell: pwsh
+        run: ./build/validate-release-artifacts.ps1 -Version "${{ needs.validate.outputs.version }}" -Commit "$env:GITHUB_SHA"
+
+      - name: Smoke-test packaged application and CLI
+        shell: pwsh
+        run: ./build/smoke-test-packages.ps1 -ApplicationPath artifacts/publish/win-x64/RobotCommand.exe -CliPath artifacts/publish-cli/win-x64/RobotCommand.Cli.exe
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot-command-${{ needs.validate.outputs.version }}-win-x64
+          path: artifacts/packages/*
+          if-no-files-found: error
+
+  draft-release:
+    name: Create draft GitHub release
+    needs:
+      - validate
+      - package-windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: robot-command-${{ needs.validate.outputs.version }}-win-x64
+          path: artifacts/packages
+
+      - name: Create release notes
+        shell: pwsh
+        run: |
+          @"
+          # Robot Command ${{ needs.validate.outputs.version }}
+
+          This is a draft release for maintainer review.
+
+          Artifacts:
+          - Windows application: `RobotCommand-${{ needs.validate.outputs.version }}-win-x64.zip`
+          - Windows CLI: `RobotCommand.Cli-${{ needs.validate.outputs.version }}-win-x64.zip`
+          - SHA-256 checksums and release manifest
+
+          "@ | Set-Content release-notes.md -Encoding UTF8
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create $env:GITHUB_REF_NAME `
+            --draft `
+            --title "Robot Command ${{ needs.validate.outputs.version }}" `
+            --notes-file release-notes.md `
+            artifacts/packages/*
