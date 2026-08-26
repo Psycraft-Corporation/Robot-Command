@@ -44,6 +44,14 @@ sdks/dart/pubspec.lock
 src/RobotCommand.Sdk.Dart/.dart_tool/
 src/RobotCommand.Sdk.Dart/pubspec.lock
 
+# Kotlin Multiplatform SDK build output
+sdks/kmp/.gradle/
+sdks/kmp/.kotlin/
+sdks/kmp/build/
+sdks/kmp/sdk/.kotlin/
+sdks/kmp/sdk/build/
+sdks/kmp/local.properties
+
 # Local runtime state and generated diagnostics
 **/data/
 **/logs/
