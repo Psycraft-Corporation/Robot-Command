@@ -65,6 +65,16 @@ public data class RobotCommandAccessStatus(
     val expiresAt: String?,
 )
 
+public sealed interface RobotCommandAccessEvent {
+    public data class Status(
+        val value: RobotCommandAccessStatus,
+    ) : RobotCommandAccessEvent
+
+    public data class ObserverReady(
+        val session: RobotCommandObserverSession,
+    ) : RobotCommandAccessEvent
+}
+
 public enum class RobotCommandObserverEventType {
     CONNECTED,
     DISCONNECTED,

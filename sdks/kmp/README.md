@@ -51,10 +51,12 @@ transport is deliberately left for the macOS/Xcode milestone.
 
 ## API boundary
 
-`RobotCommandLanClient` provides HTTPS probing and host-approved observer
-access. `RobotCommandObserverSession` exposes access status, lifecycle events,
-and immutable snapshot models. Bearer tokens and generated Wire/gRPC types
-remain internal to the SDK and are never persisted.
+`RobotCommandLanClient` provides HTTPS probing and a cold
+`requestAccess(...)` flow. The flow emits protocol-neutral access statuses and
+then an `ObserverReady` event after the pinned observer stream is established.
+`RobotCommandObserverSession` exposes lifecycle events and immutable snapshot
+models. Bearer tokens and generated Wire/gRPC types remain internal to the SDK
+and are never persisted.
 
 The client never starts a server, discovers peers, reconnects automatically, or
 sends commands.

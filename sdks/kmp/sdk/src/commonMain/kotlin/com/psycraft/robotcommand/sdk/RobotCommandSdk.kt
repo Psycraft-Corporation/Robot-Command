@@ -1,5 +1,8 @@
 package com.psycraft.robotcommand.sdk
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+
 /** Creates the platform transport-backed Robot Command client. */
 public expect fun createRobotCommandLanClient(): RobotCommandLanClient
 
@@ -40,87 +43,80 @@ public class RobotCommandLanClient internal constructor(
     }
 
     /** Requests host-approved read-only observation using an explicitly pinned certificate. */
-    public suspend fun requestAccess(
+    public fun requestAccess(
         endpoint: String,
         expectedFingerprint: String,
         identity: RobotCommandClientIdentity,
         passphrase: String = "",
         pairingInvitation: RobotCommandPairingInvitation? = null,
-        onAccessStatus: (RobotCommandAccessStatus) -> Unit = {},
-    ): RobotCommandObserverSession {
-        val parsedEndpoint = RobotCommandEndpoint.parse(endpoint)
-        val fingerprint = normalizeFingerprint(expectedFingerprint)
-        pairingInvitation?.validateAgainst(parsedEndpoint, fingerprint)
+    ): Flow<RobotCommandAccessEvent> =
+        flow {
+            val parsedEndpoint = RobotCommandEndpoint.parse(endpoint)
+            val fingerprint = normalizeFingerprint(expectedFingerprint)
+            pairingInvitation?.validateAgainst(parsedEndpoint, fingerprint)
 
-        val accessTransport = transportFactory.open(parsedEndpoint, CertificatePolicy.Pinned(fingerprint))
-        var session: RobotCommandObserverSession? = null
-        try {
-            val request =
-                psycraft.logos.robotcommand.team.v1.AccessRequest(
-                    display_name = identity.displayName,
-                    application_name = identity.applicationName,
-                    application_version = identity.applicationVersion,
-                    sdk_version = RobotCommandSdkInfo.sdkVersion,
-                    api_version = RobotCommandSdkInfo.apiVersion,
-                    client_instance_id = identity.clientInstanceId,
-                    request_nonce = createRequestNonce(),
-                    pairing_id = pairingInvitation?.pairingId.orEmpty(),
-                    pairing_code = pairingInvitation?.shortCode.orEmpty(),
-                    pairing_phrase = passphrase.trim().ifEmpty { pairingInvitation?.passphrase.orEmpty() },
-                )
-
+            val accessTransport = transportFactory.open(parsedEndpoint, CertificatePolicy.Pinned(fingerprint))
             try {
-                accessTransport.requestAccess(request).collect { status ->
-                    val mappedStatus = status.toPublicModel()
-                    onAccessStatus(mappedStatus)
-                    when (status.state) {
-                        psycraft.logos.robotcommand.team.v1.AccessState.ACCESS_STATE_APPROVED -> {
-                            val token = status.session_token
-                            if (token.isBlank()) {
-                                throw RobotCommandAccessException("Robot Command approved access without a session token.")
-                            }
-                            val observerTransport =
-                                transportFactory.open(
-                                    parsedEndpoint,
-                                    CertificatePolicy.Pinned(fingerprint),
-                                )
-                            val candidate =
-                                RobotCommandObserverSession(
-                                    transport = observerTransport,
-                                    token = token,
-                                    endpoint = parsedEndpoint,
-                                )
-                            try {
-                                candidate.open()
-                                session = candidate
-                                throw AccessSessionOpened
-                            } catch (exception: Throwable) {
-                                if (exception !== AccessSessionOpened) candidate.close()
-                                throw exception
-                            }
-                        }
+                val request =
+                    psycraft.logos.robotcommand.team.v1.AccessRequest(
+                        display_name = identity.displayName,
+                        application_name = identity.applicationName,
+                        application_version = identity.applicationVersion,
+                        sdk_version = RobotCommandSdkInfo.sdkVersion,
+                        api_version = RobotCommandSdkInfo.apiVersion,
+                        client_instance_id = identity.clientInstanceId,
+                        request_nonce = createRequestNonce(),
+                        pairing_id = pairingInvitation?.pairingId.orEmpty(),
+                        pairing_code = pairingInvitation?.shortCode.orEmpty(),
+                        pairing_phrase = passphrase.trim().ifEmpty { pairingInvitation?.passphrase.orEmpty() },
+                    )
 
-                        psycraft.logos.robotcommand.team.v1.AccessState.ACCESS_STATE_REJECTED,
-                        psycraft.logos.robotcommand.team.v1.AccessState.ACCESS_STATE_EXPIRED,
-                        psycraft.logos.robotcommand.team.v1.AccessState.ACCESS_STATE_INCOMPATIBLE,
-                        -> {
-                            throw RobotCommandAccessException(
-                                status.message.ifBlank { "Robot Command access was not approved." },
-                                mappedStatus.state,
-                            )
-                        }
+                try {
+                    accessTransport.requestAccess(request).collect { status ->
+                        val mappedStatus = status.toPublicModel()
+                        emit(RobotCommandAccessEvent.Status(mappedStatus))
+                        when (status.state) {
+                            psycraft.logos.robotcommand.team.v1.AccessState.ACCESS_STATE_APPROVED -> {
+                                val token = status.session_token
+                                if (token.isBlank()) {
+                                    throw RobotCommandAccessException("Robot Command approved access without a session token.")
+                                }
+                                val observerTransport =
+                                    transportFactory.open(
+                                        parsedEndpoint,
+                                        CertificatePolicy.Pinned(fingerprint),
+                                    )
+                                val candidate =
+                                    RobotCommandObserverSession(
+                                        transport = observerTransport,
+                                        token = token,
+                                        endpoint = parsedEndpoint,
+                                    )
+                                try {
+                                    candidate.open()
+                                    emit(RobotCommandAccessEvent.ObserverReady(candidate))
+                                    throw AccessSessionOpened
+                                } catch (exception: Throwable) {
+                                    if (exception !== AccessSessionOpened) candidate.close()
+                                    throw exception
+                                }
+                            }
 
-                        else -> Unit
+                            psycraft.logos.robotcommand.team.v1.AccessState.ACCESS_STATE_REJECTED,
+                            psycraft.logos.robotcommand.team.v1.AccessState.ACCESS_STATE_EXPIRED,
+                            psycraft.logos.robotcommand.team.v1.AccessState.ACCESS_STATE_INCOMPATIBLE,
+                            -> throw AccessNegotiationComplete
+
+                            else -> Unit
+                        }
                     }
+                } catch (_: AccessSessionOpenedException) {
+                } catch (_: AccessNegotiationCompleteException) {
                 }
-            } catch (opened: AccessSessionOpenedException) {
-                return session ?: error("Observer session was not created.")
+            } finally {
+                accessTransport.close()
             }
-            throw RobotCommandAccessException("Robot Command access ended before host approval.")
-        } finally {
-            accessTransport.close()
         }
-    }
 
     internal companion object {
         fun forTesting(factory: RobotCommandTransportFactory): RobotCommandLanClient = RobotCommandLanClient(factory)
@@ -130,6 +126,10 @@ public class RobotCommandLanClient internal constructor(
 private class AccessSessionOpenedException : RuntimeException()
 
 private val AccessSessionOpened = AccessSessionOpenedException()
+
+private class AccessNegotiationCompleteException : RuntimeException()
+
+private val AccessNegotiationComplete = AccessNegotiationCompleteException()
 
 private fun createRequestNonce(): String = (1..32).map { "0123456789abcdef"[kotlin.random.Random.nextInt(16)] }.joinToString("")
 

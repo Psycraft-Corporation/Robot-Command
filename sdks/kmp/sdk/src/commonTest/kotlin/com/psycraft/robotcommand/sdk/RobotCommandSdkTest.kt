@@ -1,8 +1,8 @@
 package com.psycraft.robotcommand.sdk
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import psycraft.logos.robotcommand.team.v1.AccessRequest
 import psycraft.logos.robotcommand.team.v1.AccessState
@@ -82,35 +82,39 @@ class RobotCommandSdkTest {
     }
 
     @Test
-    fun accessOpensObserverBeforeReturningSession() =
+    fun accessFlowEmitsStatusAndObserverReady() =
         runTest {
             val factory = FakeTransportFactory()
             val client = RobotCommandLanClient.forTesting(factory)
-            val statuses = mutableListOf<RobotCommandAccessState>()
-
-            val session =
-                client.requestAccess(
-                    endpoint = "https://robot-command.local:7443",
-                    expectedFingerprint = fingerprint,
-                    identity =
-                        RobotCommandClientIdentity(
-                            displayName = "Robot Command Mobile",
-                            applicationName = "Robot Command Mobile",
-                            applicationVersion = "0.1.0",
-                            clientInstanceId = "test-client",
-                        ),
-                    passphrase = "Meadow-Wolf",
-                    onAccessStatus = { statuses += it.state },
-                )
+            val events =
+                client
+                    .requestAccess(
+                        endpoint = "https://robot-command.local:7443",
+                        expectedFingerprint = fingerprint,
+                        identity =
+                            RobotCommandClientIdentity(
+                                displayName = "Robot Command Mobile",
+                                applicationName = "Robot Command Mobile",
+                                applicationVersion = "0.1.0",
+                                clientInstanceId = "test-client",
+                            ),
+                        passphrase = "Meadow-Wolf",
+                    ).toList()
+            val statuses = events.filterIsInstance<RobotCommandAccessEvent.Status>().map { it.value.state }
+            val session = events.filterIsInstance<RobotCommandAccessEvent.ObserverReady>().single().session
 
             assertEquals(listOf(RobotCommandAccessState.PENDING, RobotCommandAccessState.APPROVED), statuses)
             assertEquals("Meadow-Wolf", factory.lastAccessRequest?.pairing_phrase)
             assertEquals("test-token", factory.lastWatchedToken)
+            val observerEvents = session.events.toList()
+            assertEquals(RobotCommandObserverEventType.CONNECTED, observerEvents.first().type)
             assertEquals(
-                RobotCommandObserverEventType.CONNECTED,
-                session.events.first { it.type == RobotCommandObserverEventType.CONNECTED }.type,
+                7L,
+                session.snapshots
+                    .toList()
+                    .single()
+                    .revision,
             )
-            assertEquals(7L, session.snapshots.first().revision)
 
             session.close()
         }
@@ -122,14 +126,24 @@ class RobotCommandSdkTest {
             factory.snapshot = snapshot(revision = 7)
             val client = RobotCommandLanClient.forTesting(factory)
             val session =
-                client.requestAccess(
-                    endpoint = "https://robot-command.local:7443",
-                    expectedFingerprint = fingerprint,
-                    identity = testIdentity(),
-                )
+                client
+                    .requestAccess(
+                        endpoint = "https://robot-command.local:7443",
+                        expectedFingerprint = fingerprint,
+                        identity = testIdentity(),
+                    ).toList()
+                    .filterIsInstance<RobotCommandAccessEvent.ObserverReady>()
+                    .single()
+                    .session
 
             factory.snapshot = snapshot(revision = 3)
-            assertEquals(7L, session.snapshots.first().revision)
+            assertEquals(
+                7L,
+                session.snapshots
+                    .toList()
+                    .single()
+                    .revision,
+            )
             session.close()
         }
 
@@ -138,13 +152,24 @@ class RobotCommandSdkTest {
         runTest {
             val factory = FakeTransportFactory().apply { includeHeartbeat = true }
             val session =
-                RobotCommandLanClient.forTesting(factory).requestAccess(
-                    endpoint = "https://robot-command.local:7443",
-                    expectedFingerprint = fingerprint,
-                    identity = testIdentity(),
-                )
+                RobotCommandLanClient
+                    .forTesting(factory)
+                    .requestAccess(
+                        endpoint = "https://robot-command.local:7443",
+                        expectedFingerprint = fingerprint,
+                        identity = testIdentity(),
+                    ).toList()
+                    .filterIsInstance<RobotCommandAccessEvent.ObserverReady>()
+                    .single()
+                    .session
 
-            assertEquals(7L, session.snapshots.first().revision)
+            assertEquals(
+                7L,
+                session.snapshots
+                    .toList()
+                    .single()
+                    .revision,
+            )
             session.close()
         }
 
