@@ -2,6 +2,7 @@ package com.psycraft.robotcommand.sdk
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withContext
 
 /** Creates the platform transport-backed Robot Command client. */
 public expect fun createRobotCommandLanClient(): RobotCommandLanClient
@@ -18,29 +19,30 @@ public class RobotCommandLanClient internal constructor(
     private val transportFactory: RobotCommandTransportFactory,
 ) {
     /** Obtains server identity and the certificate fingerprint before trust is pinned. */
-    public suspend fun probe(endpoint: String): RobotCommandServerProbe {
-        val parsedEndpoint = RobotCommandEndpoint.parse(endpoint)
-        val transport = transportFactory.open(parsedEndpoint, CertificatePolicy.Observe)
-        return try {
-            val response = transport.probe()
-            val fingerprint =
-                transport.observedCertificateFingerprint
-                    ?: response.tls_sha256_fingerprint.takeIf { it.isNotBlank() }
-                    ?: error("Robot Command did not present a certificate that could be pinned.")
-            RobotCommandServerProbe(
-                endpoint = parsedEndpoint,
-                instanceId = response.instance_id,
-                displayName = response.display_name,
-                apiVersion = response.api_version,
-                capabilities = response.capabilities.toList(),
-                minimumSdkVersion = response.minimum_sdk_version,
-                requiresPassphrase = response.requires_passphrase,
-                certificateFingerprint = normalizeFingerprint(fingerprint),
-            )
-        } finally {
-            transport.close()
+    public suspend fun probe(endpoint: String): RobotCommandServerProbe =
+        withContext(kotlinx.coroutines.Dispatchers.Default) {
+            val parsedEndpoint = RobotCommandEndpoint.parse(endpoint)
+            val transport = transportFactory.open(parsedEndpoint, CertificatePolicy.Observe)
+            try {
+                val response = transport.probe()
+                val fingerprint =
+                    transport.observedCertificateFingerprint
+                        ?: response.tls_sha256_fingerprint.takeIf { it.isNotBlank() }
+                        ?: error("Robot Command did not present a certificate that could be pinned.")
+                RobotCommandServerProbe(
+                    endpoint = parsedEndpoint,
+                    instanceId = response.instance_id,
+                    displayName = response.display_name,
+                    apiVersion = response.api_version,
+                    capabilities = response.capabilities.toList(),
+                    minimumSdkVersion = response.minimum_sdk_version,
+                    requiresPassphrase = response.requires_passphrase,
+                    certificateFingerprint = normalizeFingerprint(fingerprint),
+                )
+            } finally {
+                transport.close()
+            }
         }
-    }
 
     /** Requests host-approved read-only observation using an explicitly pinned certificate. */
     public fun requestAccess(
