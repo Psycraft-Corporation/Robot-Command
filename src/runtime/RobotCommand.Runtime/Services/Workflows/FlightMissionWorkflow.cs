@@ -115,28 +115,35 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
             coordinates.Select(point => new FlightMissionCoordinate(point.LatitudeDegrees, point.LongitudeDegrees)).ToArray());
         return await AddStepAsync(missionId, step, cancellationToken);
     }
-    public async Task<FlightMissionSnapshot> AddSurveyAsync(string missionId, string zoneGeometryId, FlightMissionSurveyOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<FlightMissionSnapshot> AddSurveyAsync(string missionId, string? zoneGeometryId, FlightMissionSurveyOptions? options = null, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(zoneGeometryId))
+            return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.SurveyZone, Survey: options ?? new()), cancellationToken);
         if (!_geometry.TryGet(zoneGeometryId, out var geometry) || geometry is null || geometry.Kind != GeometryDocumentKind.Zone)
-            throw new InvalidOperationException("Select a saved zone before adding a survey.");
+            throw new InvalidOperationException("The selected geometry is not a saved zone.");
         var ring = geometry.Rings.Count > 0 ? geometry.Rings[0].Points : geometry.Points;
         var coordinates = ring.Select(point => new FlightMissionCoordinate(point.LatitudeDegrees, point.LongitudeDegrees)).ToArray();
         return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.SurveyZone, geometry.GeometryId, geometry.DisplayName, geometry.ContentSha256, coordinates, Survey: options ?? new()), cancellationToken);
     }
-    public async Task<FlightMissionSnapshot> AddCorridorAsync(string missionId, string waypointSequenceGeometryId, FlightMissionCorridorOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<FlightMissionSnapshot> AddCorridorAsync(string missionId, string? waypointSequenceGeometryId, FlightMissionCorridorOptions? options = null, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(waypointSequenceGeometryId))
+            return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.CorridorScan, Corridor: options ?? new()), cancellationToken);
         if (!_geometry.TryGet(waypointSequenceGeometryId, out var geometry) || geometry is null || geometry.Kind != GeometryDocumentKind.WaypointSequence)
-            throw new InvalidOperationException("Select a saved waypoint sequence before adding a corridor scan.");
+            throw new InvalidOperationException("The selected geometry is not a saved waypoint sequence.");
         var coordinates = geometry.Points.Select(point => new FlightMissionCoordinate(point.LatitudeDegrees, point.LongitudeDegrees)).ToArray();
         return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.CorridorScan, geometry.GeometryId, geometry.DisplayName, geometry.ContentSha256, coordinates, Corridor: options ?? new()), cancellationToken);
     }
-    public async Task<FlightMissionSnapshot> AddTimedLoiterAsync(string missionId, string pointGeometryId, double durationSeconds, CancellationToken cancellationToken = default)
+    public async Task<FlightMissionSnapshot> AddTimedLoiterAsync(string missionId, string? pointGeometryId, double durationSeconds, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(pointGeometryId))
+            return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.TimedLoiter, LoiterDurationSeconds: durationSeconds), cancellationToken);
         if (!_geometry.TryGet(pointGeometryId, out var geometry) || geometry is null || geometry.Kind != GeometryDocumentKind.PointOfInterest)
-            throw new InvalidOperationException("Select a saved point of interest before adding a loiter.");
+            throw new InvalidOperationException("The selected geometry is not a saved point of interest.");
         if (geometry.Points.Count == 0) throw new InvalidOperationException("The selected point of interest has no coordinates.");
-        var point = geometry.Points[0];
-        return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.TimedLoiter, geometry.GeometryId, geometry.DisplayName, geometry.ContentSha256, [new(point.LatitudeDegrees, point.LongitudeDegrees)], LoiterDurationSeconds: durationSeconds), cancellationToken);
+        return await AddStepAsync(missionId, FlightMissionGeometryBinding.Bind(
+            new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.TimedLoiter, LoiterDurationSeconds: durationSeconds),
+            geometry), cancellationToken);
     }
     public Task<FlightMissionSnapshot> AddCameraIntentAsync(string missionId, FlightMissionCameraIntent intent, CancellationToken cancellationToken = default)
         => AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.CameraCaptureIntent, CameraIntent: intent), cancellationToken);
@@ -155,6 +162,23 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
         => UpdateAndPublishAsync(missionId, document => document with { EndAction = endAction, UpdatedAt = DateTimeOffset.UtcNow }, cancellationToken);
     public Task<FlightMissionSnapshot> SetStepOverridesAsync(string missionId, string stepId, double? relativeAltitudeMetres, double? cruiseSpeedMetresPerSecond, bool terrainFollowing, CancellationToken cancellationToken = default)
         => UpdateAndPublishAsync(missionId, document => document with { Steps = document.Steps.Select(step => step.Id == stepId ? step with { RelativeAltitudeMetres = relativeAltitudeMetres, CruiseSpeedMetresPerSecond = cruiseSpeedMetresPerSecond, TerrainFollowing = terrainFollowing } : step).ToArray(), UpdatedAt = DateTimeOffset.UtcNow }, cancellationToken);
+    public async Task<FlightMissionSnapshot> SetStepGeometryAsync(string missionId, string stepId, string geometryId, CancellationToken cancellationToken = default)
+    {
+        if (!_geometry.TryGet(geometryId, out var geometry) || geometry is null)
+            throw new KeyNotFoundException($"Geometry '{geometryId}' was not found.");
+
+        return await UpdateAndPublishAsync(missionId, document =>
+        {
+            var step = document.Steps.FirstOrDefault(item => item.Id.Equals(stepId, StringComparison.Ordinal))
+                       ?? throw new KeyNotFoundException("Mission step was not found.");
+            var updatedStep = FlightMissionGeometryBinding.Bind(step, geometry);
+            return document with
+            {
+                Steps = document.Steps.Select(item => item.Id.Equals(stepId, StringComparison.Ordinal) ? updatedStep : item).ToArray(),
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+        }, cancellationToken);
+    }
     public Task<FlightMissionSnapshot> SetStepOptionsAsync(string missionId, string stepId, FlightMissionSurveyOptions? survey, FlightMissionCorridorOptions? corridor, double? loiterDurationSeconds, FlightMissionCameraIntent? cameraIntent, CancellationToken cancellationToken = default)
         => UpdateAndPublishAsync(missionId, document => document with
         {

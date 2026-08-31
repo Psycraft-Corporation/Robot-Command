@@ -327,6 +327,11 @@
   <data name="MapOperatorUnavailable" xml:space="preserve"><value>Position de l’opérateur indisponible</value></data>
   <data name="MapShowGeometries" xml:space="preserve"><value>Afficher les géométries</value></data>
   <data name="MapHideGeometries" xml:space="preserve"><value>Masquer les géométries</value></data>
+  <data name="MapMissionPreviewLayers" xml:space="preserve"><value>Couches d&apos;aperçu des missions</value></data>
+  <data name="MapMissionPreviews" xml:space="preserve"><value>Aperçus des missions</value></data>
+  <data name="FlightMissionMission" xml:space="preserve"><value>Mission</value></data>
+  <data name="FlightMissionCreate" xml:space="preserve"><value>Créer</value></data>
+  <data name="FlightMissionSaveName" xml:space="preserve"><value>Enregistrer le nom</value></data>
   <data name="MapShowPolicy" xml:space="preserve"><value>Afficher la politique</value></data>
   <data name="MapHidePolicy" xml:space="preserve"><value>Masquer la politique</value></data>
   <data name="MapShowTrails" xml:space="preserve"><value>Afficher les traces</value></data>
@@ -394,6 +399,9 @@
   <data name="FlightMissionImport" xml:space="preserve"><value>Importer</value></data>
   <data name="FlightMissionExport" xml:space="preserve"><value>Exporter</value></data>
   <data name="FlightMissionDelete" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="FlightMissionConfirmDelete" xml:space="preserve"><value>Confirmer la suppression</value></data>
+  <data name="FlightMissionDeleteAssociatedGeometry" xml:space="preserve"><value>Supprimer la géométrie associée</value></data>
+  <data name="FlightMissionDeleteMissionOnly" xml:space="preserve"><value>Supprimer uniquement la mission</value></data>
   <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
   <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
   <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
@@ -409,6 +417,20 @@
   <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>Supprimer</value></data>
   <data name="FlightMissionStatus" xml:space="preserve"><value>État de la mission</value></data>
   <data name="FlightMissionPreview" xml:space="preserve"><value>Aperçu de la mission</value></data>
+  <data name="FlightMissionVehicleActions" xml:space="preserve"><value>Véhicule et actions</value></data>
+  <data name="FlightMissionAddStep" xml:space="preserve"><value>Ajouter une étape</value></data>
+  <data name="FlightMissionNewStepGeometry" xml:space="preserve"><value>Géométrie de la nouvelle étape</value></data>
+  <data name="FlightMissionSelectedStep" xml:space="preserve"><value>Étape sélectionnée</value></data>
+  <data name="FlightMissionStepGeometry" xml:space="preserve"><value>Géométrie de l&apos;étape</value></data>
+  <data name="FlightMissionAuthoringPreview" xml:space="preserve"><value>Aperçu de l&apos;auteur</value></data>
+  <data name="FlightMissionPointOfInterest" xml:space="preserve"><value>Point d&apos;intérêt</value></data>
+  <data name="FlightMissionWaypointSequence" xml:space="preserve"><value>Séquence de points</value></data>
+  <data name="FlightMissionGeometryRequired" xml:space="preserve"><value>Géométrie requise</value></data>
+  <data name="FlightMissionLoiterSummary" xml:space="preserve"><value>Attente de {0:0.#} s</value></data>
+  <data name="FlightMissionLoiterGeometryRequired" xml:space="preserve"><value>Attente de {0:0.#} s · géométrie requise</value></data>
+  <data name="FlightMissionPointCount" xml:space="preserve"><value>{0} point</value></data>
+  <data name="FlightMissionRoutePointCount" xml:space="preserve"><value>{0} points de route</value></data>
+  <data name="FlightMissionZonePointCount" xml:space="preserve"><value>{0} points de zone</value></data>
   <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>Espacement des lignes de relevé (m)</value></data>
   <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>Orientation du relevé (°)</value></data>
   <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>Demi-tour du relevé (m)</value></data>

@@ -7,6 +7,12 @@ namespace RobotCommand.Controls;
 /// <summary>Small drawing primitives shared by the lightweight map renderers.</summary>
 internal static class MapDrawingPrimitives
 {
+    public const string MissionPreviewAccentHex = "#EF4444";
+    public const double DirectionArrowSpacing = 48;
+    public const double DirectionArrowLength = 12;
+    public const double DirectionArrowHalfWidth = 6;
+    public const double DirectionArrowThickness = 2;
+
     public static void DrawPath(DrawingContext context, IReadOnlyList<Point> points, bool closed, IBrush? fill, IPen pen)
     {
         if (points.Count == 0) return;
@@ -20,9 +26,9 @@ internal static class MapDrawingPrimitives
         context.DrawGeometry(fill, pen, path);
     }
 
-    public static void DrawDirectionArrows(DrawingContext context, IReadOnlyList<Point> points, IBrush brush, double spacing = 56)
+    public static void DrawDirectionArrows(DrawingContext context, IReadOnlyList<Point> points, IBrush brush, double spacing = DirectionArrowSpacing)
     {
-        var pen = new Pen(brush, 1.5);
+        var pen = new Pen(brush, DirectionArrowThickness);
         for (var index = 0; index < points.Count - 1; index++)
         {
             var start = points[index];
@@ -40,9 +46,9 @@ internal static class MapDrawingPrimitives
             {
                 var distance = length * arrow / (count + 1d);
                 var tip = new Point(start.X + ux * distance, start.Y + uy * distance);
-                var back = new Point(tip.X - ux * 8, tip.Y - uy * 8);
-                context.DrawLine(pen, tip, new Point(back.X + px * 4, back.Y + py * 4));
-                context.DrawLine(pen, tip, new Point(back.X - px * 4, back.Y - py * 4));
+                var back = new Point(tip.X - ux * DirectionArrowLength, tip.Y - uy * DirectionArrowLength);
+                context.DrawLine(pen, tip, new Point(back.X + px * DirectionArrowHalfWidth, back.Y + py * DirectionArrowHalfWidth));
+                context.DrawLine(pen, tip, new Point(back.X - px * DirectionArrowHalfWidth, back.Y - py * DirectionArrowHalfWidth));
             }
         }
     }

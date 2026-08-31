@@ -115,6 +115,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     private readonly Canvas _vehicleLabelOverlay;
     private readonly Canvas _dynamicLabelOverlay;
     private readonly Canvas _staticLabelOverlay;
+    private readonly MissionPreviewArrowOverlayControl _missionPreviewArrowOverlay;
     private readonly AvaloniaRectangle _selectionBox;
     private readonly Canvas _unitMarkerOverlay;
     private readonly VehicleTrailOverlayControl _trailOverlay;
@@ -274,6 +275,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             ClipToBounds = true
         };
         _staticLabelOverlay = new Canvas
+        {
+            IsHitTestVisible = false,
+            ClipToBounds = true
+        };
+        _missionPreviewArrowOverlay = new MissionPreviewArrowOverlayControl
         {
             IsHitTestVisible = false,
             ClipToBounds = true
@@ -499,6 +505,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         Children.Add(_vehicleLabelOverlay);
         Children.Add(_dynamicLabelOverlay);
         Children.Add(_staticLabelOverlay);
+        Children.Add(_missionPreviewArrowOverlay);
         Children.Add(_unitMarkerOverlay);
         Children.Add(_packageMessage);
         Children.Add(_cursorBadge);
@@ -1258,9 +1265,10 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             return;
         }
 
-        _geometryLayer.Enabled = scene.GeometryVisible;
-        _geometryLayer.Features = scene.GeometryVisible
-            ? CreateGeometryFeatures(scene.Geometries.Where(item => !item.IsPolicy), policy: false)
+        var missionPreviewVisible = scene.Geometries.Any(item => !item.IsPolicy && IsFlightMissionPreview(item));
+        _geometryLayer.Enabled = scene.GeometryVisible || missionPreviewVisible;
+        _geometryLayer.Features = scene.GeometryVisible || missionPreviewVisible
+            ? CreateGeometryFeatures(scene.Geometries.Where(item => !item.IsPolicy && (scene.GeometryVisible || IsFlightMissionPreview(item))), policy: false)
             : Array.Empty<IFeature>();
         _geometryLayer.FeaturesWereModified();
     }
@@ -1341,25 +1349,28 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         var fence = IsPx4Fence(geometry);
         var exclusionFence = IsPx4ExclusionFence(geometry);
         var lineColor = highlighted
-            ? MapsuiColor.FromString("#F5C451")
+            ? MapsuiColor.FromString("#F6C453")
             : missionPreview
-                ? MapsuiColor.FromString("#A78BFA")
+                ? MapsuiColor.FromString(MapDrawingPrimitives.MissionPreviewAccentHex)
             : fence
                 ? MapsuiColor.FromString(exclusionFence ? "#F97316" : "#22C55E")
-            : policy
+                : policy
                 ? MapsuiColor.FromString("#F87171")
                 : MapsuiColor.FromString("#6FAFC9");
         var fillColor = highlighted
-            ? new MapsuiColor(245, 196, 81, 44)
+            ? new MapsuiColor(246, 196, 83, 44)
             : missionPreview
-                ? new MapsuiColor(167, 139, 250, 20)
+                ? new MapsuiColor(239, 68, 68, 44)
             : fence
                 ? exclusionFence ? new MapsuiColor(249, 115, 22, 24) : new MapsuiColor(34, 197, 94, 24)
             : policy
                 ? new MapsuiColor(248, 113, 113, 50)
                 : new MapsuiColor(111, 175, 201, 30);
-        var pen = new MapsuiPen(lineColor, highlighted ? 2.5 : policy || fence ? 2 : 1.25);
-        if (!policy && (IsWaypointSequence(geometry) || missionPreview))
+        // Mapsui widths are map-renderer units rather than Avalonia pixels;
+        // the authoring preview's 3 px stroke is therefore represented by a
+        // much smaller native-map width at normal zoom levels.
+        var pen = new MapsuiPen(lineColor, highlighted ? 2.5 : missionPreview ? 1.25 : policy || fence ? 2 : 1.25);
+        if (!policy && IsWaypointSequence(geometry))
         {
             pen.PenStyle = PenStyle.Dash;
             pen.DashArray = [5, 4];
@@ -1376,16 +1387,16 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     private static SymbolStyle CreateGeometryPointStyle(MapGeometryVisual geometry, bool policy)
     {
         var color = geometry.Highlighted
-            ? MapsuiColor.FromString("#F5C451")
+            ? MapsuiColor.FromString("#F6C453")
             : IsFlightMissionPreview(geometry)
-                ? MapsuiColor.FromString("#A78BFA")
+                ? MapsuiColor.FromString(MapDrawingPrimitives.MissionPreviewAccentHex)
             : policy
                 ? MapsuiColor.FromString("#F87171")
                 : MapsuiColor.FromString("#6FAFC9");
         return new SymbolStyle
         {
             SymbolType = SymbolType.Ellipse,
-            SymbolScale = geometry.Highlighted ? 0.58 : 0.42,
+            SymbolScale = geometry.Highlighted || IsFlightMissionPreview(geometry) ? 0.58 : 0.42,
             Fill = new MapsuiBrush(color),
             Outline = new MapsuiPen(MapsuiColor.FromString("#10161D"), 1)
         };
@@ -2162,7 +2173,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             _geometryLabelControls.Clear();
             _geometryArrowControls.Clear();
             _staticGeometryRenderKey = renderKey;
-            if (scene.GeometryVisible)
+            if (scene.GeometryVisible || scene.Geometries.Any(item => !item.IsPolicy && IsFlightMissionPreview(item)))
             {
                 BuildStaticGeometryControls(scene);
             }
@@ -2196,12 +2207,12 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private void BuildStaticGeometryControls(OperationalMapScene scene)
     {
-        if (!scene.GeometryVisible)
+        if (!scene.GeometryVisible && !scene.Geometries.Any(item => !item.IsPolicy && IsFlightMissionPreview(item)))
         {
             return;
         }
 
-        foreach (var geometry in scene.Geometries.Where(item => !item.IsPolicy))
+        foreach (var geometry in scene.Geometries.Where(item => !item.IsPolicy && (scene.GeometryVisible || IsFlightMissionPreview(item))))
         {
             if (IsWaypointSequence(geometry))
             {
@@ -2213,14 +2224,14 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
                 {
                     var chevron = new AvaloniaPolyline
                     {
-                        Width = 13,
-                        Height = 13,
+                        Width = MapDrawingPrimitives.DirectionArrowLength + 2,
+                        Height = (MapDrawingPrimitives.DirectionArrowHalfWidth * 2) + 2,
                         Points = new AvaloniaPoints([
                             new Avalonia.Point(1, 1),
-                            new Avalonia.Point(9, 6.5),
-                            new Avalonia.Point(1, 12)
+                            new Avalonia.Point(MapDrawingPrimitives.DirectionArrowLength + 1, MapDrawingPrimitives.DirectionArrowHalfWidth + 1),
+                            new Avalonia.Point(1, (MapDrawingPrimitives.DirectionArrowHalfWidth * 2) + 1)
                         ]),
-                        StrokeThickness = 1.5,
+                        StrokeThickness = MapDrawingPrimitives.DirectionArrowThickness,
                         IsHitTestVisible = false,
                         IsVisible = false,
                         RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative)
@@ -2256,6 +2267,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private void UpdateStaticGeometryControlPositions(OperationalMapScene scene, Viewport viewport)
     {
+        var missionArrows = new List<MissionPreviewArrow>();
         foreach (var label in _geometryLabelControls.Values)
         {
             label.IsVisible = false;
@@ -2269,12 +2281,13 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             }
         }
 
-        if (!scene.GeometryVisible)
+        if (!scene.GeometryVisible && !scene.Geometries.Any(item => !item.IsPolicy && IsFlightMissionPreview(item)))
         {
+            _missionPreviewArrowOverlay.Arrows = [];
             return;
         }
 
-        foreach (var geometry in scene.Geometries.Where(item => !item.IsPolicy))
+        foreach (var geometry in scene.Geometries.Where(item => !item.IsPolicy && (scene.GeometryVisible || IsFlightMissionPreview(item))))
         {
             if (_geometryLabelControls.TryGetValue(geometry.GeometryId, out var label) &&
                 !string.IsNullOrWhiteSpace(geometry.Name) &&
@@ -2282,9 +2295,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
                 TryProject(anchor, out var projected))
             {
                 var screen = viewport.WorldToScreen(projected.X, projected.Y);
-                var accent = geometry.Highlighted
-                    ? Avalonia.Media.Color.FromRgb(245, 196, 81)
-                    : Avalonia.Media.Color.FromRgb(111, 175, 201);
+                var accent = IsFlightMissionPreview(geometry)
+                    ? Avalonia.Media.Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)
+                    : geometry.Highlighted
+                        ? Avalonia.Media.Color.FromRgb(245, 196, 81)
+                        : Avalonia.Media.Color.FromRgb(111, 175, 201);
                 if (IsPx4Fence(geometry))
                 {
                     accent = IsPx4ExclusionFence(geometry)
@@ -2302,9 +2317,67 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
                 label.IsVisible = TryPositionOnCanvas(label, screen.X - 36, screen.Y + 12);
             }
 
-            if (_geometryArrowControls.TryGetValue(geometry.GeometryId, out var arrows))
+            if (IsFlightMissionPreview(geometry))
+            {
+                missionArrows.AddRange(BuildMissionPreviewArrows(geometry, viewport));
+            }
+            else if (_geometryArrowControls.TryGetValue(geometry.GeometryId, out var arrows))
             {
                 UpdateWaypointDirectionArrows(geometry, viewport, arrows);
+            }
+        }
+
+        _missionPreviewArrowOverlay.Arrows = missionArrows;
+    }
+
+    private static IEnumerable<MissionPreviewArrow> BuildMissionPreviewArrows(
+        MapGeometryVisual geometry,
+        Viewport viewport)
+    {
+        const double arrowSpacing = MapDrawingPrimitives.DirectionArrowSpacing;
+        for (var index = 0; index < geometry.Points.Count - 1; index++)
+        {
+            if (!TryProject(geometry.Points[index], out var startProjected) ||
+                !TryProject(geometry.Points[index + 1], out var endProjected))
+            {
+                continue;
+            }
+
+            var start = viewport.WorldToScreen(startProjected.X, startProjected.Y);
+            var end = viewport.WorldToScreen(endProjected.X, endProjected.Y);
+            if (!IsFinite(start.X) || !IsFinite(start.Y) || !IsFinite(end.X) || !IsFinite(end.Y))
+            {
+                continue;
+            }
+
+            var deltaX = end.X - start.X;
+            var deltaY = end.Y - start.Y;
+            var length = Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
+            if (length < 42)
+            {
+                continue;
+            }
+
+            var arrowCount = Math.Max(1, (int)(length / arrowSpacing));
+            var ux = deltaX / length;
+            var uy = deltaY / length;
+            var px = -uy;
+            var py = ux;
+            for (var arrowIndex = 1; arrowIndex <= arrowCount; arrowIndex++)
+            {
+                var distance = length * arrowIndex / (arrowCount + 1d);
+                var tip = new Avalonia.Point(start.X + ux * distance, start.Y + uy * distance);
+                var back = new Avalonia.Point(
+                    tip.X - ux * MapDrawingPrimitives.DirectionArrowLength,
+                    tip.Y - uy * MapDrawingPrimitives.DirectionArrowLength);
+                yield return new MissionPreviewArrow(
+                    tip,
+                    new Avalonia.Point(
+                        back.X + px * MapDrawingPrimitives.DirectionArrowHalfWidth,
+                        back.Y + py * MapDrawingPrimitives.DirectionArrowHalfWidth),
+                    new Avalonia.Point(
+                        back.X - px * MapDrawingPrimitives.DirectionArrowHalfWidth,
+                        back.Y - py * MapDrawingPrimitives.DirectionArrowHalfWidth));
             }
         }
     }
@@ -2346,7 +2419,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             // Route direction is shown as small, open chevrons along the dashed
             // stroke. They deliberately avoid the solid triangular silhouette
             // used by vehicle markers.
-            var arrowSpacing = 56d;
+            var arrowSpacing = MapDrawingPrimitives.DirectionArrowSpacing;
             if (arrowOffset >= arrows.Count)
             {
                 break;
@@ -2358,7 +2431,9 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             {
                 var progress = arrowIndex / (double)(arrowCount + 1);
                 var chevron = arrows[arrowOffset + arrowIndex - 1];
-                chevron.Stroke = new SolidColorBrush(geometry.Highlighted
+                chevron.Stroke = new SolidColorBrush(IsFlightMissionPreview(geometry)
+                    ? Avalonia.Media.Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)
+                    : geometry.Highlighted
                         ? Avalonia.Media.Color.FromRgb(245, 196, 81)
                         : Avalonia.Media.Color.FromRgb(111, 175, 201));
                 chevron.RenderTransform = new RotateTransform(rotation);
@@ -4116,6 +4191,41 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
         previous.Cancel();
         previous.Dispose();
+    }
+
+    private readonly record struct MissionPreviewArrow(Avalonia.Point Tip, Avalonia.Point Left, Avalonia.Point Right);
+
+    private sealed class MissionPreviewArrowOverlayControl : Control
+    {
+        private IReadOnlyList<MissionPreviewArrow> _arrows = [];
+
+        public IReadOnlyList<MissionPreviewArrow> Arrows
+        {
+            get => _arrows;
+            set
+            {
+                _arrows = value;
+                InvalidateVisual();
+            }
+        }
+
+        public override void Render(DrawingContext context)
+        {
+            base.Render(context);
+            if (_arrows.Count == 0)
+            {
+                return;
+            }
+
+            var pen = new Avalonia.Media.Pen(
+                new SolidColorBrush(Avalonia.Media.Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)),
+                MapDrawingPrimitives.DirectionArrowThickness);
+            foreach (var arrow in _arrows)
+            {
+                context.DrawLine(pen, arrow.Tip, arrow.Left);
+                context.DrawLine(pen, arrow.Tip, arrow.Right);
+            }
+        }
     }
 
     public void Dispose()

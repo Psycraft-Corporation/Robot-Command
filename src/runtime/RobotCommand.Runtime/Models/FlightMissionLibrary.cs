@@ -129,15 +129,19 @@ public sealed class FlightMissionLibraryStore : IDisposable
                 throw new InvalidDataException("RTL must be the final step or immediately precede Land.");
             if (step.Kind == FlightMissionStepKind.Land && index != document.Steps.Count - 1)
                 throw new InvalidDataException("Land must be the final mission step.");
-            if (step.Kind is FlightMissionStepKind.PointOfInterest && step.FrozenCoordinates.Count != 1)
+            // Geometry-backed steps may be authored before a reusable geometry
+            // is chosen. They remain incomplete until the selected-step binding
+            // is set, and the compiler reports that state before upload.
+            var missingGeometry = string.IsNullOrWhiteSpace(step.SourceGeometryId) && step.FrozenCoordinates.Count == 0;
+            if (step.Kind is FlightMissionStepKind.PointOfInterest && !missingGeometry && step.FrozenCoordinates.Count != 1)
                 throw new InvalidDataException("A point-of-interest step must contain one coordinate.");
-            if (step.Kind is FlightMissionStepKind.WaypointSequence && step.FrozenCoordinates.Count < 2)
+            if (step.Kind is FlightMissionStepKind.WaypointSequence && !missingGeometry && step.FrozenCoordinates.Count < 2)
                 throw new InvalidDataException("A waypoint-sequence step must contain at least two coordinates.");
-            if (step.Kind is FlightMissionStepKind.SurveyZone && step.FrozenCoordinates.Count < 3)
+            if (step.Kind is FlightMissionStepKind.SurveyZone && !missingGeometry && step.FrozenCoordinates.Count < 3)
                 throw new InvalidDataException("A survey-zone step must contain at least three zone coordinates.");
-            if (step.Kind is FlightMissionStepKind.CorridorScan && step.FrozenCoordinates.Count < 2)
+            if (step.Kind is FlightMissionStepKind.CorridorScan && !missingGeometry && step.FrozenCoordinates.Count < 2)
                 throw new InvalidDataException("A corridor scan needs a waypoint sequence with at least two points.");
-            if (step.Kind is FlightMissionStepKind.TimedLoiter && (step.FrozenCoordinates.Count != 1 || step.LoiterDurationSeconds is not > 0 or > 3600))
+            if (step.Kind is FlightMissionStepKind.TimedLoiter && ((!missingGeometry && step.FrozenCoordinates.Count != 1) || step.LoiterDurationSeconds is not > 0 or > 3600))
                 throw new InvalidDataException("A timed loiter needs one point and a duration between 0 and 3600 seconds.");
             if (step.RelativeAltitudeMetres is { } altitude && (!double.IsFinite(altitude) || altitude is <= 0 or > 5000))
                 throw new InvalidDataException("Step altitude must be between 0 and 5000 metres.");

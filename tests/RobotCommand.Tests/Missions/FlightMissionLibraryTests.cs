@@ -158,6 +158,34 @@ public sealed class FlightMissionLibraryTests
     }
 
     [Fact]
+    public async Task UnboundGeometryStepCanBeSavedButCompilerRequiresBinding()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"robot-command-flight-mission-{Guid.NewGuid():N}");
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            var mission = ValidMission(now) with
+            {
+                Steps =
+                [
+                    new FlightMissionStep("takeoff", FlightMissionStepKind.Takeoff),
+                    new FlightMissionStep("loiter", FlightMissionStepKind.TimedLoiter, LoiterDurationSeconds: 30)
+                ]
+            };
+            using var store = new FlightMissionLibraryStore(root);
+
+            await store.SaveAsync(mission, cancellationToken: TestContext.Current.CancellationToken);
+            var findings = new Px4FlightMissionCompiler().Validate(mission, null);
+
+            Assert.Contains(findings, finding => finding.Code == "MISSION_STEP_GEOMETRY_REQUIRED");
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+    [Fact]
     public void Compiler_AppendsRtlForConfiguredMissionEndAction()
     {
         var mission = ValidMission(DateTimeOffset.UtcNow) with

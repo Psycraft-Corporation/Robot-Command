@@ -281,6 +281,9 @@
   <data name="FlightMissionImport" xml:space="preserve"><value>Імпортувати</value></data>
   <data name="FlightMissionExport" xml:space="preserve"><value>Експортувати</value></data>
   <data name="FlightMissionDelete" xml:space="preserve"><value>Видалити</value></data>
+  <data name="FlightMissionConfirmDelete" xml:space="preserve"><value>Підтвердити видалення</value></data>
+  <data name="FlightMissionDeleteAssociatedGeometry" xml:space="preserve"><value>Видалити пов’язану геометрію</value></data>
+  <data name="FlightMissionDeleteMissionOnly" xml:space="preserve"><value>Видалити лише місію</value></data>
   <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
   <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
   <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
@@ -455,6 +458,11 @@
   <data name="MapOperatorUnavailable" xml:space="preserve"><value>Місцезнаходження оператора недоступне</value></data>
   <data name="MapShowGeometries" xml:space="preserve"><value>Показати геометрію</value></data>
   <data name="MapHideGeometries" xml:space="preserve"><value>Сховати геометрію</value></data>
+  <data name="MapMissionPreviewLayers" xml:space="preserve"><value>Шари попереднього перегляду місій</value></data>
+  <data name="MapMissionPreviews" xml:space="preserve"><value>Попередній перегляд місій</value></data>
+  <data name="FlightMissionMission" xml:space="preserve"><value>Місія</value></data>
+  <data name="FlightMissionCreate" xml:space="preserve"><value>Створити</value></data>
+  <data name="FlightMissionSaveName" xml:space="preserve"><value>Зберегти назву</value></data>
   <data name="MapShowPolicy" xml:space="preserve"><value>Показати політику</value></data>
   <data name="MapHidePolicy" xml:space="preserve"><value>Сховати політику</value></data>
   <data name="MapShowTrails" xml:space="preserve"><value>Показати сліди</value></data>
@@ -477,6 +485,20 @@
   <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>Видалити</value></data>
   <data name="FlightMissionStatus" xml:space="preserve"><value>Стан місії</value></data>
   <data name="FlightMissionPreview" xml:space="preserve"><value>Попередній перегляд місії</value></data>
+  <data name="FlightMissionVehicleActions" xml:space="preserve"><value>Апарат і дії</value></data>
+  <data name="FlightMissionAddStep" xml:space="preserve"><value>Додати крок</value></data>
+  <data name="FlightMissionNewStepGeometry" xml:space="preserve"><value>Геометрія нового кроку</value></data>
+  <data name="FlightMissionSelectedStep" xml:space="preserve"><value>Вибраний крок</value></data>
+  <data name="FlightMissionStepGeometry" xml:space="preserve"><value>Геометрія кроку</value></data>
+  <data name="FlightMissionAuthoringPreview" xml:space="preserve"><value>Попередній перегляд авторингу</value></data>
+  <data name="FlightMissionPointOfInterest" xml:space="preserve"><value>Точка інтересу</value></data>
+  <data name="FlightMissionWaypointSequence" xml:space="preserve"><value>Послідовність маршрутних точок</value></data>
+  <data name="FlightMissionGeometryRequired" xml:space="preserve"><value>Потрібна геометрія</value></data>
+  <data name="FlightMissionLoiterSummary" xml:space="preserve"><value>Очікування {0:0.#} с</value></data>
+  <data name="FlightMissionLoiterGeometryRequired" xml:space="preserve"><value>Очікування {0:0.#} с · потрібна геометрія</value></data>
+  <data name="FlightMissionPointCount" xml:space="preserve"><value>{0} точка</value></data>
+  <data name="FlightMissionRoutePointCount" xml:space="preserve"><value>{0} маршрутних точок</value></data>
+  <data name="FlightMissionZonePointCount" xml:space="preserve"><value>{0} точок зони</value></data>
   <data name="FormationNamePlaceholder" xml:space="preserve"><value>Назва формації</value></data>
   <data name="FormationAddUnit" xml:space="preserve"><value>Додати юніт</value></data>
   <data name="FormationRemoveUnit" xml:space="preserve"><value>Видалити юніт</value></data>

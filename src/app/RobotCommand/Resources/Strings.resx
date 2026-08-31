@@ -327,6 +327,11 @@
   <data name="MapOperatorUnavailable" xml:space="preserve"><value>Operator location unavailable</value></data>
   <data name="MapShowGeometries" xml:space="preserve"><value>Show geometries</value></data>
   <data name="MapHideGeometries" xml:space="preserve"><value>Hide geometries</value></data>
+  <data name="MapMissionPreviewLayers" xml:space="preserve"><value>Mission preview layers</value></data>
+  <data name="MapMissionPreviews" xml:space="preserve"><value>Mission previews</value></data>
+  <data name="FlightMissionMission" xml:space="preserve"><value>Mission</value></data>
+  <data name="FlightMissionCreate" xml:space="preserve"><value>Create</value></data>
+  <data name="FlightMissionSaveName" xml:space="preserve"><value>Save name</value></data>
   <data name="MapShowPolicy" xml:space="preserve"><value>Show policy</value></data>
   <data name="MapHidePolicy" xml:space="preserve"><value>Hide policy</value></data>
   <data name="MapShowTrails" xml:space="preserve"><value>Show trails</value></data>
@@ -394,6 +399,9 @@
   <data name="FlightMissionImport" xml:space="preserve"><value>Import</value></data>
   <data name="FlightMissionExport" xml:space="preserve"><value>Export</value></data>
   <data name="FlightMissionDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="FlightMissionConfirmDelete" xml:space="preserve"><value>Confirm delete</value></data>
+  <data name="FlightMissionDeleteAssociatedGeometry" xml:space="preserve"><value>Delete associated geometry</value></data>
+  <data name="FlightMissionDeleteMissionOnly" xml:space="preserve"><value>Delete mission only</value></data>
   <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
   <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
   <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
@@ -409,6 +417,20 @@
   <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>Remove</value></data>
   <data name="FlightMissionStatus" xml:space="preserve"><value>Mission status</value></data>
   <data name="FlightMissionPreview" xml:space="preserve"><value>Mission preview</value></data>
+  <data name="FlightMissionVehicleActions" xml:space="preserve"><value>Vehicle and actions</value></data>
+  <data name="FlightMissionAddStep" xml:space="preserve"><value>Add step</value></data>
+  <data name="FlightMissionNewStepGeometry" xml:space="preserve"><value>Geometry for new step</value></data>
+  <data name="FlightMissionSelectedStep" xml:space="preserve"><value>Selected step</value></data>
+  <data name="FlightMissionStepGeometry" xml:space="preserve"><value>Step geometry</value></data>
+  <data name="FlightMissionAuthoringPreview" xml:space="preserve"><value>Authoring preview</value></data>
+  <data name="FlightMissionPointOfInterest" xml:space="preserve"><value>Point of interest</value></data>
+  <data name="FlightMissionWaypointSequence" xml:space="preserve"><value>Waypoint sequence</value></data>
+  <data name="FlightMissionGeometryRequired" xml:space="preserve"><value>Geometry required</value></data>
+  <data name="FlightMissionLoiterSummary" xml:space="preserve"><value>{0:0.#} s loiter</value></data>
+  <data name="FlightMissionLoiterGeometryRequired" xml:space="preserve"><value>{0:0.#} s loiter · geometry required</value></data>
+  <data name="FlightMissionPointCount" xml:space="preserve"><value>{0} point</value></data>
+  <data name="FlightMissionRoutePointCount" xml:space="preserve"><value>{0} route points</value></data>
+  <data name="FlightMissionZonePointCount" xml:space="preserve"><value>{0} zone points</value></data>
   <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>Survey line spacing (m)</value></data>
   <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>Survey bearing (°)</value></data>
   <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>Survey turnaround (m)</value></data>

@@ -93,11 +93,11 @@ public sealed class FlightMissionPreviewControl : Control
         if (route.Count >= 2)
         {
             var routePoints = route.Select(projection.Project).ToArray();
-            var routePen = new Pen(new SolidColorBrush(Color.Parse("#F6C453")), 3);
+            var routePen = new Pen(new SolidColorBrush(Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)), 3);
             MapDrawingPrimitives.DrawPath(context, routePoints, false, null, routePen);
-            MapDrawingPrimitives.DrawDirectionArrows(context, routePoints, routePen.Brush ?? Brushes.White, 48);
+            MapDrawingPrimitives.DrawDirectionArrows(context, routePoints, routePen.Brush ?? Brushes.White);
             foreach (var point in routePoints)
-                context.DrawEllipse(new SolidColorBrush(Color.Parse("#F6C453")), new Pen(Brushes.Black, 1), point, 3.5, 3.5);
+                context.DrawEllipse(new SolidColorBrush(Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)), new Pen(Brushes.Black, 1), point, 3.5, 3.5);
         }
 
         if (unitPoint is not null)
@@ -109,7 +109,7 @@ public sealed class FlightMissionPreviewControl : Control
                 var first = projection.Project(firstStep);
                 var approachPen = new Pen(new SolidColorBrush(Color.Parse("#5ED6D1")), 2, new DashStyle([8, 5], 0));
                 MapDrawingPrimitives.DrawPath(context, [unit, first], false, null, approachPen);
-                MapDrawingPrimitives.DrawDirectionArrows(context, [unit, first], approachPen.Brush ?? Brushes.White, 56);
+                MapDrawingPrimitives.DrawDirectionArrows(context, [unit, first], approachPen.Brush ?? Brushes.White);
             }
 
             if (Mission.Steps.Any(step => step.Kind == FlightMissionStepKind.ReturnToLaunch) && route.Count > 0)
@@ -120,7 +120,7 @@ public sealed class FlightMissionPreviewControl : Control
                     var last = projection.Project(lastStep);
                     var rtlPen = new Pen(new SolidColorBrush(Color.Parse("#FF9F5E")), 2, new DashStyle([8, 5], 0));
                     MapDrawingPrimitives.DrawPath(context, [last, unit], false, null, rtlPen);
-                    MapDrawingPrimitives.DrawDirectionArrows(context, [last, unit], rtlPen.Brush ?? Brushes.White, 56);
+                    MapDrawingPrimitives.DrawDirectionArrows(context, [last, unit], rtlPen.Brush ?? Brushes.White);
                     MapDrawingPrimitives.DrawLabel(context, "RTL", new Point(last.X + 8, last.Y - 18), rtlPen.Brush ?? Brushes.White);
                 }
             }

@@ -186,6 +186,9 @@
   <data name="FlightMissionImport" xml:space="preserve"><value>インポート</value></data>
   <data name="FlightMissionExport" xml:space="preserve"><value>エクスポート</value></data>
   <data name="FlightMissionDelete" xml:space="preserve"><value>削除</value></data>
+  <data name="FlightMissionConfirmDelete" xml:space="preserve"><value>削除を確認</value></data>
+  <data name="FlightMissionDeleteAssociatedGeometry" xml:space="preserve"><value>関連ジオメトリを削除</value></data>
+  <data name="FlightMissionDeleteMissionOnly" xml:space="preserve"><value>ミッションのみ削除</value></data>
   <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
   <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
   <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
@@ -211,6 +214,11 @@
   <data name="MapWeatherOpacity" xml:space="preserve"><value>不透明度</value></data>
   <data name="MapShowGeometries" xml:space="preserve"><value>ジオメトリを表示</value></data>
   <data name="MapHideGeometries" xml:space="preserve"><value>ジオメトリを非表示</value></data>
+  <data name="MapMissionPreviewLayers" xml:space="preserve"><value>ミッションプレビュー レイヤー</value></data>
+  <data name="MapMissionPreviews" xml:space="preserve"><value>ミッションプレビュー</value></data>
+  <data name="FlightMissionMission" xml:space="preserve"><value>ミッション</value></data>
+  <data name="FlightMissionCreate" xml:space="preserve"><value>作成</value></data>
+  <data name="FlightMissionSaveName" xml:space="preserve"><value>名前を保存</value></data>
   <data name="MapShowTrails" xml:space="preserve"><value>軌跡を表示</value></data>
   <data name="MapHideTrails" xml:space="preserve"><value>軌跡を非表示</value></data>
   <data name="MapShowLabels" xml:space="preserve"><value>ラベルを表示</value></data>
@@ -516,6 +524,20 @@
   <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>削除</value></data>
   <data name="FlightMissionStatus" xml:space="preserve"><value>ミッション状態</value></data>
   <data name="FlightMissionPreview" xml:space="preserve"><value>ミッションプレビュー</value></data>
+  <data name="FlightMissionVehicleActions" xml:space="preserve"><value>機体とアクション</value></data>
+  <data name="FlightMissionAddStep" xml:space="preserve"><value>ステップを追加</value></data>
+  <data name="FlightMissionNewStepGeometry" xml:space="preserve"><value>新しいステップのジオメトリ</value></data>
+  <data name="FlightMissionSelectedStep" xml:space="preserve"><value>選択したステップ</value></data>
+  <data name="FlightMissionStepGeometry" xml:space="preserve"><value>ステップのジオメトリ</value></data>
+  <data name="FlightMissionAuthoringPreview" xml:space="preserve"><value>作成プレビュー</value></data>
+  <data name="FlightMissionPointOfInterest" xml:space="preserve"><value>関心地点</value></data>
+  <data name="FlightMissionWaypointSequence" xml:space="preserve"><value>ウェイポイント列</value></data>
+  <data name="FlightMissionGeometryRequired" xml:space="preserve"><value>ジオメトリが必要</value></data>
+  <data name="FlightMissionLoiterSummary" xml:space="preserve"><value>{0:0.#} 秒待機</value></data>
+  <data name="FlightMissionLoiterGeometryRequired" xml:space="preserve"><value>{0:0.#} 秒待機 · ジオメトリが必要</value></data>
+  <data name="FlightMissionPointCount" xml:space="preserve"><value>{0} 地点</value></data>
+  <data name="FlightMissionRoutePointCount" xml:space="preserve"><value>{0} ルートポイント</value></data>
+  <data name="FlightMissionZonePointCount" xml:space="preserve"><value>{0} ゾーンポイント</value></data>
   <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>測量線間隔 (m)</value></data>
   <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>測量方位 (°)</value></data>
   <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>測量旋回 (m)</value></data>

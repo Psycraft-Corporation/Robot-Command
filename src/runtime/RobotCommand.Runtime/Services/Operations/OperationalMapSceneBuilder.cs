@@ -53,7 +53,8 @@ public sealed class OperationalMapSceneBuilder(IUnitDefinitionService? reconcili
         bool geometryVisible,
         bool policyVisible = true,
         IReadOnlySet<string>? highlightedGeometryIds = null,
-        IReadOnlySet<string>? selectedVehicleIds = null)
+        IReadOnlySet<string>? selectedVehicleIds = null,
+        bool missionPreviewVisible = true)
     {
         var displayVehicles = reconciliation?.ProjectVehicles(vehicles) ?? vehicles;
         var selectedTelemetry = SelectTelemetry(telemetry, selectedVehicleId);
@@ -110,7 +111,11 @@ public sealed class OperationalMapSceneBuilder(IUnitDefinitionService? reconcili
                 allowedGeometryConnections is null ||
                 allowedGeometryConnections.Contains(item.ConnectionId))
             .Select(item => ToVisual(item, highlightedGeometryIds))
-            .Where(item => item.IsPolicy ? policyVisible : geometryVisible)
+            .Where(item => item.IsPolicy
+                ? policyVisible
+                : IsMissionPreview(item)
+                    ? missionPreviewVisible
+                    : geometryVisible)
             .Where(item =>
                 item.Points.Count > 0 ||
                 item.Rings.Any(ring => ring.Count > 0))
@@ -130,6 +135,9 @@ public sealed class OperationalMapSceneBuilder(IUnitDefinitionService? reconcili
             PolicyVisible = policyVisible
         };
     }
+
+    private static bool IsMissionPreview(MapGeometryVisual geometry)
+        => geometry.Kind.StartsWith("FlightMissionPreview", StringComparison.OrdinalIgnoreCase);
 
     private VehicleTelemetryRecord? SelectTelemetry(
         IReadOnlyList<VehicleTelemetryRecord> telemetry,

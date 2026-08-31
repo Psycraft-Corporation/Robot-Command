@@ -36,6 +36,13 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
         if (mission.Steps.Count == 0) findings.Add(new("MISSION_EMPTY", WorkflowFindingSeverity.Blocking, "Add at least one mission step before uploading."));
         if (mission.Steps.Count > 0 && mission.Steps.All(step => step.Kind is FlightMissionStepKind.Takeoff or FlightMissionStepKind.ReturnToLaunch or FlightMissionStepKind.Land))
             findings.Add(new("MISSION_NO_NAVIGATION", WorkflowFindingSeverity.Blocking, "Add a saved PoI or waypoint sequence to the mission."));
+        var missingGeometrySteps = mission.Steps
+            .Where(step => IsNavigation(step.Kind) && step.FrozenCoordinates.Count == 0)
+            .Select(step => step.DisplayName)
+            .ToArray();
+        if (missingGeometrySteps.Length > 0)
+            findings.Add(new("MISSION_STEP_GEOMETRY_REQUIRED", WorkflowFindingSeverity.Blocking,
+                $"Select geometry for: {string.Join(", ", missingGeometrySteps)}."));
         // Mission end behavior is explicit and backend-neutral.  A mission
         // may end on its last navigation item and then apply Hold (the
         // default) or an automatically appended RTL.  Authored RTL/Land
@@ -74,6 +81,8 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
         FlightMissionStepKind? previousKind = null;
         foreach (var step in mission.Steps)
         {
+            if (IsNavigation(step.Kind) && step.FrozenCoordinates.Count == 0)
+                throw new InvalidOperationException($"Mission step '{step.DisplayName}' is missing geometry.");
             var speed = step.CruiseSpeedMetresPerSecond ?? mission.CruiseSpeedMetresPerSecond;
             if (IsNavigation(step.Kind) && !NearlyEqual(speed, lastSpeed))
             {

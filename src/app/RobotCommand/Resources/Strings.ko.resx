@@ -326,6 +326,11 @@
   <data name="MapOperatorUnavailable" xml:space="preserve"><value>Operator location unavailable</value></data>
   <data name="MapShowGeometries" xml:space="preserve"><value>지오메트리 표시</value></data>
   <data name="MapHideGeometries" xml:space="preserve"><value>지오메트리 숨기기</value></data>
+  <data name="MapMissionPreviewLayers" xml:space="preserve"><value>임무 미리 보기 레이어</value></data>
+  <data name="MapMissionPreviews" xml:space="preserve"><value>임무 미리 보기</value></data>
+  <data name="FlightMissionMission" xml:space="preserve"><value>임무</value></data>
+  <data name="FlightMissionCreate" xml:space="preserve"><value>만들기</value></data>
+  <data name="FlightMissionSaveName" xml:space="preserve"><value>이름 저장</value></data>
   <data name="MapShowPolicy" xml:space="preserve"><value>정책 표시</value></data>
   <data name="MapHidePolicy" xml:space="preserve"><value>정책 숨기기</value></data>
   <data name="MapShowTrails" xml:space="preserve"><value>궤적 표시</value></data>
@@ -350,24 +355,24 @@
   <data name="GeometryTool" xml:space="preserve"><value>Geometry</value></data>
   <data name="GeometryToolDescription" xml:space="preserve"><value>Create reusable local PoIs, waypoint sequences, and zones. They are not sent to a vehicle or Logos.</value></data>
   <data name="GeometryDefaultAltitude" xml:space="preserve"><value>Default altitude</value></data>
-  <data name="GeometryNewPoi" xml:space="preserve"><value>New PoI</value></data>
-  <data name="GeometrySelect" xml:space="preserve"><value>Select geometry</value></data>
+  <data name="GeometryNewPoi" xml:space="preserve"><value>새 관심 지점</value></data>
+  <data name="GeometrySelect" xml:space="preserve"><value>지오메트리 선택</value></data>
   <data name="GeometryExport" xml:space="preserve"><value>Export</value></data>
-  <data name="GeometryDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="GeometryDelete" xml:space="preserve"><value>삭제</value></data>
   <data name="GeometryRename" xml:space="preserve"><value>Rename</value></data>
-  <data name="GeometryNewWaypointSequence" xml:space="preserve"><value>New waypoint sequence</value></data>
-  <data name="GeometryNewZone" xml:space="preserve"><value>New zone</value></data>
-  <data name="GeometryDeleteSelected" xml:space="preserve"><value>Delete selected</value></data>
+  <data name="GeometryNewWaypointSequence" xml:space="preserve"><value>새 웨이포인트 시퀀스</value></data>
+  <data name="GeometryNewZone" xml:space="preserve"><value>새 구역</value></data>
+  <data name="GeometryDeleteSelected" xml:space="preserve"><value>선택 항목 삭제</value></data>
   <data name="GeometryConfirmDelete" xml:space="preserve"><value>Confirm delete</value></data>
   <data name="GeometryDraft" xml:space="preserve"><value>Local draft</value></data>
-  <data name="GeometryName" xml:space="preserve"><value>Name</value></data>
+  <data name="GeometryName" xml:space="preserve"><value>이름</value></data>
   <data name="GeometryGroups" xml:space="preserve"><value>Groups</value></data>
   <data name="GeometryOptionalGroups" xml:space="preserve"><value>Optional groups, comma-separated</value></data>
   <data name="GeometryUndo" xml:space="preserve"><value>Undo</value></data>
   <data name="GeometryRedo" xml:space="preserve"><value>Redo</value></data>
   <data name="GeometryRemoveVertex" xml:space="preserve"><value>Remove vertex</value></data>
   <data name="GeometryFinish" xml:space="preserve"><value>Finish</value></data>
-  <data name="GeometrySave" xml:space="preserve"><value>Save geometry</value></data>
+  <data name="GeometrySave" xml:space="preserve"><value>지오메트리 저장</value></data>
   <data name="GeometryCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="AutonomyLandingDescription" xml:space="preserve"><value>Create and organise reusable local geometry. Mission planning is coming next.</value></data>
    <data name="GeometrySearch" xml:space="preserve"><value>지오메트리 검색</value></data>
@@ -393,6 +398,9 @@
    <data name="FlightMissionImport" xml:space="preserve"><value>가져오기</value></data>
    <data name="FlightMissionExport" xml:space="preserve"><value>내보내기</value></data>
    <data name="FlightMissionDelete" xml:space="preserve"><value>삭제</value></data>
+   <data name="FlightMissionConfirmDelete" xml:space="preserve"><value>삭제 확인</value></data>
+   <data name="FlightMissionDeleteAssociatedGeometry" xml:space="preserve"><value>연관된 지오메트리 삭제</value></data>
+   <data name="FlightMissionDeleteMissionOnly" xml:space="preserve"><value>미션만 삭제</value></data>
   <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
   <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
   <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
@@ -408,28 +416,42 @@
    <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>제거</value></data>
    <data name="FlightMissionStatus" xml:space="preserve"><value>임무 상태</value></data>
   <data name="FlightMissionPreview" xml:space="preserve"><value>임무 미리 보기</value></data>
-  <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>Survey line spacing (m)</value></data>
-  <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>Survey bearing (°)</value></data>
-  <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>Survey turnaround (m)</value></data>
-  <data name="FlightMissionSurveyReverse" xml:space="preserve"><value>Reverse entry</value></data>
-  <data name="FlightMissionLoiterSeconds" xml:space="preserve"><value>Loiter duration (s)</value></data>
-  <data name="FlightMissionCameraMode" xml:space="preserve"><value>Camera capture mode</value></data>
-  <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Camera trigger distance (m)</value></data>
-  <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Camera trigger interval (s)</value></data>
+  <data name="FlightMissionVehicleActions" xml:space="preserve"><value>기체 및 작업</value></data>
+  <data name="FlightMissionAddStep" xml:space="preserve"><value>단계 추가</value></data>
+  <data name="FlightMissionNewStepGeometry" xml:space="preserve"><value>새 단계의 지오메트리</value></data>
+  <data name="FlightMissionSelectedStep" xml:space="preserve"><value>선택한 단계</value></data>
+  <data name="FlightMissionStepGeometry" xml:space="preserve"><value>단계 지오메트리</value></data>
+  <data name="FlightMissionAuthoringPreview" xml:space="preserve"><value>작성 미리 보기</value></data>
+  <data name="FlightMissionPointOfInterest" xml:space="preserve"><value>관심 지점</value></data>
+  <data name="FlightMissionWaypointSequence" xml:space="preserve"><value>웨이포인트 시퀀스</value></data>
+  <data name="FlightMissionGeometryRequired" xml:space="preserve"><value>지오메트리가 필요합니다</value></data>
+  <data name="FlightMissionLoiterSummary" xml:space="preserve"><value>{0:0.#}초 대기</value></data>
+  <data name="FlightMissionLoiterGeometryRequired" xml:space="preserve"><value>{0:0.#}초 대기 · 지오메트리가 필요합니다</value></data>
+  <data name="FlightMissionPointCount" xml:space="preserve"><value>{0}개 지점</value></data>
+  <data name="FlightMissionRoutePointCount" xml:space="preserve"><value>{0}개 경로 지점</value></data>
+  <data name="FlightMissionZonePointCount" xml:space="preserve"><value>{0}개 구역 지점</value></data>
+  <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>측량 선 간격 (m)</value></data>
+  <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>측량 방위각 (°)</value></data>
+  <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>측량 회차 거리 (m)</value></data>
+  <data name="FlightMissionSurveyReverse" xml:space="preserve"><value>역방향 진입</value></data>
+  <data name="FlightMissionLoiterSeconds" xml:space="preserve"><value>대기 시간 (초)</value></data>
+  <data name="FlightMissionCameraMode" xml:space="preserve"><value>카메라 촬영 모드</value></data>
+  <data name="FlightMissionCameraDistance" xml:space="preserve"><value>카메라 트리거 거리 (m)</value></data>
+  <data name="FlightMissionCameraInterval" xml:space="preserve"><value>카메라 트리거 간격 (초)</value></data>
    <data name="FlightMissionSetStep" xml:space="preserve"><value>단계 설정 적용</value></data>
    <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>상대 고도(m)</value></data>
    <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>순항 속도(m/s)</value></data>
    <data name="FlightMissionTerrain" xml:space="preserve"><value>지형 추적</value></data>
    <data name="FlightMissionSurvey" xml:space="preserve"><value>측량 구역</value></data>
    <data name="FlightMissionCorridor" xml:space="preserve"><value>통로 스캔</value></data>
-  <data name="FlightMissionCorridorWidth" xml:space="preserve"><value>Corridor width (m)</value></data>
-  <data name="FlightMissionCorridorSpacing" xml:space="preserve"><value>Pass spacing (m)</value></data>
-  <data name="FlightMissionCorridorTurnaround" xml:space="preserve"><value>Turnaround distance (m)</value></data>
-  <data name="FlightMissionCorridorFrontLap" xml:space="preserve"><value>Front lap (%)</value></data>
-  <data name="FlightMissionCorridorSideLap" xml:space="preserve"><value>Side lap (%)</value></data>
-  <data name="FlightMissionCorridorReverse" xml:space="preserve"><value>Reverse</value></data>
-  <data name="FlightMissionCorridorEntryRight" xml:space="preserve"><value>Right entry</value></data>
-  <data name="FlightMissionCorridorImagesInTurns" xml:space="preserve"><value>Images in turns</value></data>
+  <data name="FlightMissionCorridorWidth" xml:space="preserve"><value>통로 폭 (m)</value></data>
+  <data name="FlightMissionCorridorSpacing" xml:space="preserve"><value>통과 간격 (m)</value></data>
+  <data name="FlightMissionCorridorTurnaround" xml:space="preserve"><value>회차 거리 (m)</value></data>
+  <data name="FlightMissionCorridorFrontLap" xml:space="preserve"><value>전방 중첩률 (%)</value></data>
+  <data name="FlightMissionCorridorSideLap" xml:space="preserve"><value>측면 중첩률 (%)</value></data>
+  <data name="FlightMissionCorridorReverse" xml:space="preserve"><value>역방향</value></data>
+  <data name="FlightMissionCorridorEntryRight" xml:space="preserve"><value>오른쪽 진입</value></data>
+  <data name="FlightMissionCorridorImagesInTurns" xml:space="preserve"><value>회차 중 촬영</value></data>
   <data name="Px4Fences" xml:space="preserve"><value>PX4 fences</value></data>
   <data name="Px4FenceCreate" xml:space="preserve"><value>Create fence</value></data>
   <data name="Px4FenceDelete" xml:space="preserve"><value>Delete fence</value></data>

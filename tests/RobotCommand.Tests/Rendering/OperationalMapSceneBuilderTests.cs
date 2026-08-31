@@ -1,5 +1,7 @@
+using RobotCommand.Core;
 using RobotCommand.Models;
 using RobotCommand.Services.Operations;
+using RobotCommand.ViewModels;
 using Xunit;
 
 namespace RobotCommand.Tests;
@@ -125,6 +127,77 @@ public sealed class OperationalMapSceneBuilderTests
     }
 
     [Fact]
+    public void Build_CanShowMissionPreviewWhenNormalGeometryIsHidden()
+    {
+        var scene = _builder.Build(
+            [Vehicle("alpha", "conn-a")],
+            [Telemetry("alpha", "conn-a", latitude: 43.65, longitude: -79.38)],
+            [
+                Geometry("normal", "conn-a", MapFrameKind.GlobalWgs84, [new OperationalPoint(-79.38, 43.65)]),
+                Geometry("mission", "conn-a", MapFrameKind.GlobalWgs84, [new OperationalPoint(-79.37, 43.66)], kind: "FlightMissionPreviewPoint")
+            ],
+            "alpha",
+            MapViewportMode.FitAll,
+            geometryVisible: false,
+            missionPreviewVisible: true);
+
+        var preview = Assert.Single(scene.Geometries);
+        Assert.Equal("mission", preview.GeometryId);
+        Assert.False(scene.GeometryVisible);
+    }
+
+    [Fact]
+    public void Build_CanHideMissionPreviewWithoutHidingNormalGeometry()
+    {
+        var scene = _builder.Build(
+            [Vehicle("alpha", "conn-a")],
+            [Telemetry("alpha", "conn-a", latitude: 43.65, longitude: -79.38)],
+            [
+                Geometry("normal", "conn-a", MapFrameKind.GlobalWgs84, [new OperationalPoint(-79.38, 43.65)]),
+                Geometry("mission", "conn-a", MapFrameKind.GlobalWgs84, [new OperationalPoint(-79.37, 43.66)], kind: "FlightMissionPreviewPoint")
+            ],
+            "alpha",
+            MapViewportMode.FitAll,
+            geometryVisible: true,
+            missionPreviewVisible: false);
+
+        var normal = Assert.Single(scene.Geometries);
+        Assert.Equal("normal", normal.GeometryId);
+    }
+
+    [Fact]
+    public void MissionPreview_UsesOneConnectedRouteAndUnlabelledStepMarkers()
+    {
+        var mission = new FlightMissionSnapshot(
+            "mission",
+            "Survey mission",
+            20,
+            [
+                new FlightMissionStep(
+                    "first",
+                    FlightMissionStepKind.TimedLoiter,
+                    SourceGeometryName: "PoI 1",
+                    Coordinates: [new FlightMissionCoordinate(43.65, -79.38)]),
+                new FlightMissionStep(
+                    "second",
+                    FlightMissionStepKind.TimedLoiter,
+                    SourceGeometryName: "PoI 2",
+                    Coordinates: [new FlightMissionCoordinate(43.66, -79.37)])
+            ],
+            "Valid",
+            [],
+            DateTimeOffset.UtcNow,
+            "hash");
+
+        var overlays = OperationalMapViewModel.BuildMissionPreviewOverlays(mission);
+        var route = Assert.Single(overlays.Where(item => item.Kind == "FlightMissionPreviewRoute"));
+
+        Assert.Equal(2, route.Points.Count);
+        Assert.All(overlays, item => Assert.True(string.IsNullOrWhiteSpace(item.Name)));
+        Assert.Equal(2, overlays.Count(item => item.Kind == "FlightMissionPreviewPoint"));
+    }
+
+    [Fact]
     public void Build_CanHidePolicyWithoutHidingOperationalGeometry()
     {
         var scene = _builder.Build(
@@ -236,14 +309,15 @@ public sealed class OperationalMapSceneBuilderTests
         MapFrameKind frame,
         IReadOnlyList<OperationalPoint> points,
         string policyKind = "none",
-        string policyConstraint = "none")
+        string policyConstraint = "none",
+        string kind = "WaypointSequence")
         => new(
             $"{connectionId}:{id}",
             id,
             connectionId,
             null,
             id,
-            "WaypointSequence",
+            kind,
             frame,
             false,
             points,

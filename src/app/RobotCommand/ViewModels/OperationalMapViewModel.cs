@@ -58,8 +58,6 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
     private readonly AsyncRelayCommand _completeGeometryEditCommand;
     private readonly RelayCommand _cancelGeometryEditCommand;
     private readonly AsyncRelayCommand _deleteActiveGeometryCommand;
-    private readonly RelayCommand _beginGeometryRenameCommand;
-    private readonly RelayCommand _applyGeometryRenameCommand;
     private readonly AsyncRelayCommand _newPointGeometryCommand;
     private readonly AsyncRelayCommand _newRouteGeometryCommand;
     private readonly AsyncRelayCommand _newZoneGeometryCommand;
@@ -74,6 +72,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
     private OperationalMapScene _scene = OperationalMapScene.Empty;
     private OperationalMapPresentation _presentation = OperationalMapPresentation.Empty;
     private MapVehicleMotionSnapshot _vehicleMotion = MapVehicleMotionSnapshot.Empty;
+    private readonly HashSet<string> _visibleMissionPreviewIds = new(StringComparer.Ordinal);
     private MapViewportMode _viewportMode = MapViewportMode.FitAll;
     private MapOrientationMode _orientationMode = MapOrientationMode.NorthUp;
     private bool _geometryVisible = true;
@@ -99,8 +98,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
     private long _navigationRevision = 1;
     private bool _refreshingStyles;
     private string _geometryDefaultAltitudeText = "20";
-    private string _geometryRenameText = string.Empty;
-    private bool _geometryRenameVisible;
+    private string _geometryNameText = string.Empty;
     private bool _geometrySelectionEnabled;
     private GeometryDocumentKind? _activeGeometryTool;
     private CancellationTokenSource? _rebuildDebounce;
@@ -182,6 +180,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         _reconciliation = reconciliation;
         Styles = [];
         SavedViews = [];
+        MissionPreviewLayers = [];
 
         _engine.Changed += OnEngineChanged;
         _geometryEdit.Changed += OnGeometryEditChanged;
@@ -295,8 +294,6 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         _deleteActiveGeometryCommand = new AsyncRelayCommand(
             DeleteActiveGeometryAsync,
             () => GeometryEdit.HasDraft);
-        _beginGeometryRenameCommand = new RelayCommand(_ => BeginGeometryRename(), _ => GeometryEdit.HasDraft);
-        _applyGeometryRenameCommand = new RelayCommand(_ => ApplyGeometryRename(), _ => CanApplyGeometryRename());
         _newPointGeometryCommand = new AsyncRelayCommand(
             token => BeginNewGeometryAsync(GeometryDocumentKind.PointOfInterest, token));
         _newRouteGeometryCommand = new AsyncRelayCommand(
@@ -318,8 +315,6 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         CompleteGeometryEditCommand = _completeGeometryEditCommand;
         CancelGeometryEditCommand = _cancelGeometryEditCommand;
         DeleteActiveGeometryCommand = _deleteActiveGeometryCommand;
-        BeginGeometryRenameCommand = _beginGeometryRenameCommand;
-        ApplyGeometryRenameCommand = _applyGeometryRenameCommand;
         NewPointGeometryCommand = _newPointGeometryCommand;
         NewRouteGeometryCommand = _newRouteGeometryCommand;
         NewZoneGeometryCommand = _newZoneGeometryCommand;
@@ -335,6 +330,10 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
     public ObservableCollection<MapStyleOption> Styles { get; }
 
     public ObservableCollection<SavedMapView> SavedViews { get; }
+
+    public ObservableCollection<MissionPreviewLayerItemViewModel> MissionPreviewLayers { get; }
+
+    public bool HasMissionPreviewLayers => MissionPreviewLayers.Count > 0;
 
     public ThreeDSceneSnapshot? WorldScene
     {
@@ -657,22 +656,16 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         set => SetProperty(ref _geometryDefaultAltitudeText, value);
     }
 
-    public string GeometryRenameText
+    public string GeometryNameText
     {
-        get => _geometryRenameText;
+        get => _geometryNameText;
         set
         {
-            if (SetProperty(ref _geometryRenameText, value))
+            if (SetProperty(ref _geometryNameText, value))
             {
-                _applyGeometryRenameCommand.RaiseCanExecuteChanged();
+                _completeGeometryEditCommand.RaiseCanExecuteChanged();
             }
         }
-    }
-
-    public bool GeometryRenameVisible
-    {
-        get => _geometryRenameVisible;
-        private set => SetProperty(ref _geometryRenameVisible, value);
     }
 
     /// <summary>
@@ -742,10 +735,6 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
     public ICommand CancelGeometryEditCommand { get; }
 
     public ICommand DeleteActiveGeometryCommand { get; }
-
-    public ICommand BeginGeometryRenameCommand { get; }
-
-    public ICommand ApplyGeometryRenameCommand { get; }
 
     public ICommand NewPointGeometryCommand { get; }
 
@@ -1052,6 +1041,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
 
                 _activeGeometryTool = kind;
                 _selection.Clear();
+                GeometryNameText = selected.DisplayName;
                 _geometryEdit.BeginEdit(selected);
                 Summary = $"Continuing {kind} '{selected.DisplayName}'.";
                 Rebuild();
@@ -1067,8 +1057,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
             _selection.Clear();
             _geometrySelection?.Clear();
             _activeGeometryTool = kind;
-            GeometryRenameText = document.DisplayName;
-            GeometryRenameVisible = false;
+            GeometryNameText = document.DisplayName;
             _geometryEdit.BeginCreate(document);
             Summary = $"Creating {kind} '{document.DisplayName}'. Click the map to place geometry.";
             Rebuild();
@@ -1109,9 +1098,20 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(GeometryNameText))
+        {
+            Summary = "Enter a geometry name before saving.";
+            return;
+        }
+
         GeometryDocument completed;
         try
         {
+            if (GeometryEdit.Draft is { } draft && !string.Equals(draft.DisplayName, GeometryNameText.Trim(), StringComparison.Ordinal))
+            {
+                _geometryEdit.Rename(GeometryNameText);
+            }
+
             completed = _geometryEdit.Complete() with
             {
                 AltitudeReference = GeometryAltitudeReference.AboveGroundLevel
@@ -1130,7 +1130,6 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
 
             _geometryEdit.Clear();
             _activeGeometryTool = null;
-            GeometryRenameVisible = false;
             GeometrySelectionEnabled = true;
             _geometrySelection?.Set([completed.GeometryId], completed.GeometryId);
             Summary = $"Saved geometry '{completed.DisplayName}'.";
@@ -1142,38 +1141,6 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
             // storage failure never throws away the operator's geometry.
             Summary = $"Could not save geometry: {ex.Message}";
             Rebuild();
-        }
-    }
-
-    private void BeginGeometryRename()
-    {
-        if (GeometryEdit.Draft is not { } draft)
-        {
-            return;
-        }
-
-        GeometryRenameText = draft.DisplayName;
-        GeometryRenameVisible = true;
-    }
-
-    private bool CanApplyGeometryRename()
-        => GeometryEdit.HasDraft && !string.IsNullOrWhiteSpace(GeometryRenameText);
-
-    private void ApplyGeometryRename()
-    {
-        if (!CanApplyGeometryRename())
-        {
-            return;
-        }
-
-        try
-        {
-            _geometryEdit.Rename(GeometryRenameText);
-            GeometryRenameVisible = false;
-        }
-        catch (Exception ex)
-        {
-            Summary = $"Could not rename geometry: {ex.Message}";
         }
     }
 
@@ -1206,7 +1173,6 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
 
             _geometryEdit.Clear();
             _activeGeometryTool = null;
-            GeometryRenameVisible = false;
             Summary = $"Deleted geometry '{draft.DisplayName}'.";
             Rebuild();
         }
@@ -1225,8 +1191,6 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         _completeGeometryEditCommand.RaiseCanExecuteChanged();
         _cancelGeometryEditCommand.RaiseCanExecuteChanged();
         _deleteActiveGeometryCommand.RaiseCanExecuteChanged();
-        _beginGeometryRenameCommand.RaiseCanExecuteChanged();
-        _applyGeometryRenameCommand.RaiseCanExecuteChanged();
     }
 
     private async Task ConfirmDeleteSelectedGeometryAsync(CancellationToken cancellationToken)
@@ -2018,6 +1982,59 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         _deleteSavedViewCommand.RaiseCanExecuteChanged();
     }
 
+    private void RefreshMissionPreviewLayers()
+    {
+        var missions = _flightMissions?.Missions
+            .OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(item => item.Id, StringComparer.Ordinal)
+            .ToArray() ?? [];
+        var desiredIds = missions.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
+
+        for (var index = MissionPreviewLayers.Count - 1; index >= 0; index--)
+        {
+            if (desiredIds.Contains(MissionPreviewLayers[index].MissionId)) continue;
+            _visibleMissionPreviewIds.Remove(MissionPreviewLayers[index].MissionId);
+            MissionPreviewLayers.RemoveAt(index);
+        }
+
+        for (var desiredIndex = 0; desiredIndex < missions.Length; desiredIndex++)
+        {
+            var mission = missions[desiredIndex];
+            var existingIndex = -1;
+            for (var index = 0; index < MissionPreviewLayers.Count; index++)
+            {
+                if (MissionPreviewLayers[index].MissionId != mission.Id) continue;
+                existingIndex = index;
+                break;
+            }
+
+            if (existingIndex < 0)
+            {
+                _visibleMissionPreviewIds.Add(mission.Id);
+                MissionPreviewLayers.Insert(desiredIndex,
+                    new MissionPreviewLayerItemViewModel(
+                        mission.Id,
+                        mission.Name,
+                        isVisible: true,
+                        visible => SetMissionPreviewVisibility(mission.Id, visible)));
+                continue;
+            }
+
+            MissionPreviewLayers[existingIndex].UpdateName(mission.Name);
+            if (existingIndex != desiredIndex)
+                MissionPreviewLayers.Move(existingIndex, desiredIndex);
+        }
+
+        OnPropertyChanged(nameof(HasMissionPreviewLayers));
+    }
+
+    private void SetMissionPreviewVisibility(string missionId, bool visible)
+    {
+        if (visible) _visibleMissionPreviewIds.Add(missionId);
+        else _visibleMissionPreviewIds.Remove(missionId);
+        Rebuild();
+    }
+
     private void Rebuild()
     {
         if (_follow is not null && !HasValidPositions(_follow.VehicleIds))
@@ -2027,6 +2044,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
             Changed?.Invoke(this, EventArgs.Empty);
         }
 
+        RefreshMissionPreviewLayers();
         var selectedVehicleId = SelectedVehicleId();
         _vehicleStructureKey = CreateVehicleStructureKey(_vehicles.Items);
         var displayVehicles = _reconciliation?.ProjectVehicles(_vehicles.Items) ?? _vehicles.Items;
@@ -2055,31 +2073,10 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         // registry records are intentionally not projected here: those
         // resources are not yet managed or deployed by this UI and must not
         // appear as unexplained map objects.
-        var missionPreview = _flightMissions?.MapPreview;
-        var missionPreviewGeometry = missionPreview?.Steps
-            .Where(step => step.Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter)
-            .Select(step => (Step: step, Coordinates: step.Kind switch
-            {
-                FlightMissionStepKind.SurveyZone => Px4FlightMissionCompiler.SurveyRoute(step),
-                FlightMissionStepKind.CorridorScan => Px4FlightMissionCompiler.CorridorRoute(step),
-                _ => step.FrozenCoordinates
-            }))
-            .Where(item => item.Coordinates.Count > 0)
-            .Select(step => new GeometryOverlayRecord(
-                $"robotcommand-mission-preview:{missionPreview.Id}:{step.Step.Id}",
-                $"robotcommand-mission-preview:{missionPreview.Id}:{step.Step.Id}",
-                "robotcommand-mission-preview",
-                null,
-                missionPreview.Name,
-                step.Step.Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.TimedLoiter ? "FlightMissionPreviewPoint" : "FlightMissionPreviewRoute",
-                MapFrameKind.GlobalWgs84,
-                false,
-                step.Coordinates.Select(point => new OperationalPoint(point.LongitudeDegrees, point.LatitudeDegrees, missionPreview.RelativeAltitudeMetres)).ToArray(),
-                [],
-                "none",
-                "none",
-                missionPreview.UpdatedAt))
-            .ToArray() ?? [];
+        var missionPreviewGeometry = (_flightMissions?.Missions ?? [])
+            .Where(mission => _visibleMissionPreviewIds.Contains(mission.Id))
+            .SelectMany(BuildMissionPreviewOverlays)
+            .ToArray();
         var fenceGeometry = _fences?.Fences
             .Select(fence => new GeometryOverlayRecord(
                 $"robotcommand-fence:{fence.Document.FenceId}",
@@ -2113,7 +2110,8 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
             GeometryVisible,
             PolicyVisible,
             highlightedGeometryIds,
-            unitSelectionIds.ToHashSet(StringComparer.Ordinal));
+            unitSelectionIds.ToHashSet(StringComparer.Ordinal),
+            missionPreviewVisible: true);
         baseScene = baseScene with
         {
             Vehicles = baseScene.Vehicles
@@ -2204,6 +2202,60 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
             : Presentation.Renderer == OperationalMapRendererKind.NativeGlobal
                 ? $"No live units connected · {Presentation.Status}"
                 : "Waiting for compatible vehicle or geometry coordinates.";
+    }
+
+    internal static IReadOnlyList<GeometryOverlayRecord> BuildMissionPreviewOverlays(FlightMissionSnapshot mission)
+    {
+        var stepRoutes = mission.Steps
+            .Where(step => step.Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter)
+            .Select(step => (Step: step, Coordinates: Px4FlightMissionCompiler.NavigationCoordinates(step)))
+            .Where(item => item.Coordinates.Count > 0)
+            .ToArray();
+        var route = stepRoutes.SelectMany(item => item.Coordinates).ToArray();
+        if (route.Length == 0)
+        {
+            return [];
+        }
+
+        var overlays = new List<GeometryOverlayRecord>();
+        if (route.Length >= 2)
+        {
+            overlays.Add(new GeometryOverlayRecord(
+                $"robotcommand-mission-preview:{mission.Id}:route",
+                $"robotcommand-mission-preview:{mission.Id}:route",
+                "robotcommand-mission-preview",
+                null,
+                string.Empty,
+                "FlightMissionPreviewRoute",
+                MapFrameKind.GlobalWgs84,
+                false,
+                route.Select(point => new OperationalPoint(point.LongitudeDegrees, point.LatitudeDegrees, mission.RelativeAltitudeMetres)).ToArray(),
+                [],
+                "none",
+                "none",
+                mission.UpdatedAt));
+        }
+
+        foreach (var stepRoute in stepRoutes)
+        {
+            var point = stepRoute.Coordinates[0];
+            overlays.Add(new GeometryOverlayRecord(
+                $"robotcommand-mission-preview:{mission.Id}:{stepRoute.Step.Id}",
+                $"robotcommand-mission-preview:{mission.Id}:{stepRoute.Step.Id}",
+                "robotcommand-mission-preview",
+                null,
+                string.Empty,
+                "FlightMissionPreviewPoint",
+                MapFrameKind.GlobalWgs84,
+                false,
+                [new OperationalPoint(point.LongitudeDegrees, point.LatitudeDegrees, mission.RelativeAltitudeMetres)],
+                [],
+                "none",
+                "none",
+                mission.UpdatedAt));
+        }
+
+        return overlays;
     }
 
     private void OnActiveGoToTargetChanged(object? sender, EventArgs e)

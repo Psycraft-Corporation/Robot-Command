@@ -325,12 +325,29 @@ public sealed record FlightMissionStep(
     FlightMissionCorridorOptions? Corridor = null)
 {
     public IReadOnlyList<FlightMissionCoordinate> FrozenCoordinates => Coordinates ?? [];
+    public bool HasSourceGeometry => !string.IsNullOrWhiteSpace(SourceGeometryName);
     public string DisplayName => Kind switch
     {
         FlightMissionStepKind.ReturnToLaunch => "RTL",
         FlightMissionStepKind.CorridorScan => "Corridor scan",
         _ => Kind.ToString()
     };
+    public bool NeedsGeometryBinding => Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter
+        && FrozenCoordinates.Count == 0;
+    public string ContextSummary => Kind switch
+    {
+        _ when NeedsGeometryBinding && Kind == FlightMissionStepKind.TimedLoiter && LoiterDurationSeconds is { } duration
+            => $"{duration:0.#} s loiter · geometry required",
+        _ when NeedsGeometryBinding => "Geometry required",
+        FlightMissionStepKind.TimedLoiter when LoiterDurationSeconds is { } duration
+            => $"{duration:0.#} s loiter",
+        FlightMissionStepKind.PointOfInterest => "1 point",
+        FlightMissionStepKind.WaypointSequence => $"{FrozenCoordinates.Count} route points",
+        FlightMissionStepKind.CorridorScan => $"{FrozenCoordinates.Count} route points",
+        FlightMissionStepKind.SurveyZone => $"{FrozenCoordinates.Count} zone points",
+        _ => string.Empty
+    };
+    public bool HasContextSummary => !string.IsNullOrWhiteSpace(ContextSummary);
 }
 
 public sealed record FlightMissionDocument(
@@ -447,9 +464,9 @@ public interface IFlightMissionWorkflow
     Task<FlightMissionSnapshot> SetAltitudeAsync(string missionId, double relativeAltitudeMetres, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddTakeoffAsync(string missionId, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddGeometryAsync(string missionId, string geometryId, CancellationToken cancellationToken = default);
-    Task<FlightMissionSnapshot> AddSurveyAsync(string missionId, string zoneGeometryId, FlightMissionSurveyOptions? options = null, CancellationToken cancellationToken = default);
-    Task<FlightMissionSnapshot> AddCorridorAsync(string missionId, string waypointSequenceGeometryId, FlightMissionCorridorOptions? options = null, CancellationToken cancellationToken = default);
-    Task<FlightMissionSnapshot> AddTimedLoiterAsync(string missionId, string pointGeometryId, double durationSeconds, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> AddSurveyAsync(string missionId, string? zoneGeometryId, FlightMissionSurveyOptions? options = null, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> AddCorridorAsync(string missionId, string? waypointSequenceGeometryId, FlightMissionCorridorOptions? options = null, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> AddTimedLoiterAsync(string missionId, string? pointGeometryId, double durationSeconds, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddCameraIntentAsync(string missionId, FlightMissionCameraIntent intent, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddReturnToLaunchAsync(string missionId, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddLandAsync(string missionId, CancellationToken cancellationToken = default);
@@ -458,6 +475,7 @@ public interface IFlightMissionWorkflow
     Task<FlightMissionSnapshot> SetCruiseSpeedAsync(string missionId, double cruiseSpeedMetresPerSecond, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> SetEndActionAsync(string missionId, FlightMissionEndAction endAction, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> SetStepOverridesAsync(string missionId, string stepId, double? relativeAltitudeMetres, double? cruiseSpeedMetresPerSecond, bool terrainFollowing, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> SetStepGeometryAsync(string missionId, string stepId, string geometryId, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> SetStepOptionsAsync(string missionId, string stepId, FlightMissionSurveyOptions? survey, FlightMissionCorridorOptions? corridor, double? loiterDurationSeconds, FlightMissionCameraIntent? cameraIntent, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> SetTargetAssignmentAsync(string missionId, FlightMissionTargetAssignment? assignment, CancellationToken cancellationToken = default);
     Task<FlightMissionCompilationPreview> PreviewAsync(string missionId, string? vehicleId = null, CancellationToken cancellationToken = default);

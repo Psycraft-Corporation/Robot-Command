@@ -39,6 +39,7 @@ The CLI exposes the same operational workflows for scripts, diagnostics, and rep
 ## Learn more
 
 - [Operations and safety](docs/operations-and-safety.md)
+- [Mission authoring](docs/mission-authoring.md)
 - [Architecture](docs/architecture.md)
 - [Development](docs/development.md)
 - [Support](docs/support.md)
