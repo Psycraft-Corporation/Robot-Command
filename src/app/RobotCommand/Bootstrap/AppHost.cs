@@ -100,6 +100,8 @@ internal static class AppHost
             _ => new EntityStore<string, PerceptionTrackRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, CameraSourceRecord>>(
             _ => new EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal));
+        services.AddSingleton<IEntityStore<string, MavlinkCameraDefinitionRecord>>(
+            _ => new EntityStore<string, MavlinkCameraDefinitionRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, CameraStreamRecord>>(
             _ => new EntityStore<string, CameraStreamRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, MissionRecord>>(

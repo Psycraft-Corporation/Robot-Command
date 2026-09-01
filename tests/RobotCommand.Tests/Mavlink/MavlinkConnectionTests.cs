@@ -202,6 +202,30 @@ public sealed class MavlinkConnectionTests
     }
 
     [Fact]
+    public async Task CameraProtocolDiscoveryPublishesCameraSourceAndDefinition()
+    {
+        var transport = new FakeTransport();
+        var definitions = new EntityStore<string, MavlinkCameraDefinitionRecord>(item => item.Id, StringComparer.Ordinal);
+        var connection = CreateConnection(transport, cameraDefinitions: definitions);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(CameraHeartbeat(1, 100));
+        transport.Emit(CameraInformation(1, 100));
+
+        var source = Assert.Single(connection.LiveSnapshot.CameraSources);
+        Assert.Equal("mavlink:1:100", source.Id);
+        Assert.Contains("Acme", source.Name);
+        var definition = Assert.Single(definitions.Items);
+        Assert.Equal("Acme", definition.VendorName);
+        Assert.Equal("SurveyCam", definition.ModelName);
+        Assert.Equal("https://example.invalid/survey.xml", definition.DefinitionUri);
+
+        await connection.DisposeAsync();
+        Assert.Empty(definitions.Items);
+    }
+
+    [Fact]
     public async Task UdpBootstrapPeer_ReceivesInitialGcsHeartbeatBeforeVehicleDiscovery()
     {
         var transport = new FakeTransport();
@@ -1228,7 +1252,8 @@ public sealed class MavlinkConnectionTests
         TimeSpan? heartbeatTimeout = null,
         IReadOnlyList<IMavlinkAutopilotAdapter>? adapters = null,
         MavlinkAutopilotProfile autopilot = MavlinkAutopilotProfile.Px4,
-        IEntityStore<string, OperationalCommandRecord>? commands = null)
+        IEntityStore<string, OperationalCommandRecord>? commands = null,
+        IEntityStore<string, MavlinkCameraDefinitionRecord>? cameraDefinitions = null)
         => new(
             new ConnectionDefinition(
                 "mavlink",
@@ -1245,7 +1270,8 @@ public sealed class MavlinkConnectionTests
             new ImmediateDispatcher(),
             new MavlinkConnectionRegistry(),
             NullLogger<MavlinkConnection>.Instance,
-            heartbeatTimeout);
+            heartbeatTimeout,
+            cameraDefinitions: cameraDefinitions);
 
     private static MavlinkPacket Heartbeat(
         byte systemId,
@@ -1266,6 +1292,40 @@ public sealed class MavlinkConnectionTests
                 ["base_mode"] = baseMode,
                 ["custom_mode"] = customMode,
                 ["system_status"] = MavlinkValues.MavStateActive
+            },
+            DateTimeOffset.UtcNow);
+
+    private static MavlinkPacket CameraHeartbeat(byte systemId, byte componentId)
+        => new(
+            2,
+            1,
+            systemId,
+            componentId,
+            MavlinkMessageIds.Heartbeat,
+            new Dictionary<string, object>
+            {
+                ["type"] = MavlinkValues.MavTypeCamera,
+                ["autopilot"] = MavlinkValues.MavAutopilotInvalid,
+                ["base_mode"] = (byte)0,
+                ["custom_mode"] = (uint)0,
+                ["system_status"] = MavlinkValues.MavStateActive
+            },
+            DateTimeOffset.UtcNow);
+
+    private static MavlinkPacket CameraInformation(byte systemId, byte componentId)
+        => new(
+            2,
+            2,
+            systemId,
+            componentId,
+            MavlinkMessageIds.CameraInformation,
+            new Dictionary<string, object>
+            {
+                ["vendor_name"] = "Acme",
+                ["model_name"] = "SurveyCam",
+                ["firmware_version"] = (uint)0x01020300,
+                ["cam_definition_version"] = (byte)4,
+                ["cam_definition_uri"] = "https://example.invalid/survey.xml"
             },
             DateTimeOffset.UtcNow);
 

@@ -108,7 +108,8 @@ public sealed record UnitDiagnosticsObservation(
     string TelemetryDetail,
     IReadOnlyList<string> Blockers,
     IReadOnlyList<string> Warnings,
-    DateTimeOffset? ObservedAt);
+    DateTimeOffset? ObservedAt,
+    string FirmwareVersion = "Not reported");
 
 public sealed record UnitLinkObservation(
     string ConnectionId,

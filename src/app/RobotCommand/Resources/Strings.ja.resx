@@ -600,4 +600,34 @@
   <data name="ConnectionShowAdvancedRadioSettings" xml:space="preserve"><value>詳細な S0-S14 設定を表示</value></data>
   <data name="ConnectionReviewLocalChanges" xml:space="preserve"><value>ローカル変更を確認</value></data>
   <data name="ConnectionReviewPairedChanges" xml:space="preserve"><value>ペアリング変更を確認</value></data>
+  <data name="FlightMissionMissionStartCameraActions" xml:space="preserve"><value>ミッション開始時のカメラ操作</value></data>
+  <data name="FlightMissionStepCameraActions" xml:space="preserve"><value>ステップのカメラ操作</value></data>
+  <data name="FlightMissionAddStepCameraAction" xml:space="preserve"><value>このステップにカメラ操作を追加</value></data>
+  <data name="FlightMissionAddCameraAction" xml:space="preserve"><value>カメラ操作を追加</value></data>
+  <data name="FlightMissionRemoveCameraAction" xml:space="preserve"><value>削除</value></data>
+  <data name="FlightMissionCameraActionCameraName" xml:space="preserve"><value>カメラ名（任意）</value></data>
+  <data name="FlightMissionCameraActionInterval" xml:space="preserve"><value>撮影間隔（秒）</value></data>
+  <data name="FlightMissionCameraActionDistance" xml:space="preserve"><value>撮影距離（m）</value></data>
+  <data name="FlightMissionCameraActionMode" xml:space="preserve"><value>カメラモード</value></data>
+  <data name="FlightMissionCameraActionRoiLatitude" xml:space="preserve"><value>ROI 緯度</value></data>
+  <data name="FlightMissionCameraActionRoiLongitude" xml:space="preserve"><value>ROI 経度</value></data>
+  <data name="FlightMissionCameraActionGimbalPitch" xml:space="preserve"><value>ピッチ（°）</value></data>
+  <data name="FlightMissionCameraActionGimbalYaw" xml:space="preserve"><value>ヨー（°）</value></data>
+  <data name="FlightMissionCameraActionGimbalRoll" xml:space="preserve"><value>ロール（°）</value></data>
+  <data name="FlightMissionCameraActionPhotoOnce" xml:space="preserve"><value>1 枚撮影</value></data>
+  <data name="FlightMissionCameraActionPhotoByTime" xml:space="preserve"><value>時間間隔で撮影</value></data>
+  <data name="FlightMissionCameraActionPhotoByDistance" xml:space="preserve"><value>距離間隔で撮影</value></data>
+  <data name="FlightMissionCameraActionStopPhotos" xml:space="preserve"><value>撮影停止</value></data>
+  <data name="FlightMissionCameraActionStartVideo" xml:space="preserve"><value>動画開始</value></data>
+  <data name="FlightMissionCameraActionStopVideo" xml:space="preserve"><value>動画停止</value></data>
+  <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>カメラモード設定</value></data>
+  <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>関心領域を設定</value></data>
+  <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>ジンバルを向ける</value></data>
+  <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>写真</value></data>
+  <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>動画</value></data>
+  <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>機体基準</value></data>
+  <data name="FlightMissionGimbalFrameEarth" xml:space="preserve"><value>地球基準</value></data>
+  <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>{0} 枚の写真 · 動画 {1:0.#} 秒 · トリガーコマンド {2}</value></data>
+  <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>{0} 枚の写真 · 動画 {1:0.#} 秒 · トリガーコマンド {2}</value></data>
+  <data name="CameraDefinition" xml:space="preserve"><value>カメラ定義</value></data>
 </root>

@@ -208,7 +208,7 @@ public sealed class MapNavigationTests
         Assert.Contains("open chevrons", mapControl, StringComparison.Ordinal);
         Assert.Contains("TryGetGeometryLabelAnchor", mapControl, StringComparison.Ordinal);
         Assert.Contains("Text = geometry.Name", mapControl, StringComparison.Ordinal);
-        Assert.Contains("SymbolScale = geometry.Highlighted || IsFlightMissionPreview(geometry) ? 0.58 : 0.42", mapControl, StringComparison.Ordinal);
+        Assert.Contains("SymbolScale = captureMarker ? 0.82 : geometry.Highlighted || IsFlightMissionPreview(geometry) ? 0.58 : 0.42", mapControl, StringComparison.Ordinal);
         Assert.Contains("#6FAFC9", mapControl, StringComparison.Ordinal);
     }
 

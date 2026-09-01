@@ -440,7 +440,7 @@ public sealed class FlightMissionLibraryTests
         [
             new FlightMissionCoordinate(43.7000, -79.4010),
             new FlightMissionCoordinate(43.7010, -79.4010)
-        ], Corridor: new FlightMissionCorridorOptions(40, 20, 5, CameraIntent: new FlightMissionCameraIntent("Photo", TriggerDistanceMetres: 10)));
+        ], Corridor: new FlightMissionCorridorOptions(40, 20, 5, CameraIntent: new FlightMissionCameraIntent("Photo")));
         var mission = ValidMission(DateTimeOffset.UtcNow) with
         {
             Steps =

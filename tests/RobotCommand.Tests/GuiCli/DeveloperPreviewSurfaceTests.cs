@@ -105,7 +105,7 @@ public sealed class DeveloperPreviewSurfaceTests
         var selectedStep = mission.IndexOf("FlightMissionSelectedStep", StringComparison.Ordinal);
         var stepGeometry = mission.IndexOf("FlightMissionStepGeometry", StringComparison.Ordinal);
         Assert.True(addStep >= 0 && selectedStep > addStep && stepGeometry > selectedStep);
-        Assert.DoesNotContain("FlightMissionMission", mission);
+        Assert.DoesNotContain("Text=\"{loc:Loc Key=FlightMissionMission}\"", mission);
         Assert.DoesNotContain("FlightMissionAddGeometry", mission);
         Assert.DoesNotContain("AddGeometryCommand", viewModel);
         Assert.DoesNotContain("Mission step added.", viewModel);
@@ -118,6 +118,25 @@ public sealed class DeveloperPreviewSurfaceTests
         var geometryLibrary = File.ReadAllText(Path.Combine(
             root, "src", "app", "RobotCommand", "ViewModels", "GeometryLibraryViewModel.cs"));
         Assert.DoesNotContain("Confirm deletion of local geometry", geometryLibrary);
+    }
+
+    [Fact]
+    public void FlightMissionAuthoring_ExposesCameraActionsAtMissionAndStepScopes()
+    {
+        var root = FindRepositoryRoot();
+        var mission = File.ReadAllText(Path.Combine(
+            root, "src", "app", "RobotCommand", "Views", "Workspaces", "FlightMissionView.axaml"));
+        var viewModel = File.ReadAllText(Path.Combine(
+            root, "src", "app", "RobotCommand", "ViewModels", "FlightMissionViewModel.cs"));
+
+        Assert.Contains("MissionStartCameraActions", mission);
+        Assert.Contains("AddMissionStartCameraActionCommand", mission);
+        Assert.Contains("SelectedStepCameraActions", mission);
+        Assert.Contains("AddSelectedStepCameraActionCommand", mission);
+        Assert.DoesNotContain("AddCameraIntentCommand", mission);
+        Assert.Contains("SetMissionCameraActionsAsync", viewModel);
+        Assert.Contains("SetStepCameraActionsAsync", viewModel);
+        Assert.Contains("CameraActionKinds", viewModel);
     }
 
     [Fact]

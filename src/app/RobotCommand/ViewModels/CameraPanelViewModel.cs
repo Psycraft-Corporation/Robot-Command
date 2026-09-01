@@ -24,6 +24,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private readonly IEntityStore<string, MissionRecord> _missions;
     private readonly IEntityStore<string, OperationalTaskRecord> _tasks;
     private readonly IEntityStore<string, CameraSourceRecord> _cameraSources;
+    private readonly IEntityStore<string, MavlinkCameraDefinitionRecord>? _cameraDefinitions;
     private readonly IEntityStore<string, CameraStreamRecord> _cameraStreams;
     private readonly IEntityStore<string, PerceptionTrackRecord> _tracks;
     private readonly ILogosConnectionManager _connections;
@@ -92,6 +93,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private string _remoteRecordingDetail = RemoteVideoRecordingStatus.NotConfigured.Detail;
     private bool _captureIncludeOverlays = true;
     private string _evidenceStatus = "No evidence captured in this session.";
+    private string _cameraDefinitionSummary = string.Empty;
+    private bool _hasCameraDefinition;
 
     public CameraPanelViewModel(
         ISelectionService selection,
@@ -114,7 +117,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         IUiDispatcher uiDispatcher,
         IMediaWorkflow? mediaWorkflow = null,
         IMediaSettingsService? mediaSettings = null,
-        ILocalizationService? localization = null)
+        ILocalizationService? localization = null,
+        IEntityStore<string, MavlinkCameraDefinitionRecord>? cameraDefinitions = null)
     {
         _selection = selection;
         _vehicles = vehicles;
@@ -122,6 +126,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _missions = missions;
         _tasks = tasks;
         _cameraSources = cameraSources;
+        _cameraDefinitions = cameraDefinitions;
         _cameraStreams = cameraStreams;
         _tracks = tracks;
         _connections = connections;
@@ -199,6 +204,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         Subscribe(_missions.Items);
         Subscribe(_tasks.Items);
         Subscribe(_cameraSources.Items);
+        if (_cameraDefinitions is not null) Subscribe(_cameraDefinitions.Items);
         Subscribe(_cameraStreams.Items);
         Subscribe(_tracks.Items);
         Refresh();
@@ -209,6 +215,20 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     }
 
     public ObservableCollection<CameraSourceRecord> Cameras { get; }
+
+    public ObservableCollection<MavlinkCameraSettingRecord> CameraSettings { get; } = [];
+
+    public bool HasCameraDefinition
+    {
+        get => _hasCameraDefinition;
+        private set => SetProperty(ref _hasCameraDefinition, value);
+    }
+
+    public string CameraDefinitionSummary
+    {
+        get => _cameraDefinitionSummary;
+        private set => SetProperty(ref _cameraDefinitionSummary, value);
+    }
 
     public IReadOnlyList<VideoProtocolPreference> Protocols { get; }
 
@@ -614,10 +634,32 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             CameraStatus = Text("VideoNoCameraSource", "No camera source available");
             OverlayScene = VideoOverlayScene.Empty;
             TrackSummary = Text("VideoNoPerceptionTracks", "No perception tracks");
+            CameraSettings.Clear();
+            HasCameraDefinition = false;
+            CameraDefinitionSummary = string.Empty;
         }
         else
         {
             CameraStatus = $"{camera.State} · {camera.Health} · {(camera.Fresh ? "fresh" : "stale")} · {camera.FrameRateHz:0.0} fps";
+            var definition = _cameraDefinitions?.Items.FirstOrDefault(item => item.Id == camera.Id);
+            CameraSettings.Clear();
+            if (definition is not null)
+            {
+                foreach (var setting in definition.Settings) CameraSettings.Add(setting);
+                HasCameraDefinition = definition.Settings.Count > 0;
+                CameraDefinitionSummary = string.Join(" · ", new[]
+                {
+                    definition.DisplayName,
+                    string.IsNullOrWhiteSpace(definition.FirmwareVersion) ? null : $"FW {definition.FirmwareVersion}",
+                    string.IsNullOrWhiteSpace(definition.CapabilitySummary) ? null : definition.CapabilitySummary,
+                    definition.Status
+                }.Where(item => !string.IsNullOrWhiteSpace(item)));
+            }
+            else
+            {
+                HasCameraDefinition = false;
+                CameraDefinitionSummary = string.Empty;
+            }
             var relevantTracks = _tracks.Items
                 .Where(item => item.ConnectionId == camera.ConnectionId)
                 .Where(item =>

@@ -21,6 +21,7 @@ using Mapsui.Tiling.Layers;
 using Mapsui.UI.Avalonia;
 using NetTopologySuite.Geometries;
 using RobotCommand.Infrastructure;
+using RobotCommand.Core;
 using RobotCommand.Models;
 using RobotCommand.Services;
 using RobotCommand.Services.Maps;
@@ -118,6 +119,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     private readonly MissionPreviewArrowOverlayControl _missionPreviewArrowOverlay;
     private readonly AvaloniaRectangle _selectionBox;
     private readonly Canvas _unitMarkerOverlay;
+    private readonly Canvas _unitCameraConeOverlay;
     private readonly VehicleTrailOverlayControl _trailOverlay;
     private MemoryLayer? _policyLayer;
     private MemoryLayer? _geometryLayer;
@@ -130,6 +132,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     private MemoryLayer? _vehicleLayer;
     private readonly Dictionary<string, VehicleAnimationState> _vehicleAnimations = new(StringComparer.Ordinal);
     private readonly Dictionary<string, AvaloniaPolygon> _unitOverlayMarkers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, AvaloniaPolygon> _unitCameraConeOverlays = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Border> _vehicleLabelControls = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Border> _geometryLabelControls = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<AvaloniaPolyline>> _geometryArrowControls = new(StringComparer.Ordinal);
@@ -285,6 +288,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             ClipToBounds = true
         };
         _unitMarkerOverlay = new Canvas
+        {
+            IsHitTestVisible = false,
+            ClipToBounds = true
+        };
+        _unitCameraConeOverlay = new Canvas
         {
             IsHitTestVisible = false,
             ClipToBounds = true
@@ -506,6 +514,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         Children.Add(_dynamicLabelOverlay);
         Children.Add(_staticLabelOverlay);
         Children.Add(_missionPreviewArrowOverlay);
+        Children.Add(_unitCameraConeOverlay);
         Children.Add(_unitMarkerOverlay);
         Children.Add(_packageMessage);
         Children.Add(_cursorBadge);
@@ -869,6 +878,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         {
             animation.UpdateRenderedVisual();
             UpdateUnitOverlayMarker(animation);
+            UpdateUnitCameraCone(animation);
         }
 
         if (Presentation is { } presentation)
@@ -1229,6 +1239,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         foreach (var animation in _vehicleAnimations.Values)
         {
             UpdateUnitOverlayMarker(animation);
+            UpdateUnitCameraCone(animation);
         }
     }
 
@@ -1386,8 +1397,15 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private static SymbolStyle CreateGeometryPointStyle(MapGeometryVisual geometry, bool policy)
     {
+        var captureMarker = IsMissionCaptureMarker(geometry);
+        var captureColor = geometry.Kind.EndsWith(nameof(FlightMissionCameraActionKind.StartVideo), StringComparison.OrdinalIgnoreCase) ||
+                           geometry.Kind.EndsWith(nameof(FlightMissionCameraActionKind.StopVideo), StringComparison.OrdinalIgnoreCase)
+            ? MapsuiColor.FromString("#60A5FA")
+            : MapsuiColor.FromString("#F97316");
         var color = geometry.Highlighted
             ? MapsuiColor.FromString("#F6C453")
+            : captureMarker
+                ? captureColor
             : IsFlightMissionPreview(geometry)
                 ? MapsuiColor.FromString(MapDrawingPrimitives.MissionPreviewAccentHex)
             : policy
@@ -1396,7 +1414,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         return new SymbolStyle
         {
             SymbolType = SymbolType.Ellipse,
-            SymbolScale = geometry.Highlighted || IsFlightMissionPreview(geometry) ? 0.58 : 0.42,
+            SymbolScale = captureMarker ? 0.82 : geometry.Highlighted || IsFlightMissionPreview(geometry) ? 0.58 : 0.42,
             Fill = new MapsuiBrush(color),
             Outline = new MapsuiPen(MapsuiColor.FromString("#10161D"), 1)
         };
@@ -1410,6 +1428,9 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private static bool IsFlightMissionPreview(MapGeometryVisual geometry)
         => geometry.Kind.StartsWith("FlightMissionPreview", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsMissionCaptureMarker(MapGeometryVisual geometry)
+        => geometry.Kind.StartsWith("FlightMissionPreviewCaptureMarker:", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsPx4Fence(MapGeometryVisual geometry)
         => geometry.Kind.StartsWith("Px4Fence", StringComparison.OrdinalIgnoreCase)
@@ -1761,6 +1782,8 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             features.Add(animation.Feature);
             EnsureUnitOverlayMarker(vehicle.VehicleId);
             UpdateUnitOverlayMarker(animation);
+            EnsureUnitCameraCone(vehicle.VehicleId);
+            UpdateUnitCameraCone(animation);
         }
 
         foreach (var staleVehicleId in _vehicleAnimations.Keys.Where(id => !liveVehicleIds.Contains(id)).ToArray())
@@ -1769,6 +1792,10 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             if (_unitOverlayMarkers.Remove(staleVehicleId, out var marker))
             {
                 _unitMarkerOverlay.Children.Remove(marker);
+            }
+            if (_unitCameraConeOverlays.Remove(staleVehicleId, out var cone))
+            {
+                _unitCameraConeOverlay.Children.Remove(cone);
             }
         }
 
@@ -1800,6 +1827,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             {
                 animation.UpdateRenderedVisual();
                 UpdateUnitOverlayMarker(animation);
+                UpdateUnitCameraCone(animation);
             }
 
             UpdateFollowCamera();
@@ -1898,6 +1926,60 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             : Avalonia.Media.Color.FromRgb(10, 14, 18));
         marker.StrokeThickness = animation.Visual.Selected || animation.Visual.TeamSelected ? 1.5 : 1;
         marker.RenderTransform = new RotateTransform(animation.Visual.HeadingDegrees ?? 0);
+    }
+
+    private void EnsureUnitCameraCone(string vehicleId)
+    {
+        if (_unitCameraConeOverlays.ContainsKey(vehicleId)) return;
+        var cone = new AvaloniaPolygon
+        {
+            Fill = new SolidColorBrush(Avalonia.Media.Color.FromArgb(55, 96, 165, 250)),
+            Stroke = new SolidColorBrush(Avalonia.Media.Color.FromArgb(190, 96, 165, 250)),
+            StrokeThickness = 1.5,
+            IsHitTestVisible = false,
+            IsVisible = false
+        };
+        _unitCameraConeOverlays[vehicleId] = cone;
+        _unitCameraConeOverlay.Children.Add(cone);
+    }
+
+    private void UpdateUnitCameraCone(VehicleAnimationState animation)
+    {
+        if (!_unitCameraConeOverlays.TryGetValue(animation.VehicleId, out var cone) ||
+            animation.Visual.CameraCone is not { } camera ||
+            animation.Visual.HeadingDegrees is not { } heading ||
+            !_mapControl.IsVisible ||
+            _mapControl.Map is null ||
+            !HasUsableNativeViewport())
+        {
+            if (cone is not null) cone.IsVisible = false;
+            return;
+        }
+
+        var viewport = _mapControl.Map.Navigator.Viewport;
+        var screenCenter = viewport.WorldToScreen(animation.CurrentX, animation.CurrentY);
+        var center = new Avalonia.Point(screenCenter.X, screenCenter.Y);
+        var rangePixels = Math.Clamp(camera.RangeMetres / viewport.Resolution, 18, 2400);
+        var halfFov = Math.Clamp(camera.HorizontalFieldOfViewDegrees, 10, 120) * Math.PI / 360d;
+        var headingRadians = (heading - viewport.Rotation) * Math.PI / 180d;
+        var points = new List<Avalonia.Point> { center };
+        const int arcPoints = 12;
+        for (var index = 0; index <= arcPoints; index++)
+        {
+            var angle = headingRadians - halfFov + (2 * halfFov * index / arcPoints);
+            points.Add(new Avalonia.Point(
+                center.X + Math.Sin(angle) * rangePixels,
+                center.Y - Math.Cos(angle) * rangePixels));
+        }
+
+        var minX = points.Min(point => point.X);
+        var minY = points.Min(point => point.Y);
+        var maxX = points.Max(point => point.X);
+        var maxY = points.Max(point => point.Y);
+        cone.Width = Math.Max(1, maxX - minX);
+        cone.Height = Math.Max(1, maxY - minY);
+        cone.Points = new AvaloniaPoints(points.Select(point => new Avalonia.Point(point.X - minX, point.Y - minY)));
+        cone.IsVisible = TryPositionOnCanvas(cone, minX, minY);
     }
 
     private sealed class VehicleAnimationState

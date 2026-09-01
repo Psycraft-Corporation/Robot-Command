@@ -166,6 +166,43 @@ public sealed class OperationalMapSceneBuilderTests
     }
 
     [Fact]
+    public void Build_ShowsCameraConeOnlyForReportedPx4OrArduPilotCameras()
+    {
+        var px4 = Vehicle("px4-camera", "conn-camera") with
+        {
+            ProfileKey = "px4",
+            CapabilityKeys = ["camera_capture"]
+        };
+        var other = Vehicle("other-camera", "conn-other") with
+        {
+            ProfileKey = "test-backend",
+            CapabilityKeys = ["camera_capture"]
+        };
+
+        var scene = _builder.Build(
+            [px4, other],
+            [
+                Telemetry("px4-camera", "conn-camera", latitude: 43.65, longitude: -79.38, heading: 90),
+                Telemetry("other-camera", "conn-other", latitude: 43.66, longitude: -79.37, heading: 90)
+            ],
+            [],
+            "px4-camera",
+            MapViewportMode.FitAll,
+            geometryVisible: true);
+
+        Assert.NotNull(Assert.Single(scene.Vehicles, item => item.VehicleId == "px4-camera").CameraCone);
+
+        var otherScene = _builder.Build(
+            [other],
+            [Telemetry("other-camera", "conn-other", latitude: 43.66, longitude: -79.37, heading: 90)],
+            [],
+            "other-camera",
+            MapViewportMode.FitAll,
+            geometryVisible: true);
+        Assert.Null(Assert.Single(otherScene.Vehicles).CameraCone);
+    }
+
+    [Fact]
     public void MissionPreview_UsesOneConnectedRouteAndUnlabelledStepMarkers()
     {
         var mission = new FlightMissionSnapshot(
@@ -195,6 +232,32 @@ public sealed class OperationalMapSceneBuilderTests
         Assert.Equal(2, route.Points.Count);
         Assert.All(overlays, item => Assert.True(string.IsNullOrWhiteSpace(item.Name)));
         Assert.Equal(2, overlays.Count(item => item.Kind == "FlightMissionPreviewPoint"));
+    }
+
+    [Fact]
+    public void MissionPreview_ContainsCaptureMarkersWithoutGeometryLabels()
+    {
+        var mission = new FlightMissionSnapshot(
+            "mission-capture",
+            "Capture mission",
+            20,
+            [new FlightMissionStep(
+                "route",
+                FlightMissionStepKind.WaypointSequence,
+                Coordinates: [
+                    new FlightMissionCoordinate(43.6500, -79.3800),
+                    new FlightMissionCoordinate(43.6510, -79.3800)
+                ],
+                CameraIntent: new FlightMissionCameraIntent(Actions: [FlightMissionCameraAction.PhotoByDistance(50)]))],
+            "Valid",
+            [],
+            DateTimeOffset.UtcNow,
+            "hash");
+
+        var overlays = OperationalMapViewModel.BuildMissionPreviewOverlays(mission);
+
+        Assert.Contains(overlays, item => item.Kind.StartsWith("FlightMissionPreviewCaptureMarker:", StringComparison.Ordinal));
+        Assert.All(overlays, item => Assert.True(string.IsNullOrWhiteSpace(item.Name)));
     }
 
     [Fact]

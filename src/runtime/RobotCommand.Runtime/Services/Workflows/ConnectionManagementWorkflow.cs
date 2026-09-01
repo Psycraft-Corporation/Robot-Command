@@ -345,7 +345,7 @@ public sealed class UnitObservationWorkflow : IUnitObservationWorkflow, IDisposa
             diagnostic is null ? null : new UnitDiagnosticsObservation(diagnostic.OverallStatus.ToString(), diagnostic.Summary,
                 diagnostic.ArmReadiness.ToString(), diagnostic.ArmReadinessDetail, diagnostic.NavigationReadiness.ToString(), diagnostic.NavigationReadinessDetail,
                 diagnostic.TelemetryStatus.ToString(), diagnostic.TelemetryDetail, diagnostic.Blockers.Select(item => item.Detail).ToArray(),
-                diagnostic.Warnings.Select(item => item.Detail).ToArray(), diagnostic.ObservedAt), links, new UnitActionObservation(current, queued),
+                diagnostic.Warnings.Select(item => item.Detail).ToArray(), diagnostic.ObservedAt, diagnostic.Version), links, new UnitActionObservation(current, queued),
             associatedConnections, DistanceFromOperator(telemetry), canAcceptOperatorCommands);
         if (vehicle.IsGhost)
         {

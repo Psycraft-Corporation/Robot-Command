@@ -43,7 +43,9 @@ public sealed class FlightMissionPreviewControl : Control
         var operatorPoint = OperatorLocation is { IsAvailable: true, LatitudeDegrees: { } operatorLatitude, LongitudeDegrees: { } operatorLongitude }
             ? new FlightMissionCoordinate(operatorLatitude, operatorLongitude)
             : null;
+        var captureMarkers = Preview?.CaptureStatistics?.Markers ?? [];
         var all = stepPoints.Select(item => item.Point).Concat(route)
+            .Concat(captureMarkers.Select(marker => marker.Coordinate))
             .Concat(unitPoint is null ? [] : [unitPoint])
             .Concat(operatorPoint is null ? [] : [operatorPoint])
             .ToArray();
@@ -100,6 +102,9 @@ public sealed class FlightMissionPreviewControl : Control
                 context.DrawEllipse(new SolidColorBrush(Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)), new Pen(Brushes.Black, 1), point, 3.5, 3.5);
         }
 
+        foreach (var marker in captureMarkers)
+            DrawCaptureMarker(context, projection.Project(marker.Coordinate), marker.Action);
+
         if (unitPoint is not null)
         {
             var unit = projection.Project(unitPoint);
@@ -155,6 +160,35 @@ public sealed class FlightMissionPreviewControl : Control
             var y = bounds.Top + bounds.Height * index / 10;
             context.DrawLine(pen, new Point(x, bounds.Top), new Point(x, bounds.Bottom));
             context.DrawLine(pen, new Point(bounds.Left, y), new Point(bounds.Right, y));
+        }
+    }
+
+    private static void DrawCaptureMarker(
+        DrawingContext context,
+        Point point,
+        FlightMissionCameraActionKind action)
+    {
+        var isVideo = action is FlightMissionCameraActionKind.StartVideo or FlightMissionCameraActionKind.StopVideo;
+        var color = isVideo ? Color.Parse("#60A5FA") : Color.Parse("#F97316");
+        var brush = new SolidColorBrush(color);
+        var outline = new Pen(Brushes.Black, 1.5);
+        if (isVideo)
+        {
+            var triangle = new StreamGeometry();
+            using (var builder = triangle.Open())
+            {
+                builder.BeginFigure(new Point(point.X - 6, point.Y - 6), true);
+                builder.LineTo(new Point(point.X + 7, point.Y));
+                builder.LineTo(new Point(point.X - 6, point.Y + 6));
+                builder.EndFigure(true);
+            }
+            context.DrawGeometry(brush, outline, triangle);
+        }
+        else
+        {
+            context.DrawEllipse(brush, outline, point, 6, 6);
+            context.DrawLine(new Pen(Brushes.White, 1.5), new Point(point.X - 3, point.Y), new Point(point.X + 3, point.Y));
+            context.DrawLine(new Pen(Brushes.White, 1.5), new Point(point.X, point.Y - 3), new Point(point.X, point.Y + 3));
         }
     }
 

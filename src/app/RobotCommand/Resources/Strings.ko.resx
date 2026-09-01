@@ -601,4 +601,34 @@
   <data name="ConnectionShowAdvancedRadioSettings" xml:space="preserve"><value>고급 S0-S14 설정 표시</value></data>
   <data name="ConnectionReviewLocalChanges" xml:space="preserve"><value>로컬 변경 검토</value></data>
   <data name="ConnectionReviewPairedChanges" xml:space="preserve"><value>페어링 변경 검토</value></data>
+  <data name="FlightMissionMissionStartCameraActions" xml:space="preserve"><value>미션 시작 카메라 동작</value></data>
+  <data name="FlightMissionStepCameraActions" xml:space="preserve"><value>단계 카메라 동작</value></data>
+  <data name="FlightMissionAddStepCameraAction" xml:space="preserve"><value>이 단계에 카메라 동작 추가</value></data>
+  <data name="FlightMissionAddCameraAction" xml:space="preserve"><value>카메라 동작 추가</value></data>
+  <data name="FlightMissionRemoveCameraAction" xml:space="preserve"><value>삭제</value></data>
+  <data name="FlightMissionCameraActionCameraName" xml:space="preserve"><value>카메라 이름(선택 사항)</value></data>
+  <data name="FlightMissionCameraActionInterval" xml:space="preserve"><value>사진 간격(초)</value></data>
+  <data name="FlightMissionCameraActionDistance" xml:space="preserve"><value>사진 거리(m)</value></data>
+  <data name="FlightMissionCameraActionMode" xml:space="preserve"><value>카메라 모드</value></data>
+  <data name="FlightMissionCameraActionRoiLatitude" xml:space="preserve"><value>ROI 위도</value></data>
+  <data name="FlightMissionCameraActionRoiLongitude" xml:space="preserve"><value>ROI 경도</value></data>
+  <data name="FlightMissionCameraActionGimbalPitch" xml:space="preserve"><value>피치(°)</value></data>
+  <data name="FlightMissionCameraActionGimbalYaw" xml:space="preserve"><value>요(°)</value></data>
+  <data name="FlightMissionCameraActionGimbalRoll" xml:space="preserve"><value>롤(°)</value></data>
+  <data name="FlightMissionCameraActionPhotoOnce" xml:space="preserve"><value>사진 한 장</value></data>
+  <data name="FlightMissionCameraActionPhotoByTime" xml:space="preserve"><value>시간별 사진</value></data>
+  <data name="FlightMissionCameraActionPhotoByDistance" xml:space="preserve"><value>거리별 사진</value></data>
+  <data name="FlightMissionCameraActionStopPhotos" xml:space="preserve"><value>사진 중지</value></data>
+  <data name="FlightMissionCameraActionStartVideo" xml:space="preserve"><value>비디오 시작</value></data>
+  <data name="FlightMissionCameraActionStopVideo" xml:space="preserve"><value>비디오 중지</value></data>
+  <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>카메라 모드 설정</value></data>
+  <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>관심 영역 설정</value></data>
+  <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>짐벌 조준</value></data>
+  <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>사진</value></data>
+  <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>비디오</value></data>
+  <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>기체 기준</value></data>
+  <data name="FlightMissionGimbalFrameEarth" xml:space="preserve"><value>지구 기준</value></data>
+  <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>사진 {0}장 · 동영상 {1:0.#}초 · 트리거 명령 {2}개</value></data>
+  <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>사진 {0}장 · 동영상 {1:0.#}초 · 트리거 명령 {2}개</value></data>
+  <data name="CameraDefinition" xml:space="preserve"><value>카메라 정의</value></data>
 </root>

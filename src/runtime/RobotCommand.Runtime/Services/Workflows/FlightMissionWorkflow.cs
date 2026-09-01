@@ -193,6 +193,25 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
                 : step).ToArray(),
             UpdatedAt = DateTimeOffset.UtcNow
         }, cancellationToken);
+    public Task<FlightMissionSnapshot> SetMissionCameraActionsAsync(string missionId, IReadOnlyList<FlightMissionCameraAction> actions, CancellationToken cancellationToken = default)
+        => UpdateAndPublishAsync(missionId, document => document with
+        {
+            CameraIntent = WithCameraActions(document.CameraIntent, actions),
+            UpdatedAt = DateTimeOffset.UtcNow
+        }, cancellationToken);
+    public Task<FlightMissionSnapshot> SetStepCameraActionsAsync(string missionId, string stepId, IReadOnlyList<FlightMissionCameraAction> actions, CancellationToken cancellationToken = default)
+        => UpdateAndPublishAsync(missionId, document =>
+        {
+            var found = false;
+            var steps = document.Steps.Select(step =>
+            {
+                if (!step.Id.Equals(stepId, StringComparison.Ordinal)) return step;
+                found = true;
+                return SetStepCameraActions(step, actions);
+            }).ToArray();
+            if (!found) throw new KeyNotFoundException("Mission step was not found.");
+            return document with { Steps = steps, UpdatedAt = DateTimeOffset.UtcNow };
+        }, cancellationToken);
     public Task<FlightMissionSnapshot> SetTargetAssignmentAsync(string missionId, FlightMissionTargetAssignment? assignment, CancellationToken cancellationToken = default)
         => UpdateAndPublishAsync(missionId, document => document with { TargetAssignment = assignment, UpdatedAt = DateTimeOffset.UtcNow }, cancellationToken);
     public async Task<FlightMissionCompilationPreview> PreviewAsync(string missionId, string? vehicleId = null, CancellationToken cancellationToken = default)
@@ -605,7 +624,25 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
         var findings = _defaultCompiler.Validate(document, null);
         return new(document.MissionId, document.DisplayName, document.RelativeAltitudeMetres, document.Steps,
             Blocked(findings) ? "Invalid" : "Ready", findings, document.UpdatedAt, document.ContentSha256,
-            document.CruiseSpeedMetresPerSecond, document.TargetAssignment, document.EndAction);
+            document.CruiseSpeedMetresPerSecond, document.TargetAssignment, document.EndAction, document.CameraIntent);
+    }
+
+    private static FlightMissionCameraIntent WithCameraActions(FlightMissionCameraIntent? current, IReadOnlyList<FlightMissionCameraAction> actions)
+        => (current ?? new FlightMissionCameraIntent()) with { Actions = actions.ToArray() };
+
+    private static FlightMissionStep SetStepCameraActions(FlightMissionStep step, IReadOnlyList<FlightMissionCameraAction> actions)
+    {
+        if (step.Kind == FlightMissionStepKind.SurveyZone)
+        {
+            var survey = step.Survey ?? new FlightMissionSurveyOptions();
+            return step with { Survey = survey with { CameraIntent = WithCameraActions(survey.CameraIntent, actions) } };
+        }
+        if (step.Kind == FlightMissionStepKind.CorridorScan)
+        {
+            var corridor = step.Corridor ?? new FlightMissionCorridorOptions();
+            return step with { Corridor = corridor with { CameraIntent = WithCameraActions(corridor.CameraIntent, actions) } };
+        }
+        return step with { CameraIntent = WithCameraActions(step.CameraIntent, actions) };
     }
 
     private IFlightMissionCompiler CompilerFor(UnitObservationSnapshot? target)

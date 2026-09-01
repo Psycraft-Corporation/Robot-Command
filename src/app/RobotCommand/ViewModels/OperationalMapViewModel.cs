@@ -44,6 +44,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
     private readonly IOperatorLocationService? _operatorLocation;
     private readonly IThreeDWorldSceneWorkflow? _worldScene;
     private readonly IWeatherRadarSource? _weatherRadar;
+    private readonly IEntityStore<string, CameraSourceRecord>? _cameraSources;
     private readonly ILocalizationService _localization;
     private readonly OperatorControlsViewModel? _operatorControls;
     private readonly IUnitDefinitionService? _reconciliation;
@@ -135,7 +136,8 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         IFormationLockWorkflow? formationLock = null,
         IThreeDWorldSceneWorkflow? worldScene = null,
         IWeatherRadarSource? weatherRadar = null,
-        ILocalizationService? localization = null)
+        ILocalizationService? localization = null,
+        IEntityStore<string, CameraSourceRecord>? cameraSources = null)
     {
         _selection = selection;
         _teamSelection = teamSelection;
@@ -163,6 +165,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         _operatorLocation = operatorLocation;
         _worldScene = worldScene;
         _weatherRadar = weatherRadar;
+        _cameraSources = cameraSources;
         _localization = localization ?? LocalizationService.Current;
         _weatherRadarSnapshot = weatherRadar?.Current ?? WeatherRadarSnapshot.Empty;
         _worldSceneSnapshot = worldScene?.Current;
@@ -211,6 +214,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
         Subscribe(_geometries.Items);
         Subscribe(_missions.Items);
         Subscribe(_tasks.Items);
+        if (_cameraSources is not null) Subscribe(_cameraSources.Items);
 
         FitAllCommand = new RelayCommand(_ =>
         {
@@ -2016,11 +2020,13 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
                         mission.Id,
                         mission.Name,
                         isVisible: true,
-                        visible => SetMissionPreviewVisibility(mission.Id, visible)));
+                        setVisibility: visible => SetMissionPreviewVisibility(mission.Id, visible),
+                        captureSummary: BuildMissionPreviewCaptureSummary(mission)));
                 continue;
             }
 
             MissionPreviewLayers[existingIndex].UpdateName(mission.Name);
+            MissionPreviewLayers[existingIndex].UpdateCaptureSummary(BuildMissionPreviewCaptureSummary(mission));
             if (existingIndex != desiredIndex)
                 MissionPreviewLayers.Move(existingIndex, desiredIndex);
         }
@@ -2211,6 +2217,7 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
             .Select(step => (Step: step, Coordinates: Px4FlightMissionCompiler.NavigationCoordinates(step)))
             .Where(item => item.Coordinates.Count > 0)
             .ToArray();
+        var captureStatistics = BuildMissionPreviewCaptureStatistics(mission, stepRoutes);
         var route = stepRoutes.SelectMany(item => item.Coordinates).ToArray();
         if (route.Length == 0)
         {
@@ -2255,7 +2262,84 @@ public sealed class OperationalMapViewModel : ObservableObject, IMapNavigationCo
                 mission.UpdatedAt));
         }
 
+        foreach (var marker in captureStatistics.Markers)
+        {
+            overlays.Add(new GeometryOverlayRecord(
+                $"robotcommand-mission-preview:{mission.Id}:capture:{overlays.Count}",
+                $"robotcommand-mission-preview:{mission.Id}:capture:{overlays.Count}",
+                "robotcommand-mission-preview",
+                null,
+                string.Empty,
+                $"FlightMissionPreviewCaptureMarker:{marker.Action}",
+                MapFrameKind.GlobalWgs84,
+                false,
+                [new OperationalPoint(marker.Coordinate.LongitudeDegrees, marker.Coordinate.LatitudeDegrees, mission.RelativeAltitudeMetres)],
+                [],
+                "none",
+                "none",
+                mission.UpdatedAt));
+        }
+
         return overlays;
+    }
+
+    internal static FlightMissionCaptureStatistics BuildMissionPreviewCaptureStatistics(FlightMissionSnapshot mission)
+    {
+        var stepRoutes = mission.Steps
+            .Where(step => step.Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter)
+            .Select(step => (Step: step, Coordinates: Px4FlightMissionCompiler.NavigationCoordinates(step)))
+            .Where(item => item.Coordinates.Count > 0)
+            .ToArray();
+        return BuildMissionPreviewCaptureStatistics(mission, stepRoutes);
+    }
+
+    private static FlightMissionCaptureStatistics BuildMissionPreviewCaptureStatistics(
+        FlightMissionSnapshot mission,
+        IReadOnlyList<(FlightMissionStep Step, IReadOnlyList<FlightMissionCoordinate> Coordinates)> stepRoutes)
+    {
+        var segments = stepRoutes
+            .Select(item =>
+            {
+                var speed = mission.CruiseSpeedMetresPerSecond;
+                var duration = speed > 0
+                    ? item.Coordinates.Zip(item.Coordinates.Skip(1), DistanceMetres).Sum() / speed
+                    : 0;
+                if (item.Step.Kind == FlightMissionStepKind.TimedLoiter)
+                    duration += item.Step.LoiterDurationSeconds ?? 0;
+                return new FlightMissionPreviewRouteSegment(
+                    item.Step.Id,
+                    item.Step.Kind,
+                    item.Coordinates,
+                    duration,
+                    item.Step.CameraIntent ?? item.Step.Survey?.CameraIntent ?? item.Step.Corridor?.CameraIntent);
+            })
+            .ToArray();
+        return FlightMissionPreviewCaptureBuilder.Build(segments, mission.CameraIntent, mission.CruiseSpeedMetresPerSecond);
+    }
+
+    private string BuildMissionPreviewCaptureSummary(FlightMissionSnapshot mission)
+    {
+        var statistics = BuildMissionPreviewCaptureStatistics(mission);
+        return statistics.HasCaptures
+            ? string.Format(
+                System.Globalization.CultureInfo.CurrentCulture,
+                _localization.Get("MapMissionPreviewCaptureSummary"),
+                statistics.ExpectedPhotoCount,
+                statistics.ExpectedVideoDurationSeconds,
+                statistics.TriggerCommandCount)
+            : string.Empty;
+    }
+
+    private static double DistanceMetres(FlightMissionCoordinate a, FlightMissionCoordinate b)
+    {
+        const double radius = 6_371_000;
+        const double radians = Math.PI / 180d;
+        var dLat = (b.LatitudeDegrees - a.LatitudeDegrees) * radians;
+        var dLon = (b.LongitudeDegrees - a.LongitudeDegrees) * radians;
+        var value = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(a.LatitudeDegrees * radians) * Math.Cos(b.LatitudeDegrees * radians) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        return 2 * radius * Math.Atan2(Math.Sqrt(value), Math.Sqrt(Math.Max(0, 1 - value)));
     }
 
     private void OnActiveGoToTargetChanged(object? sender, EventArgs e)

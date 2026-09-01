@@ -718,9 +718,9 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
             ["param2"] = item.Param2,
             ["param3"] = item.Param3,
             ["param4"] = item.Param4,
-            ["x"] = item.LatitudeE7,
-            ["y"] = item.LongitudeE7,
-            ["z"] = item.AltitudeMetres
+            ["x"] = item.RawX ?? item.LatitudeE7,
+            ["y"] = item.RawY ?? item.LongitudeE7,
+            ["z"] = item.RawZ ?? item.AltitudeMetres
         });
 
     public byte[] EncodeMissionItem(byte sourceSystemId, byte sourceComponentId, byte targetSystemId, byte targetComponentId, MavlinkMissionItem item)
@@ -737,9 +737,9 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
             ["param2"] = item.Param2,
             ["param3"] = item.Param3,
             ["param4"] = item.Param4,
-            ["x"] = item.LatitudeE7 / 10_000_000f,
-            ["y"] = item.LongitudeE7 / 10_000_000f,
-            ["z"] = item.AltitudeMetres
+            ["x"] = item.RawX is { } rawX ? rawX : item.LatitudeE7 / 10_000_000f,
+            ["y"] = item.RawY is { } rawY ? rawY : item.LongitudeE7 / 10_000_000f,
+            ["z"] = item.RawZ ?? item.AltitudeMetres
         });
 
     public byte[] EncodeMissionRequestList(byte sourceSystemId, byte sourceComponentId, byte targetSystemId, byte targetComponentId, byte missionType = 0)
@@ -921,10 +921,25 @@ public static class MavlinkMessageIds
     public const uint Vibration = 241;
     public const uint ExtendedSystemState = 245;
     public const uint StatusText = 253;
+    public const uint CameraInformation = 259;
+    public const uint CameraSettings = 260;
+    public const uint CameraCaptureStatus = 262;
+    public const uint VideoStreamInformation = 269;
+    public const uint VideoStreamStatus = 270;
 }
 
 public static class MavlinkCommandIds
 {
+    public const ushort DoSetRoi = 201;
+    public const ushort DoSetRoiLocation = 195;
+    public const ushort DoMountControl = 205;
+    public const ushort DoSetCameraTriggerDistance = 206;
+    public const ushort SetCameraMode = 530;
+    public const ushort DoGimbalManagerPitchYaw = 1000;
+    public const ushort ImageStartCapture = 2000;
+    public const ushort ImageStopCapture = 2001;
+    public const ushort VideoStartCapture = 2500;
+    public const ushort VideoStopCapture = 2501;
     public const ushort ConditionYaw = 115;
     public const ushort NavReturnToLaunch = 20;
     public const ushort NavLand = 21;
@@ -936,6 +951,9 @@ public static class MavlinkCommandIds
     public const ushort MissionStart = 300;
     public const ushort ComponentArmDisarm = 400;
     public const ushort SetMessageInterval = 511;
+    public const ushort RequestMessage = 512;
+    public const ushort RequestCameraInformation = 521;
+    public const ushort RequestCameraSettings = 522;
 }
 
 public static class MavlinkValues
@@ -951,6 +969,8 @@ public static class MavlinkValues
     public const byte MavModeFlagManualInputEnabled = 64;
     public const byte MavModeFlagSafetyArmed = 128;
     public const byte MavCompIdAutopilot1 = 1;
+    public const byte MavTypeCamera = 30;
+    public const byte MavCompIdCamera = 100;
     public const byte MavLandedStateOnGround = 1;
     public const byte MavLandedStateInAir = 2;
 

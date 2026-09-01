@@ -1,9 +1,12 @@
 using RobotCommand.Models;
 using RobotCommand.Services.Reconciliation;
+using RobotCommand.State;
 
 namespace RobotCommand.Services.Operations;
 
-public sealed class OperationalMapSceneBuilder(IUnitDefinitionService? reconciliation = null) : IOperationalMapSceneBuilder
+public sealed class OperationalMapSceneBuilder(
+    IUnitDefinitionService? reconciliation = null,
+    IEntityStore<string, CameraSourceRecord>? cameraSources = null) : IOperationalMapSceneBuilder
 {
     public MapVehicleMotionSnapshot BuildMotion(
         IReadOnlyList<VehicleRecord> vehicles,
@@ -97,7 +100,10 @@ public sealed class OperationalMapSceneBuilder(IUnitDefinitionService? reconcili
                     sample?.HeadingDegrees,
                     sample?.State ?? vehicle.State,
                     selectedVehicleIds?.Contains(vehicle.Id) == true || vehicle.Id == selectedVehicleId,
-                    vehicle.IsGhost);
+                    vehicle.IsGhost)
+                {
+                    CameraCone = CameraConeFor(vehicle)
+                };
             })
             .Where(item => item is not null)
             .Cast<MapVehicleVisual>()
@@ -331,6 +337,28 @@ public sealed class OperationalMapSceneBuilder(IUnitDefinitionService? reconcili
 
     private static bool HasLocal(VehicleTelemetryRecord? item)
         => item?.LocalNorthMetres is not null && item.LocalEastMetres is not null;
+
+    private MapCameraConeVisual? CameraConeFor(VehicleRecord vehicle)
+    {
+        if (vehicle.IsGhost ||
+            (!vehicle.ProfileKey.Contains("px4", StringComparison.OrdinalIgnoreCase) &&
+             !vehicle.ProfileKey.Contains("ardupilot", StringComparison.OrdinalIgnoreCase)) ||
+            !vehicle.VehicleClass.Contains("multicopter", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var capabilityReported = vehicle.CapabilityKeys?.Any(IsCameraCapability) == true;
+        var sourceReported = cameraSources?.Items.Any(source =>
+            vehicle.ConnectionIds.Contains(source.ConnectionId, StringComparer.Ordinal) &&
+            source.State is (AvailabilityState.Online or AvailabilityState.Degraded) &&
+            (source.Active || source.Fresh || source.HasImage)) == true;
+        return capabilityReported || sourceReported ? new MapCameraConeVisual() : null;
+    }
+
+    private static bool IsCameraCapability(string key)
+        => key.Contains("camera", StringComparison.OrdinalIgnoreCase) ||
+           key.Contains("gimbal", StringComparison.OrdinalIgnoreCase);
 
     private static string FrameLabel(MapFrameKind frame)
         => frame switch

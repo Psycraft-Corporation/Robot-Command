@@ -156,6 +156,34 @@ public sealed class MavlinkCodecTests
     }
 
     [Fact]
+    public void MissionItem_EncodesRawCommandParametersForNonGeographicItems()
+    {
+        var codec = new MavlinkSharpCodec();
+        var item = new MavlinkMissionItem(
+            2,
+            MavlinkCommandIds.DoGimbalManagerPitchYaw,
+            2,
+            0,
+            0,
+            0,
+            Param1: -30,
+            Param2: 10,
+            RawX: 64,
+            RawY: 0,
+            RawZ: 4);
+
+        var intBytes = codec.EncodeMissionItemInt(255, 190, 1, 1, item);
+        var floatBytes = codec.EncodeMissionItem(255, 190, 1, 1, item);
+
+        Assert.True(codec.TryDecode(intBytes, DateTimeOffset.UtcNow, out var intPacket, out var intError), intError);
+        Assert.True(codec.TryDecode(floatBytes, DateTimeOffset.UtcNow, out var floatPacket, out var floatError), floatError);
+        Assert.Equal(64, intPacket!.Int32("x"));
+        Assert.Equal(4, intPacket.Single("z"));
+        Assert.Equal(64, floatPacket!.Single("x"));
+        Assert.Equal(4, floatPacket.Single("z"));
+    }
+
+    [Fact]
     public void MissionTransferMessages_EncodeFenceMissionTypeOnWire()
     {
         var codec = new MavlinkSharpCodec();
