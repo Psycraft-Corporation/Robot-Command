@@ -636,5 +636,9 @@
   <data name="FlightMissionGimbalFrameEarth" xml:space="preserve"><value>Земна система відліку</value></data>
   <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>{0} фото · відео {1:0.#} с · команд запуску {2}</value></data>
   <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>{0} фото · відео {1:0.#} с · команд запуску {2}</value></data>
+  <data name="CameraCapturePhoto" xml:space="preserve"><value>Зробити фото</value></data>
+  <data name="CameraStartVideo" xml:space="preserve"><value>Запустити відео камери</value></data>
+  <data name="CameraStopVideo" xml:space="preserve"><value>Зупинити відео камери</value></data>
+  <data name="CameraCenterGimbal" xml:space="preserve"><value>Центрувати підвіс</value></data>
   <data name="CameraDefinition" xml:space="preserve"><value>Визначення камери</value></data>
 </root>

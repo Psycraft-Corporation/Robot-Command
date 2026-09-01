@@ -629,5 +629,9 @@
   <data name="FlightMissionGimbalFrameEarth" xml:space="preserve"><value>Repère terrestre</value></data>
   <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>{0} photos · {1:0.#} s de vidéo · {2} commandes de déclenchement</value></data>
   <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>{0} photos · {1:0.#} s de vidéo · {2} commandes de déclenchement</value></data>
+  <data name="CameraCapturePhoto" xml:space="preserve"><value>Capturer une photo</value></data>
+  <data name="CameraStartVideo" xml:space="preserve"><value>Démarrer la vidéo caméra</value></data>
+  <data name="CameraStopVideo" xml:space="preserve"><value>Arrêter la vidéo caméra</value></data>
+  <data name="CameraCenterGimbal" xml:space="preserve"><value>Centrer la nacelle</value></data>
   <data name="CameraDefinition" xml:space="preserve"><value>Définition de la caméra</value></data>
 </root>

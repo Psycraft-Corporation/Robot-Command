@@ -629,5 +629,9 @@
   <data name="FlightMissionGimbalFrameEarth" xml:space="preserve"><value>地球基準</value></data>
   <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>{0} 枚の写真 · 動画 {1:0.#} 秒 · トリガーコマンド {2}</value></data>
   <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>{0} 枚の写真 · 動画 {1:0.#} 秒 · トリガーコマンド {2}</value></data>
+  <data name="CameraCapturePhoto" xml:space="preserve"><value>写真を撮影</value></data>
+  <data name="CameraStartVideo" xml:space="preserve"><value>カメラ動画を開始</value></data>
+  <data name="CameraStopVideo" xml:space="preserve"><value>カメラ動画を停止</value></data>
+  <data name="CameraCenterGimbal" xml:space="preserve"><value>ジンバルを中央に戻す</value></data>
   <data name="CameraDefinition" xml:space="preserve"><value>カメラ定義</value></data>
 </root>

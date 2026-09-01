@@ -629,5 +629,9 @@
   <data name="ConnectionReviewPairedChanges" xml:space="preserve"><value>Review paired changes</value></data>
   <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>{0} photos · {1:0.#} s video · {2} trigger commands</value></data>
   <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>{0} photos · {1:0.#} s video · {2} trigger commands</value></data>
+  <data name="CameraCapturePhoto" xml:space="preserve"><value>Capture photo</value></data>
+  <data name="CameraStartVideo" xml:space="preserve"><value>Start camera video</value></data>
+  <data name="CameraStopVideo" xml:space="preserve"><value>Stop camera video</value></data>
+  <data name="CameraCenterGimbal" xml:space="preserve"><value>Center gimbal</value></data>
   <data name="CameraDefinition" xml:space="preserve"><value>Camera definition</value></data>
 </root>

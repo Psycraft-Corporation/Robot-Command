@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net.Sockets;
+using RobotCommand.Core;
 using Microsoft.Extensions.Logging;
 using RobotCommand.Infrastructure;
 using RobotCommand.Models;
@@ -87,6 +88,7 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
     private readonly SemaphoreSlim _lifecycleGate = new(1, 1);
     private readonly Dictionary<byte, SystemState> _systems = [];
     private readonly Dictionary<(byte SystemId, byte ComponentId), MavlinkCameraState> _cameras = [];
+    private readonly Dictionary<(byte SystemId, byte ComponentId), MavlinkGimbalState> _gimbals = [];
     private readonly HashSet<(byte SystemId, byte ComponentId)> _cameraInformationRequested = [];
     private readonly ConcurrentDictionary<CommandKey, TaskCompletionSource<MavlinkCommandAck>> _pendingAcks = new();
     // MAVLink COMMAND_ACK has no request identifier. After a mutating command
@@ -1383,6 +1385,176 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
             command.CommandId);
     }
 
+    /// <summary>
+    /// Sends one standard MAVLink camera or gimbal action immediately. This
+    /// path never arms, changes flight mode, or bypasses vehicle safety checks.
+    /// </summary>
+    public async Task<MavlinkCommandDispatchResult> SendCameraActionAsync(
+        string vehicleId,
+        string? cameraSourceId,
+        FlightMissionCameraAction action,
+        CancellationToken cancellationToken = default)
+    {
+        if (!TryGetVehicle(vehicleId, out var systemId, out var vehicleComponentId, out _, out var adapter) ||
+            adapter is null)
+        {
+            return MavlinkCommandDispatchResult.Rejected(
+                $"The {ConfiguredAutopilotName} MAVLink vehicle is no longer available.");
+        }
+
+        MavlinkCommandEnvelope command;
+        byte targetComponentId;
+        MavlinkTransportRoute? gimbalRoute = null;
+        byte gimbalDeviceId = 0;
+        lock (_gate)
+        {
+            var camera = ResolveCamera(systemId, cameraSourceId);
+            var gimbal = _gimbals.Values
+                .Where(item => item.SystemId == systemId)
+                .OrderBy(item => item.ComponentId is MavlinkValues.MavCompIdGimbal or MavlinkValues.MavCompIdGimbal2 ? 0 : 1)
+                .ThenBy(item => item.ComponentId)
+                .FirstOrDefault();
+            var requiresCamera = action.Kind is
+                FlightMissionCameraActionKind.PhotoOnce or
+                FlightMissionCameraActionKind.PhotoByTime or
+                FlightMissionCameraActionKind.PhotoByDistance or
+                FlightMissionCameraActionKind.StopPhotos or
+                FlightMissionCameraActionKind.StartVideo or
+                FlightMissionCameraActionKind.StopVideo or
+                FlightMissionCameraActionKind.CameraMode;
+            if (requiresCamera && camera is null)
+            {
+                return MavlinkCommandDispatchResult.Rejected(
+                    "No MAVLink camera component has been discovered for this vehicle. Wait for camera discovery and try again.");
+            }
+            if (action.Kind == FlightMissionCameraActionKind.Gimbal && gimbal is null)
+            {
+                return MavlinkCommandDispatchResult.Rejected(
+                    "No MAVLink gimbal component has been discovered for this vehicle.");
+            }
+
+            if (action.Kind == FlightMissionCameraActionKind.Gimbal)
+            {
+                gimbalRoute = gimbal!.Route;
+                gimbalDeviceId = gimbal.ComponentId;
+            }
+
+            try
+            {
+                command = MavlinkCameraActionMissionCompiler.CompileStandalone(action, adapter.Profile);
+            }
+            catch (InvalidOperationException exception)
+            {
+                return MavlinkCommandDispatchResult.Rejected(exception.Message);
+            }
+
+            targetComponentId = action.Kind switch
+            {
+                FlightMissionCameraActionKind.Gimbal when command.CommandId == MavlinkCommandIds.DoMountControl
+                    => gimbal!.ComponentId,
+                FlightMissionCameraActionKind.Gimbal => vehicleComponentId,
+                FlightMissionCameraActionKind.RegionOfInterest => vehicleComponentId,
+                _ => camera!.ComponentId
+            };
+        }
+
+        if (action.Kind == FlightMissionCameraActionKind.Gimbal)
+        {
+            try
+            {
+                var options = Definition.Mavlink ?? new MavlinkConnectionOptions();
+                var flags = action.GimbalFrame == FlightMissionGimbalFrame.Earth ? 64u : 32u;
+                var bytes = _codec.EncodeGimbalManagerSetPitchYaw(
+                    options.SourceSystemId,
+                    options.SourceComponentId,
+                    systemId,
+                    vehicleComponentId,
+                    flags,
+                    gimbalDeviceId,
+                    ToMavlinkFloat(action.GimbalPitchDegrees),
+                    ToMavlinkFloat(action.GimbalYawDegrees),
+                    float.NaN,
+                    float.NaN);
+                if (gimbalRoute is null)
+                {
+                    return MavlinkCommandDispatchResult.Rejected(
+                        "No MAVLink route is available for the discovered gimbal.");
+                }
+
+                await _transport.SendAsync(bytes, gimbalRoute, cancellationToken);
+                AddEvent(
+                    "Info",
+                    "mavlink-camera-command",
+                    $"Dispatched live gimbal setpoint to device {gimbalDeviceId}.",
+                    systemId,
+                    "MAVLINK_GIMBAL_SETPOINT_DISPATCH",
+                    action.Kind.ToString());
+                return new(true, OperationalCommandState.Succeeded,
+                    "Gimbal setpoint sent to MAVLink.", (ushort)MavlinkMessageIds.GimbalManagerSetPitchYaw);
+            }
+            catch (Exception exception) when (exception is InvalidOperationException or KeyNotFoundException)
+            {
+                return MavlinkCommandDispatchResult.Rejected(exception.Message);
+            }
+        }
+
+        MavlinkCommandAck acknowledgement;
+        try
+        {
+            acknowledgement = await SendCommandAsync(systemId, targetComponentId, command, cancellationToken);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return new(false, OperationalCommandState.TimedOut,
+                $"{command.Description} was sent, but no MAVLink acknowledgement arrived.", command.CommandId);
+        }
+        catch (TimeoutException)
+        {
+            return new(false, OperationalCommandState.TimedOut,
+                $"{command.Description} was sent, but no MAVLink acknowledgement arrived.", command.CommandId);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return MavlinkCommandDispatchResult.Rejected(exception.Message);
+        }
+
+        if (!acknowledgement.Accepted)
+        {
+            return new(false, OperationalCommandState.Rejected,
+                $"{command.Description} was rejected by MAVLink ({acknowledgement.ResultCode}).",
+                command.CommandId);
+        }
+
+        AddEvent(
+            "Info",
+            "mavlink-camera-command",
+            $"Dispatched {command.Description} (MAV_CMD {command.CommandId}) to component {targetComponentId}.",
+            systemId,
+            "MAVLINK_CAMERA_COMMAND_DISPATCH",
+            command.CommandId.ToString(CultureInfo.InvariantCulture));
+        return new(true, OperationalCommandState.Succeeded,
+            $"{command.Description} acknowledged by MAVLink.", command.CommandId);
+    }
+
+    private MavlinkCameraState? ResolveCamera(byte systemId, string? cameraSourceId)
+    {
+        if (!string.IsNullOrWhiteSpace(cameraSourceId))
+        {
+            var selected = _cameras.Values.FirstOrDefault(item =>
+                item.SystemId == systemId &&
+                CameraSourceId(item.SystemId, item.ComponentId).Equals(cameraSourceId, StringComparison.Ordinal));
+            if (selected is not null)
+            {
+                return selected;
+            }
+        }
+
+        return _cameras.Values
+            .Where(item => item.SystemId == systemId)
+            .OrderBy(item => item.ComponentId)
+            .FirstOrDefault();
+    }
+
     private bool TryBeginActiveOperation(
         byte systemId,
         OperatorCommandRequest request,
@@ -2303,6 +2475,7 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
             {
                 _systems.Clear();
                 _cameras.Clear();
+                _gimbals.Clear();
                 _cameraInformationRequested.Clear();
             }
             if (_cameraDefinitions is not null)
@@ -2393,6 +2566,19 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
                 MavlinkMessageIds.VideoStreamStatus)
             {
                 ProcessCameraPacket(packet, route);
+                // Component packets update camera state as well as the vehicle
+                // state. Publish them so connection managers can project the
+                // discovered camera into the shared stores.
+                RaiseChanged();
+                return;
+            }
+
+            if (packet.MessageId is MavlinkMessageIds.GimbalManagerInformation or
+                MavlinkMessageIds.GimbalDeviceInformation or
+                MavlinkMessageIds.GimbalDeviceAttitudeStatus)
+            {
+                ProcessGimbalPacket(packet, route);
+                RaiseChanged();
                 return;
             }
 
@@ -2438,10 +2624,19 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
             {
                 var mavType = packet.Byte("type");
                 var autopilot = packet.Byte("autopilot");
-                if (mavType == MavlinkValues.MavTypeCamera ||
-                    (packet.ComponentId >= MavlinkValues.MavCompIdCamera && autopilot == MavlinkValues.MavAutopilotInvalid))
+                if ((mavType == MavlinkValues.MavTypeCamera ||
+                    packet.ComponentId >= MavlinkValues.MavCompIdCamera) &&
+                    packet.ComponentId is not MavlinkValues.MavCompIdGimbal and not MavlinkValues.MavCompIdGimbal2)
                 {
                     ProcessCameraHeartbeat(packet, route);
+                    RaiseChanged();
+                    return;
+                }
+                if (mavType == MavlinkValues.MavTypeGimbal ||
+                    packet.ComponentId is MavlinkValues.MavCompIdGimbal or MavlinkValues.MavCompIdGimbal2)
+                {
+                    ProcessGimbalHeartbeat(packet, route);
+                    RaiseChanged();
                     return;
                 }
                 if (mavType is MavlinkValues.MavTypeGcs or MavlinkValues.MavTypeOnboardController ||
@@ -2702,6 +2897,11 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
                     {
                         _ = RequestCameraInformationAsync(packet.SystemId, packet.ComponentId);
                     }
+                    var cameraKey = (packet.SystemId, MavlinkValues.MavCompIdCamera);
+                    if (_cameraInformationRequested.Add(cameraKey))
+                    {
+                        _ = RequestCameraInformationAsync(packet.SystemId, MavlinkValues.MavCompIdCamera);
+                    }
                 }
             }
         }
@@ -2809,6 +3009,35 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
         }
     }
 
+    private void ProcessGimbalHeartbeat(MavlinkPacket packet, MavlinkTransportRoute route)
+    {
+        var key = (packet.SystemId, packet.ComponentId);
+        if (!_gimbals.TryGetValue(key, out var gimbal))
+        {
+            gimbal = new MavlinkGimbalState(packet.SystemId, packet.ComponentId);
+            _gimbals.Add(key, gimbal);
+        }
+
+        gimbal.LastHeartbeatAt = packet.ReceivedAt;
+        gimbal.LastMessageAt = packet.ReceivedAt;
+        gimbal.Route = _bootstrapRoute ?? route;
+        gimbal.Availability = AvailabilityState.Online;
+    }
+
+    private void ProcessGimbalPacket(MavlinkPacket packet, MavlinkTransportRoute route)
+    {
+        var key = (packet.SystemId, packet.ComponentId);
+        if (!_gimbals.TryGetValue(key, out var gimbal))
+        {
+            gimbal = new MavlinkGimbalState(packet.SystemId, packet.ComponentId);
+            _gimbals.Add(key, gimbal);
+        }
+
+        gimbal.LastMessageAt = packet.ReceivedAt;
+        gimbal.Route = _bootstrapRoute ?? route;
+        gimbal.Availability = AvailabilityState.Online;
+    }
+
     private async Task RequestCameraInformationAsync(byte systemId, byte componentId)
     {
         try
@@ -2887,6 +3116,15 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
             .Where(item => !string.IsNullOrWhiteSpace(item))).Trim();
         if (displayName.Length == 0) displayName = $"MAVLink camera {camera.SystemId}/{camera.ComponentId}";
         var sourceId = CameraSourceId(camera.SystemId, camera.ComponentId);
+        var gimbal = _gimbals.Values
+            .Where(item => item.SystemId == camera.SystemId)
+            .OrderBy(item => item.ComponentId is MavlinkValues.MavCompIdGimbal or MavlinkValues.MavCompIdGimbal2 ? 0 : 1)
+            .ThenBy(item => item.ComponentId)
+            .FirstOrDefault();
+        // A zero capability bitmask means the camera did not report optional
+        // flags, not that it is incapable. The command acknowledgement remains
+        // authoritative for execution.
+        var capabilitiesUnknown = camera.CapabilityFlags == 0;
         return new CameraSourceRecord(
             sourceId,
             sourceId,
@@ -2907,7 +3145,11 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
             $"mavlink-{camera.SystemId}-{camera.ComponentId}",
             "MAVLINK_CAMERA_DISCOVERED",
             camera.DefinitionStatus,
-            camera.LastMessageAt == default ? DateTimeOffset.UtcNow : camera.LastMessageAt);
+            camera.LastMessageAt == default ? DateTimeOffset.UtcNow : camera.LastMessageAt,
+            SupportsPhoto: capabilitiesUnknown || (camera.CapabilityFlags & 2) != 0,
+            SupportsVideo: capabilitiesUnknown || (camera.CapabilityFlags & 1) != 0,
+            SupportsGimbal: gimbal is not null,
+            GimbalComponentId: gimbal?.ComponentId);
     }
 
     private static string CameraSourceId(byte systemId, byte componentId) => $"mavlink:{systemId}:{componentId}";
@@ -3761,7 +4003,23 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
         var diagnostics = ToDiagnostics(system);
         var health = supported ? diagnostics.OverallStatus.ToString() : "Unsupported";
         var readiness = supported ? diagnostics.ArmReadiness.ToString() : "Unsupported autopilot or vehicle type";
-        var capabilities = adapter?.CapabilityKeys ?? [];
+        var cameraCapabilities = _cameras.Values
+            .Where(item => item.SystemId == system.SystemId)
+            .SelectMany(item => new[]
+            {
+                item.CapabilityFlags == 0 || (item.CapabilityFlags & 2) != 0 ? "camera_photo" : null,
+                item.CapabilityFlags == 0 || (item.CapabilityFlags & 1) != 0 ? "camera_video" : null
+            })
+            .Where(item => item is not null)
+            .Cast<string>();
+        var gimbalCapabilities = _gimbals.Values.Any(item => item.SystemId == system.SystemId)
+            ? new[] { "gimbal" }
+            : Array.Empty<string>();
+        var capabilities = (adapter?.CapabilityKeys ?? [])
+            .Concat(cameraCapabilities)
+            .Concat(gimbalCapabilities)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
         return new LogosConnectionObservation(
             new RuntimeObservation(
                 runtimeId,
@@ -4429,6 +4687,15 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
     private static double NormalizeHeading(double heading)
         => (heading % 360 + 360) % 360;
 
+    private static float ToMavlinkFloat(double? value)
+    {
+        if (value is null) return float.NaN;
+        var converted = (float)value.Value;
+        return float.IsFinite(converted)
+            ? converted
+            : throw new InvalidOperationException("The camera or gimbal angle is outside the MAVLink float range.");
+    }
+
     private static double? OperationTargetHeading(
         IMavlinkAutopilotAdapter adapter,
         OperatorCommandRequest request,
@@ -4721,6 +4988,16 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
         public bool DefinitionLoadRequested { get; set; }
         public IReadOnlyList<MavlinkCameraSettingRecord> Settings { get; set; } = [];
         public string DefinitionStatus { get; set; } = "Discovered";
+    }
+
+    private sealed class MavlinkGimbalState(byte systemId, byte componentId)
+    {
+        public byte SystemId { get; } = systemId;
+        public byte ComponentId { get; } = componentId;
+        public MavlinkTransportRoute? Route { get; set; }
+        public AvailabilityState Availability { get; set; } = AvailabilityState.Connecting;
+        public DateTimeOffset LastHeartbeatAt { get; set; }
+        public DateTimeOffset LastMessageAt { get; set; }
     }
 
     private sealed class ActiveOperation(

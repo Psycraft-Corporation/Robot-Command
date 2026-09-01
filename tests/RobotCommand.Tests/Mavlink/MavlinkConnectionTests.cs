@@ -1,5 +1,7 @@
 using System.Net;
+using System.Linq;
 using Microsoft.Extensions.Logging.Abstractions;
+using RobotCommand.Core;
 using RobotCommand.Infrastructure;
 using RobotCommand.Models;
 using RobotCommand.Services.Mavlink;
@@ -216,6 +218,10 @@ public sealed class MavlinkConnectionTests
         var source = Assert.Single(connection.LiveSnapshot.CameraSources);
         Assert.Equal("mavlink:1:100", source.Id);
         Assert.Contains("Acme", source.Name);
+        Assert.True(source.SupportsPhoto);
+        Assert.True(source.SupportsVideo);
+        Assert.Contains("camera_photo", connection.Observations[0].Runtime.CapabilityKeys);
+        Assert.Contains("camera_video", connection.Observations[0].Runtime.CapabilityKeys);
         var definition = Assert.Single(definitions.Items);
         Assert.Equal("Acme", definition.VendorName);
         Assert.Equal("SurveyCam", definition.ModelName);
@@ -223,6 +229,60 @@ public sealed class MavlinkConnectionTests
 
         await connection.DisposeAsync();
         Assert.Empty(definitions.Items);
+    }
+
+    [Fact]
+    public async Task StandaloneCameraActionsTargetDiscoveredCameraAndGimbalSetpointsUseQgcMessage()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(CameraHeartbeat(1, 100));
+        transport.Emit(CameraInformation(1, 100) with
+        {
+            Fields = new Dictionary<string, object>
+            {
+                ["vendor_name"] = "Acme",
+                ["model_name"] = "SurveyCam",
+                ["flags"] = (uint)3
+            }
+        });
+        transport.Emit(CameraHeartbeat(1, MavlinkValues.MavCompIdGimbal) with
+        {
+            Fields = new Dictionary<string, object>
+            {
+                ["type"] = MavlinkValues.MavTypeGimbal,
+                ["autopilot"] = MavlinkValues.MavAutopilotInvalid,
+                ["base_mode"] = (byte)0,
+                ["custom_mode"] = (uint)0,
+                ["system_status"] = MavlinkValues.MavStateActive
+            }
+        });
+
+        var photoTask = connection.SendCameraActionAsync(
+            "mavlink:mavlink:1",
+            "mavlink:1:100",
+            FlightMissionCameraAction.PhotoOnce(),
+            TestContext.Current.CancellationToken);
+        await Task.Delay(10, TestContext.Current.CancellationToken);
+        transport.Emit(CommandAck(1, MavlinkCommandIds.ImageStartCapture, MavlinkValues.MavResultAccepted, 100));
+        var photo = await photoTask;
+
+        var gimbal = await connection.SendCameraActionAsync(
+            "mavlink:mavlink:1",
+            null,
+            FlightMissionCameraAction.SetGimbal(0, 0),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(photo.Accepted, photo.Message);
+        Assert.Equal(MavlinkCommandIds.ImageStartCapture, photo.MavlinkCommandId);
+        Assert.True(gimbal.Accepted);
+        Assert.Equal((ushort)MavlinkMessageIds.GimbalManagerSetPitchYaw, gimbal.MavlinkCommandId);
+        Assert.Contains(transport.SentPayloads, payload => payload.SequenceEqual([(byte)19]));
+
+        await connection.DisposeAsync();
     }
 
     [Fact]
@@ -1390,12 +1450,12 @@ public sealed class MavlinkConnectionTests
             new Dictionary<string, object> { ["landed_state"] = landedState },
             DateTimeOffset.UtcNow);
 
-    private static MavlinkPacket CommandAck(byte systemId, ushort command, byte result)
+    private static MavlinkPacket CommandAck(byte systemId, ushort command, byte result, byte componentId = MavlinkValues.MavCompIdAutopilot1)
         => new(
             2,
             5,
             systemId,
-            MavlinkValues.MavCompIdAutopilot1,
+            componentId,
             MavlinkMessageIds.CommandAck,
             new Dictionary<string, object>
             {
@@ -1509,6 +1569,18 @@ public sealed class MavlinkConnectionTests
             short z,
             short r,
             ushort buttons = 0) => [4];
+
+        public byte[] EncodeGimbalManagerSetPitchYaw(
+            byte sourceSystemId,
+            byte sourceComponentId,
+            byte targetSystemId,
+            byte targetComponentId,
+            uint flags,
+            byte gimbalDeviceId,
+            float pitch,
+            float yaw,
+            float pitchRate,
+            float yawRate) => [19];
 
         public byte[] EncodeParameterRequestList(byte sourceSystemId, byte sourceComponentId, byte targetSystemId, byte targetComponentId) => [6];
 

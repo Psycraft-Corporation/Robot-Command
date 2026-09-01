@@ -51,6 +51,94 @@ internal static class MavlinkCameraActionMissionCompiler
     }
 
     /// <summary>
+    /// Compiles one portable camera action for immediate MAVLink dispatch. The
+    /// parameter ordering is shared with mission compilation so standalone
+    /// controls and uploaded missions cannot drift apart.
+    /// </summary>
+    public static MavlinkCommandEnvelope CompileStandalone(
+        FlightMissionCameraAction action,
+        MavlinkAutopilotProfile profile)
+    {
+        if (!action.IsValid)
+            throw new InvalidOperationException(string.Join(" ", action.ValidationErrors));
+
+        var cameraId = action.CameraId ?? 0;
+        return action.Kind switch
+        {
+            FlightMissionCameraActionKind.PhotoOnce => Command(
+                MavlinkCommandIds.ImageStartCapture,
+                "Capture photo",
+                cameraId, 0, 1, 0, 0, 0, 0),
+            FlightMissionCameraActionKind.PhotoByTime => Command(
+                MavlinkCommandIds.ImageStartCapture,
+                "Start timed photos",
+                cameraId, ToFloat(action.IntervalSeconds), 0, 0, 0, 0, 0),
+            FlightMissionCameraActionKind.PhotoByDistance => Command(
+                MavlinkCommandIds.DoSetCameraTriggerDistance,
+                "Start distance photos",
+                ToFloat(action.DistanceMetres), 0, 0, cameraId, 0, 0, 0),
+            FlightMissionCameraActionKind.StopPhotos => Command(
+                MavlinkCommandIds.ImageStopCapture,
+                "Stop photos",
+                cameraId, 0, 0, 0, 0, 0, 0),
+            FlightMissionCameraActionKind.StartVideo => Command(
+                MavlinkCommandIds.VideoStartCapture,
+                "Start video",
+                0, 0, cameraId, 0, 0, 0, 0),
+            FlightMissionCameraActionKind.StopVideo => Command(
+                MavlinkCommandIds.VideoStopCapture,
+                "Stop video",
+                0, cameraId, 0, 0, 0, 0, 0),
+            FlightMissionCameraActionKind.CameraMode => Command(
+                MavlinkCommandIds.SetCameraMode,
+                "Set camera mode",
+                cameraId, action.CameraMode == FlightMissionCameraMode.Video ? 1 : 0, 0, 0, 0, 0, 0),
+            FlightMissionCameraActionKind.RegionOfInterest => new(
+                MavlinkCommandIds.DoSetRoiLocation,
+                [cameraId, 0, 0, 0, 0, 0, 0],
+                "Set camera region of interest",
+                MavlinkWireKind.CommandInt,
+                GlobalRelativeAltInt,
+                ToE7(action.RegionOfInterest!.LatitudeDegrees),
+                ToE7(action.RegionOfInterest.LongitudeDegrees),
+                0),
+            FlightMissionCameraActionKind.Gimbal when profile == MavlinkAutopilotProfile.ArduPilot && action.GimbalRollDegrees is not null
+                => Command(
+                    MavlinkCommandIds.DoMountControl,
+                    "Set gimbal attitude",
+                    ToFloat(action.GimbalPitchDegrees),
+                    ToFloat(action.GimbalRollDegrees),
+                    ToFloat(action.GimbalYawDegrees),
+                    MountModeMavlinkTargeting, 0, 0, 0),
+            FlightMissionCameraActionKind.Gimbal => Command(
+                MavlinkCommandIds.DoGimbalManagerPitchYaw,
+                "Set gimbal attitude",
+                ToFloat(action.GimbalPitchDegrees),
+                ToFloat(action.GimbalYawDegrees),
+                float.NaN,
+                float.NaN,
+                action.GimbalFrame == FlightMissionGimbalFrame.Earth
+                    ? GimbalManagerYawInEarthFrame
+                    : GimbalManagerYawInVehicleFrame,
+                0,
+                cameraId),
+            _ => throw new InvalidOperationException($"Camera action {action.Kind} is not supported.")
+        };
+    }
+
+    private static MavlinkCommandEnvelope Command(
+        ushort commandId,
+        string description,
+        float param1 = 0,
+        float param2 = 0,
+        float param3 = 0,
+        float param4 = 0,
+        float param5 = 0,
+        float param6 = 0,
+        float param7 = 0)
+        => new(commandId, [param1, param2, param3, param4, param5, param6, param7], description);
+
+    /// <summary>
     /// Reconstructs the portable camera action represented by a downloaded
     /// MAVLink mission item. Keeping this beside the encoder prevents PX4 and
     /// ArduPilot imports from drifting apart as command parameters evolve.

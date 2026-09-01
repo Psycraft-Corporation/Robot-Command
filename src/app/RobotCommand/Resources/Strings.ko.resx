@@ -630,5 +630,9 @@
   <data name="FlightMissionGimbalFrameEarth" xml:space="preserve"><value>지구 기준</value></data>
   <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>사진 {0}장 · 동영상 {1:0.#}초 · 트리거 명령 {2}개</value></data>
   <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>사진 {0}장 · 동영상 {1:0.#}초 · 트리거 명령 {2}개</value></data>
+  <data name="CameraCapturePhoto" xml:space="preserve"><value>사진 촬영</value></data>
+  <data name="CameraStartVideo" xml:space="preserve"><value>카메라 비디오 시작</value></data>
+  <data name="CameraStopVideo" xml:space="preserve"><value>카메라 비디오 중지</value></data>
+  <data name="CameraCenterGimbal" xml:space="preserve"><value>짐벌 중앙 정렬</value></data>
   <data name="CameraDefinition" xml:space="preserve"><value>카메라 정의</value></data>
 </root>

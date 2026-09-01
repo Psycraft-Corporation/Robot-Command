@@ -10,6 +10,7 @@ using RobotCommand.Services;
 using RobotCommand.Services.Connections;
 using RobotCommand.Services.Evidence;
 using RobotCommand.Services.Media;
+using RobotCommand.Services.Mavlink;
 using RobotCommand.Services.Operations;
 using RobotCommand.State;
 
@@ -39,6 +40,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _uiDispatcher;
     private readonly IMediaWorkflow? _mediaWorkflow;
     private readonly ILocalizationService? _localization;
+    private readonly IMavlinkCameraControlService? _cameraControl;
     private readonly VideoFrameBuffer _ghostFrameBuffer = new();
     private readonly SwitchableVideoFrameSource _frameSource = new();
     private CancellationTokenSource? _ghostVideoCancellation;
@@ -59,6 +61,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private readonly AsyncRelayCommand _captureDisplayedFrameCommand;
     private readonly AsyncRelayCommand _captureSourceImageCommand;
     private readonly AsyncRelayCommand _exportTimelineClipCommand;
+    private readonly AsyncRelayCommand _capturePhotoCommand;
+    private readonly AsyncRelayCommand _startRemoteVideoCommand;
+    private readonly AsyncRelayCommand _stopRemoteVideoCommand;
+    private readonly AsyncRelayCommand _centerGimbalCommand;
     private CameraSourceRecord? _selectedCamera;
     private CameraStreamRecord? _activeStream;
     private VideoProtocolPreference _selectedProtocol = VideoProtocolPreference.Automatic;
@@ -95,6 +101,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private string _evidenceStatus = "No evidence captured in this session.";
     private string _cameraDefinitionSummary = string.Empty;
     private bool _hasCameraDefinition;
+    private string _cameraControlStatus = string.Empty;
 
     public CameraPanelViewModel(
         ISelectionService selection,
@@ -118,7 +125,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         IMediaWorkflow? mediaWorkflow = null,
         IMediaSettingsService? mediaSettings = null,
         ILocalizationService? localization = null,
-        IEntityStore<string, MavlinkCameraDefinitionRecord>? cameraDefinitions = null)
+        IEntityStore<string, MavlinkCameraDefinitionRecord>? cameraDefinitions = null,
+        IMavlinkCameraControlService? cameraControl = null)
     {
         _selection = selection;
         _vehicles = vehicles;
@@ -141,6 +149,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _uiDispatcher = uiDispatcher;
         _mediaWorkflow = mediaWorkflow;
         _localization = localization;
+        _cameraControl = cameraControl;
         if (_localization is not null)
         {
             _localization.PropertyChanged += OnLocalizationChanged;
@@ -176,6 +185,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _captureDisplayedFrameCommand = new AsyncRelayCommand(CaptureDisplayedFrameAsync, CanCaptureDisplayedFrame);
         _captureSourceImageCommand = new AsyncRelayCommand(CaptureSourceImageAsync, CanCaptureSourceImage);
         _exportTimelineClipCommand = new AsyncRelayCommand(ExportTimelineClipAsync, CanExportTimelineClip);
+        _capturePhotoCommand = new AsyncRelayCommand(CapturePhotoAsync, CanCapturePhoto);
+        _startRemoteVideoCommand = new AsyncRelayCommand(StartRemoteVideoAsync, CanStartRemoteVideo);
+        _stopRemoteVideoCommand = new AsyncRelayCommand(StopRemoteVideoAsync, CanStopRemoteVideo);
+        _centerGimbalCommand = new AsyncRelayCommand(CenterGimbalAsync, CanCenterGimbal);
         OpenStreamCommand = _openStreamCommand;
         CloseStreamCommand = _closeStreamCommand;
         StartTestPatternCommand = _startTestPatternCommand;
@@ -193,6 +206,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         CaptureDisplayedFrameCommand = _captureDisplayedFrameCommand;
         CaptureSourceImageCommand = _captureSourceImageCommand;
         ExportTimelineClipCommand = _exportTimelineClipCommand;
+        CapturePhotoCommand = _capturePhotoCommand;
+        StartRemoteVideoCommand = _startRemoteVideoCommand;
+        StopRemoteVideoCommand = _stopRemoteVideoCommand;
+        CenterGimbalCommand = _centerGimbalCommand;
 
         _selection.Changed += OnSelectionChanged;
         _playback.Changed += OnPlaybackChanged;
@@ -421,6 +438,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     public string GoLiveTooltip => Text("VideoLive", "Go live");
     public string CaptureFrameTooltip => Text("VideoCaptureFrame", "Capture frame");
     public string CaptureSourceTooltip => Text("VideoCaptureSource", "Capture source image");
+    public string CapturePhotoTooltip => Text("CameraCapturePhoto", "Capture photo");
+    public string StartRemoteVideoTooltip => Text("CameraStartVideo", "Start camera video");
+    public string StopRemoteVideoTooltip => Text("CameraStopVideo", "Stop camera video");
+    public string CenterGimbalTooltip => Text("CameraCenterGimbal", "Center gimbal");
 
     public ICommand OpenStreamCommand { get; }
 
@@ -455,6 +476,17 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     public ICommand CaptureSourceImageCommand { get; }
 
     public ICommand ExportTimelineClipCommand { get; }
+
+    public ICommand CapturePhotoCommand { get; }
+    public ICommand StartRemoteVideoCommand { get; }
+    public ICommand StopRemoteVideoCommand { get; }
+    public ICommand CenterGimbalCommand { get; }
+
+    public string CameraControlStatus
+    {
+        get => _cameraControlStatus;
+        private set => SetProperty(ref _cameraControlStatus, value);
+    }
 
     public bool CaptureIncludeOverlays
     {
@@ -1098,6 +1130,52 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
            SelectedCamera.State is not (AvailabilityState.Offline or AvailabilityState.Faulted) &&
            _activeStream is null;
 
+    private bool CanCapturePhoto()
+        => _cameraControl is not null && GetSelectedVehicle() is not null &&
+           SelectedCamera is { SupportsPhoto: true, State: not (AvailabilityState.Offline or AvailabilityState.Faulted) };
+
+    private bool CanStartRemoteVideo()
+        => _cameraControl is not null && GetSelectedVehicle() is not null &&
+           SelectedCamera is { SupportsVideo: true, State: not (AvailabilityState.Offline or AvailabilityState.Faulted) };
+
+    private bool CanStopRemoteVideo() => CanStartRemoteVideo();
+
+    private bool CanCenterGimbal()
+        => _cameraControl is not null && GetSelectedVehicle() is not null &&
+           SelectedCamera is { SupportsGimbal: true, State: not (AvailabilityState.Offline or AvailabilityState.Faulted) };
+
+    private Task CapturePhotoAsync(CancellationToken cancellationToken)
+        => ExecuteCameraActionAsync(FlightMissionCameraAction.PhotoOnce(), cancellationToken);
+
+    private Task StartRemoteVideoAsync(CancellationToken cancellationToken)
+        => ExecuteCameraActionAsync(FlightMissionCameraAction.StartVideo(), cancellationToken);
+
+    private Task StopRemoteVideoAsync(CancellationToken cancellationToken)
+        => ExecuteCameraActionAsync(FlightMissionCameraAction.StopVideo(), cancellationToken);
+
+    private Task CenterGimbalAsync(CancellationToken cancellationToken)
+        => ExecuteCameraActionAsync(FlightMissionCameraAction.SetGimbal(0, 0), cancellationToken);
+
+    private async Task ExecuteCameraActionAsync(
+        FlightMissionCameraAction action,
+        CancellationToken cancellationToken)
+    {
+        var vehicle = GetSelectedVehicle();
+        var camera = SelectedCamera;
+        if (_cameraControl is null || vehicle is null || camera is null)
+        {
+            return;
+        }
+
+        var result = await _cameraControl.ExecuteAsync(
+            camera.ConnectionId,
+            vehicle.Id,
+            camera.CameraSourceId,
+            action,
+            cancellationToken);
+        CameraControlStatus = result.Message;
+    }
+
     private bool CanCloseStream() => _activeStream is not null;
 
     private static bool IsGhostCamera(CameraSourceRecord camera)
@@ -1625,6 +1703,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _captureDisplayedFrameCommand.RaiseCanExecuteChanged();
         _captureSourceImageCommand.RaiseCanExecuteChanged();
         _exportTimelineClipCommand.RaiseCanExecuteChanged();
+        _capturePhotoCommand.RaiseCanExecuteChanged();
+        _startRemoteVideoCommand.RaiseCanExecuteChanged();
+        _stopRemoteVideoCommand.RaiseCanExecuteChanged();
+        _centerGimbalCommand.RaiseCanExecuteChanged();
     }
 
     private void OnLocalizationChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

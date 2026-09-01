@@ -136,6 +136,20 @@ public interface IMavlinkCodec
         short r,
         ushort buttons = 0);
 
+    /// <summary>Encodes the live gimbal-manager setpoint used by QGC controls.</summary>
+    byte[] EncodeGimbalManagerSetPitchYaw(
+        byte sourceSystemId,
+        byte sourceComponentId,
+        byte targetSystemId,
+        byte targetComponentId,
+        uint flags,
+        byte gimbalDeviceId,
+        float pitch,
+        float yaw,
+        float pitchRate,
+        float yawRate)
+        => throw new NotSupportedException("This MAVLink codec does not include gimbal-manager setpoints.");
+
     /// <summary>
     /// Encodes a local-NED position/velocity setpoint for PX4 Offboard
     /// control. Callers explicitly select which dimensions are ignored using
@@ -553,6 +567,33 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
         }
     }
 
+    public byte[] EncodeGimbalManagerSetPitchYaw(
+        byte sourceSystemId,
+        byte sourceComponentId,
+        byte targetSystemId,
+        byte targetComponentId,
+        uint flags,
+        byte gimbalDeviceId,
+        float pitch,
+        float yaw,
+        float pitchRate,
+        float yawRate)
+        => EncodeSimpleMessage(
+            MavlinkMessageIds.GimbalManagerSetPitchYaw,
+            sourceSystemId,
+            sourceComponentId,
+            new Dictionary<string, object>
+            {
+                ["flags"] = flags,
+                ["gimbal_device_id"] = gimbalDeviceId,
+                ["pitch"] = pitch,
+                ["yaw"] = yaw,
+                ["pitch_rate"] = pitchRate,
+                ["yaw_rate"] = yawRate,
+                ["target_system"] = targetSystemId,
+                ["target_component"] = targetComponentId
+            });
+
     public byte[] EncodeSetPositionTargetLocalNed(
         byte sourceSystemId,
         byte sourceComponentId,
@@ -924,6 +965,10 @@ public static class MavlinkMessageIds
     public const uint CameraInformation = 259;
     public const uint CameraSettings = 260;
     public const uint CameraCaptureStatus = 262;
+    public const uint GimbalManagerInformation = 280;
+    public const uint GimbalDeviceInformation = 283;
+    public const uint GimbalManagerSetPitchYaw = 284;
+    public const uint GimbalDeviceAttitudeStatus = 285;
     public const uint VideoStreamInformation = 269;
     public const uint VideoStreamStatus = 270;
 }
@@ -970,7 +1015,10 @@ public static class MavlinkValues
     public const byte MavModeFlagSafetyArmed = 128;
     public const byte MavCompIdAutopilot1 = 1;
     public const byte MavTypeCamera = 30;
+    public const byte MavTypeGimbal = 26;
     public const byte MavCompIdCamera = 100;
+    public const byte MavCompIdGimbal = 154;
+    public const byte MavCompIdGimbal2 = 155;
     public const byte MavLandedStateOnGround = 1;
     public const byte MavLandedStateInAir = 2;
 

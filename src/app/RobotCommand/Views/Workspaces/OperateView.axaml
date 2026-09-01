@@ -296,7 +296,7 @@
                 IsVisible="{Binding VideoVisible}">
           <Grid RowDefinitions="Auto,*,Auto,Auto">
             <Border Classes="surfaceHeader">
-              <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+              <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                   <StackPanel Spacing="2">
                     <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=VideoCamera}" />
@@ -345,7 +345,29 @@
                           AutomationProperties.Name="Close stream"
                           Command="{Binding Camera.CloseStreamCommand}" />
                 </Grid>
-                <Border Grid.Row="2" Classes="surfaceInset" Padding="8" IsVisible="{Binding Camera.HasCameraDefinition}">
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6">
+                    <Button Classes="primary"
+                            Content="{loc:Loc Key=CameraCapturePhoto}"
+                            ToolTip.Tip="{Binding Camera.CapturePhotoTooltip}"
+                            AutomationProperties.Name="{loc:Loc Key=CameraCapturePhoto}"
+                            Command="{Binding Camera.CapturePhotoCommand}" />
+                    <Button Content="{loc:Loc Key=CameraStartVideo}"
+                            ToolTip.Tip="{Binding Camera.StartRemoteVideoTooltip}"
+                            AutomationProperties.Name="{loc:Loc Key=CameraStartVideo}"
+                            Command="{Binding Camera.StartRemoteVideoCommand}" />
+                    <Button Content="{loc:Loc Key=CameraStopVideo}"
+                            ToolTip.Tip="{Binding Camera.StopRemoteVideoTooltip}"
+                            AutomationProperties.Name="{loc:Loc Key=CameraStopVideo}"
+                            Command="{Binding Camera.StopRemoteVideoCommand}" />
+                    <Button Content="{loc:Loc Key=CameraCenterGimbal}"
+                            ToolTip.Tip="{Binding Camera.CenterGimbalTooltip}"
+                            AutomationProperties.Name="{loc:Loc Key=CameraCenterGimbal}"
+                            Command="{Binding Camera.CenterGimbalCommand}" />
+                  <TextBlock Classes="muted"
+                             VerticalAlignment="Center"
+                             Text="{Binding Camera.CameraControlStatus}" />
+                </StackPanel>
+                <Border Grid.Row="3" Classes="surfaceInset" Padding="8" IsVisible="{Binding Camera.HasCameraDefinition}">
                   <StackPanel Spacing="5">
                     <TextBlock FontSize="10" FontWeight="SemiBold" Text="{loc:Loc Key=CameraDefinition}" />
                     <TextBlock Classes="muted" FontSize="10" Text="{Binding Camera.CameraDefinitionSummary}" />

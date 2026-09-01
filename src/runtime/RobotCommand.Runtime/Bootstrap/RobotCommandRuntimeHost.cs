@@ -155,6 +155,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IVehicleDiagnosticsProvider, ArduPilotVehicleDiagnosticsProvider>();
         services.AddSingleton<MavlinkConnectionRegistry>();
         services.AddSingleton<IMavlinkConnectionRegistry>(provider => provider.GetRequiredService<MavlinkConnectionRegistry>());
+        services.AddSingleton<IMavlinkCameraControlService, MavlinkCameraControlService>();
         services.AddSingleton<IConnectionProvider, DirectLogosConnectionFactory>();
         services.AddSingleton<IConnectionProvider, LinkdConnectionProvider>();
         services.AddSingleton<IConnectionProvider, MavlinkConnectionProvider>();

@@ -138,6 +138,7 @@ internal static class AppHost
         services.AddSingleton<MavlinkConnectionRegistry>();
         services.AddSingleton<IMavlinkConnectionRegistry>(
             serviceProvider => serviceProvider.GetRequiredService<MavlinkConnectionRegistry>());
+        services.AddSingleton<IMavlinkCameraControlService, MavlinkCameraControlService>();
         services.AddSingleton<IConnectionProvider, DirectLogosConnectionFactory>();
         services.AddSingleton<IConnectionProvider, LinkdConnectionProvider>();
         services.AddSingleton<IConnectionProvider, MavlinkConnectionProvider>();

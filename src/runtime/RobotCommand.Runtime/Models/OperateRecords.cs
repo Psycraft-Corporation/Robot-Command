@@ -63,7 +63,11 @@ public sealed record CameraSourceRecord(
     string FrameId,
     string Code,
     string Message,
-    DateTimeOffset ObservedAt);
+    DateTimeOffset ObservedAt,
+    bool SupportsPhoto = false,
+    bool SupportsVideo = false,
+    bool SupportsGimbal = false,
+    byte? GimbalComponentId = null);
 
 /// <summary>
 /// Normalized camera-definition data discovered through the MAVLink Camera

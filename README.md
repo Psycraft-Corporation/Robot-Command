@@ -40,6 +40,7 @@ The CLI exposes the same operational workflows for scripts, diagnostics, and rep
 
 - [Operations and safety](docs/operations-and-safety.md)
 - [Mission authoring](docs/mission-authoring.md)
+- [MAVLink camera and gimbal controls](docs/mavlink-camera-controls.md)
 - [Architecture](docs/architecture.md)
 - [Development](docs/development.md)
 - [Support](docs/support.md)
