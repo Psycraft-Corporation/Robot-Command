@@ -93,6 +93,9 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     public static readonly StyledProperty<ICommand?> MapAssembleCommandProperty =
         AvaloniaProperty.Register<NativeOperationalMapControl, ICommand?>(nameof(MapAssembleCommand));
 
+    public static readonly StyledProperty<ICommand?> MapPointGimbalCommandProperty =
+        AvaloniaProperty.Register<NativeOperationalMapControl, ICommand?>(nameof(MapPointGimbalCommand));
+
     public static readonly StyledProperty<OperatorControlsViewModel?> MapOperatorControlsProperty =
         AvaloniaProperty.Register<NativeOperationalMapControl, OperatorControlsViewModel?>(nameof(MapOperatorControls));
 
@@ -1201,6 +1204,12 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         set => SetValue(MapAssembleCommandProperty, value);
     }
 
+    public ICommand? MapPointGimbalCommand
+    {
+        get => GetValue(MapPointGimbalCommandProperty);
+        set => SetValue(MapPointGimbalCommandProperty, value);
+    }
+
     public OperatorControlsViewModel? MapOperatorControls
     {
         get => GetValue(MapOperatorControlsProperty);
@@ -1961,7 +1970,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         var center = new Avalonia.Point(screenCenter.X, screenCenter.Y);
         var rangePixels = Math.Clamp(camera.RangeMetres / viewport.Resolution, 18, 2400);
         var halfFov = Math.Clamp(camera.HorizontalFieldOfViewDegrees, 10, 120) * Math.PI / 360d;
-        var headingRadians = (heading - viewport.Rotation) * Math.PI / 180d;
+        var gimbalYaw = animation.Visual.GimbalYawDegrees ?? 0;
+        var cameraHeading = animation.Visual.GimbalYawInEarthFrame == true
+            ? gimbalYaw
+            : heading + gimbalYaw;
+        var headingRadians = (cameraHeading - viewport.Rotation) * Math.PI / 180d;
         var points = new List<Avalonia.Point> { center };
         const int arcPoints = 12;
         for (var index = 0; index <= arcPoints; index++)
@@ -2030,7 +2043,14 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         {
             var now = DateTimeOffset.UtcNow;
             var timestamp = sample.SourceTimestamp == DateTimeOffset.MinValue ? now : sample.SourceTimestamp;
-            _visual = _visual with { HeadingDegrees = sample.HeadingDegrees, State = sample.State };
+            _visual = _visual with
+            {
+                HeadingDegrees = sample.HeadingDegrees,
+                State = sample.State,
+                GimbalPitchDegrees = sample.GimbalPitchDegrees,
+                GimbalYawDegrees = sample.GimbalYawDegrees,
+                GimbalYawInEarthFrame = sample.GimbalYawInEarthFrame
+            };
             var snap = _samples.Count == 0 ||
                        sample.IsStale ||
                        IsLandedState(sample.LandedState) ||
@@ -3617,6 +3637,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         var canPrepareTeamGoTo = teamGoToCommand?.CanExecute(target) == true;
         var canPrepareGoTo = MapGoToCommand?.CanExecute(target) == true;
         var canPrepareSetHeading = MapSetHeadingCommand?.CanExecute(target) == true;
+        var canPreparePointGimbal = MapPointGimbalCommand?.CanExecute(target) == true;
         var findingSignature = pending is null
             ? string.Empty
             : string.Join('|', _mapOperatorControls?.Findings.Select(item => $"{item.Severity}:{item.Message}") ?? []);
@@ -3633,6 +3654,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             canPrepareTeamGoTo,
             canPrepareGoTo,
             canPrepareSetHeading,
+            canPreparePointGimbal,
             _mapOperatorControls?.HasMultiUnitSelection == true,
             _mapAssemblyChoosingFormation,
             _mapAssemblyStart is not null,
@@ -3730,6 +3752,17 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             };
             if (canPrepareSetHeading)
                 _mapContextMenu.Items.Add(setHeading);
+            if (canPreparePointGimbal)
+            {
+                _mapContextMenu.Items.Add(new MenuItem
+                {
+                    Header = "Queue point gimbal here",
+                    Command = new RelayCommand(
+                        parameter => ExecuteMapContextCommand(MapPointGimbalCommand, parameter),
+                        parameter => MapPointGimbalCommand?.CanExecute(parameter) == true),
+                    CommandParameter = target
+                });
+            }
             return;
         }
 
@@ -3858,13 +3891,18 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         command?.Execute(parameter);
         if (ReferenceEquals(command, MapAssembleCommand))
             MapOperatorControls?.ClearFormationPreview();
-        // Avalonia closes a ContextMenu after a MenuItem is clicked. Reopen it
-        // on the next UI turn so the confirmation remains at the map location.
-        Dispatcher.UIThread.Post(() =>
+        // Match the Go To/formation flow: clicking a queue action opens a new
+        // context menu in confirmation mode. Defer creation until the original
+        // menu has completed its close cycle; otherwise Avalonia closes the
+        // newly-created menu along with the first one.
+        if (_mapContextTarget is not null)
         {
-            RefreshMapContextMenu();
-            _mapContextMenu?.Open(_mapControl);
-        });
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_mapAwaitingConfirmation && _mapContextTarget is { } currentTarget)
+                    OpenMapContextMenu(default, currentTarget, awaitingConfirmation: true);
+            });
+        }
     }
 
     private void OnMapOperatorControlsPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -3872,12 +3910,31 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         if (e.PropertyName is not nameof(OperatorControlsViewModel.PendingPlan) and
             not nameof(OperatorControlsViewModel.Findings) and
             not nameof(OperatorControlsViewModel.StatusMessage) and
-            not nameof(OperatorControlsViewModel.IsPreparingMapCommand))
+            not nameof(OperatorControlsViewModel.IsPreparingMapCommand) and
+            not nameof(OperatorControlsViewModel.HasGimbalCameraSelection) and
+            not nameof(OperatorControlsViewModel.GimbalCameraSupportedCount))
         {
             return;
         }
 
         Dispatcher.UIThread.Post(() =>
+        {
+            if (_mapAwaitingConfirmation &&
+                _mapOperatorControls?.PendingPlan is null &&
+                _mapOperatorControls?.IsPreparingMapCommand != true)
+            {
+                _ = VerifyMapContextPreparationAsync();
+                return;
+            }
+
+            RefreshMapContextMenu();
+        });
+    }
+
+    private async Task VerifyMapContextPreparationAsync()
+    {
+        await Task.Delay(75);
+        await Dispatcher.UIThread.InvokeAsync(() =>
         {
             if (_mapAwaitingConfirmation &&
                 _mapOperatorControls?.PendingPlan is null &&

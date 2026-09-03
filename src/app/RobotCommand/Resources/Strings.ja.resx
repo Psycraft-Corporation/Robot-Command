@@ -623,6 +623,8 @@
   <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>カメラモード設定</value></data>
   <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>関心領域を設定</value></data>
   <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>ジンバルを向ける</value></data>
+  <data name="GimbalCameraControls" xml:space="preserve"><value>ジンバルとカメラの操作</value></data>
+  <data name="GimbalCameraAvailableCount" xml:space="preserve"><value>選択した{1}台中{0}台でジンバル/カメラを利用可能</value></data>
   <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>写真</value></data>
   <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>動画</value></data>
   <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>機体基準</value></data>

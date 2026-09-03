@@ -280,7 +280,8 @@ public enum FlightMissionCameraActionKind
     StopVideo,
     CameraMode,
     RegionOfInterest,
-    Gimbal
+    Gimbal,
+    CameraZoom
 }
 
 /// <summary>Semantic camera mode requested by a camera-mode action.</summary>
@@ -303,6 +304,7 @@ public sealed record FlightMissionCameraAction(
     double? GimbalPitchDegrees = null,
     double? GimbalYawDegrees = null,
     double? GimbalRollDegrees = null,
+    double? GimbalZoomPercent = null,
     FlightMissionGimbalFrame GimbalFrame = FlightMissionGimbalFrame.Vehicle,
     string? CameraName = null,
     byte? CameraId = null)
@@ -341,6 +343,10 @@ public sealed record FlightMissionCameraAction(
         => new(FlightMissionCameraActionKind.Gimbal, GimbalPitchDegrees: pitchDegrees, GimbalYawDegrees: yawDegrees,
             GimbalRollDegrees: rollDegrees, GimbalFrame: frame, CameraName: cameraName, CameraId: cameraId);
 
+    public static FlightMissionCameraAction SetZoom(double zoomPercent, string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.CameraZoom, GimbalZoomPercent: zoomPercent,
+            CameraName: cameraName, CameraId: cameraId);
+
     [System.Text.Json.Serialization.JsonIgnore]
     public IReadOnlyList<string> ValidationErrors
     {
@@ -370,6 +376,9 @@ public sealed record FlightMissionCameraAction(
                 case FlightMissionCameraActionKind.Gimbal when GimbalPitchDegrees is null && GimbalYawDegrees is null && GimbalRollDegrees is null:
                     errors.Add("Gimbal action requires at least one angle.");
                     break;
+                case FlightMissionCameraActionKind.CameraZoom when GimbalZoomPercent is null:
+                    errors.Add("Camera zoom requires a percentage.");
+                    break;
             }
 
             if (RegionOfInterest is { } roi &&
@@ -383,6 +392,8 @@ public sealed record FlightMissionCameraAction(
                 errors.Add("Gimbal yaw must be finite.");
             if (GimbalRollDegrees is { } roll && !double.IsFinite(roll))
                 errors.Add("Gimbal roll must be finite.");
+            if (GimbalZoomPercent is { } zoom && (!double.IsFinite(zoom) || zoom is < 0 or > 100))
+                errors.Add("Camera zoom must be between 0 and 100 percent.");
             if (!Enum.IsDefined(GimbalFrame))
                 errors.Add("The gimbal reference frame is invalid.");
 

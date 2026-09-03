@@ -630,6 +630,8 @@
   <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>Встановити режим камери</value></data>
   <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>Встановити область інтересу</value></data>
   <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>Навести підвіс</value></data>
+  <data name="GimbalCameraControls" xml:space="preserve"><value>Керування підвісом і камерою</value></data>
+  <data name="GimbalCameraAvailableCount" xml:space="preserve"><value>Підвіс/камера доступні у {0} з {1} вибраних юнітів</value></data>
   <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>Фото</value></data>
   <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>Відео</value></data>
   <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>Система відліку апарата</value></data>

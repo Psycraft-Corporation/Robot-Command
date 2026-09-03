@@ -77,7 +77,7 @@ public sealed class MavlinkCameraMissionCompilationTests
         Assert.Equal(437010000, cameraItems[1].LatitudeE7);
         Assert.Equal(-794010000, cameraItems[1].LongitudeE7);
         Assert.Equal(4, cameraItems[2].RawZ);
-        Assert.Equal(64, cameraItems[2].RawX);
+        Assert.Equal(4 | 8 | 64, cameraItems[2].RawX);
         Assert.Equal(-30, cameraItems[3].Param1);
         Assert.Equal(5, cameraItems[3].Param2);
         Assert.Equal(10, cameraItems[3].Param3);

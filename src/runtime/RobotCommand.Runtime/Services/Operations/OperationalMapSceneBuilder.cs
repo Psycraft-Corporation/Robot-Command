@@ -41,7 +41,10 @@ public sealed class OperationalMapSceneBuilder(
                 sample?.AirframeMode ?? string.Empty,
                 sample?.LandedState ?? string.Empty,
                 sample?.IsStale ?? true,
-                sample?.ObservedAt ?? capturedAt));
+                sample?.ObservedAt ?? capturedAt,
+                GimbalPitchDegrees: sample?.GimbalPitchDegrees,
+                GimbalYawDegrees: sample?.GimbalYawDegrees,
+                GimbalYawInEarthFrame: sample?.GimbalYawInEarthFrame));
         }
 
         return new MapVehicleMotionSnapshot(frame, samples, capturedAt);
@@ -102,7 +105,10 @@ public sealed class OperationalMapSceneBuilder(
                     selectedVehicleIds?.Contains(vehicle.Id) == true || vehicle.Id == selectedVehicleId,
                     vehicle.IsGhost)
                 {
-                    CameraCone = CameraConeFor(vehicle)
+                    CameraCone = CameraConeFor(vehicle),
+                    GimbalPitchDegrees = sample?.GimbalPitchDegrees,
+                    GimbalYawDegrees = sample?.GimbalYawDegrees,
+                    GimbalYawInEarthFrame = sample?.GimbalYawInEarthFrame
                 };
             })
             .Where(item => item is not null)

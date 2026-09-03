@@ -980,7 +980,9 @@ public static class MavlinkCommandIds
     public const ushort DoMountControl = 205;
     public const ushort DoSetCameraTriggerDistance = 206;
     public const ushort SetCameraMode = 530;
+    public const ushort SetCameraZoom = 531;
     public const ushort DoGimbalManagerPitchYaw = 1000;
+    public const ushort DoGimbalManagerConfigure = 1001;
     public const ushort ImageStartCapture = 2000;
     public const ushort ImageStopCapture = 2001;
     public const ushort VideoStartCapture = 2500;

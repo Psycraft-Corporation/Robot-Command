@@ -623,6 +623,8 @@
   <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>Définir le mode caméra</value></data>
   <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>Définir la zone d’intérêt</value></data>
   <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>Orienter la nacelle</value></data>
+  <data name="GimbalCameraControls" xml:space="preserve"><value>Commandes de nacelle et de caméra</value></data>
+  <data name="GimbalCameraAvailableCount" xml:space="preserve"><value>Nacelle/caméra disponible sur {0} des {1} unités sélectionnées</value></data>
   <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>Photo</value></data>
   <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>Vidéo</value></data>
   <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>Repère véhicule</value></data>

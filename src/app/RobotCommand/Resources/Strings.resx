@@ -462,6 +462,8 @@
   <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>Set camera mode</value></data>
   <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>Set region of interest</value></data>
   <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>Point gimbal</value></data>
+  <data name="GimbalCameraControls" xml:space="preserve"><value>Gimbal and camera controls</value></data>
+  <data name="GimbalCameraAvailableCount" xml:space="preserve"><value>Gimbal/camera available on {0} of {1} selected units</value></data>
   <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>Photo</value></data>
   <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>Video</value></data>
   <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>Vehicle frame</value></data>

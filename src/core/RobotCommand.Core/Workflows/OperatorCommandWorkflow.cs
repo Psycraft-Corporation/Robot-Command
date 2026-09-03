@@ -11,7 +11,13 @@ public enum OperatorWorkflowCommandKind
     Land,
     ReturnHome,
     ChangeAltitude,
-    SetHeading
+    SetHeading,
+    CapturePhoto,
+    StartVideo,
+    StopVideo,
+    CenterGimbal,
+    NadirGimbal,
+    SetGimbal
 }
 
 public enum OperatorWorkflowAvailability { Ready, Warning, Blocked, Unavailable }
@@ -40,7 +46,12 @@ public sealed record OperatorWorkflowParameters(
     OperatorWorkflowHeadingTargetKind? HeadingTargetKind = null,
     double? HeadingDegrees = null,
     double? RelativeYawDegrees = null,
-    bool AirborneDisarmConfirmed = false)
+    bool AirborneDisarmConfirmed = false,
+    double? GimbalPitchDegrees = null,
+    double? GimbalYawDegrees = null,
+    double? GimbalRollDegrees = null,
+    double? GimbalZoomPercent = null,
+    bool GimbalEarthFrame = false)
 {
     public static OperatorWorkflowParameters None { get; } = new();
 }

@@ -32,6 +32,9 @@
           <StackPanel Spacing="7">
             <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=SelectedUnits}" />
             <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding SelectionSummary}" />
+            <TextBlock IsVisible="{Binding HasSelectedGimbalCamera}"
+                       Text="{Binding SelectedGimbalCameraSummary}"
+                       ToolTip.Tip="{Binding SelectedGimbalCameraTooltip}" />
             <TextBlock Text="{Binding SelectedQueuedAction, StringFormat='Queued action: {0}'}" TextWrapping="Wrap" />
             <TextBlock Text="{Binding SelectedQueuedAvailability, StringFormat='Queue status: {0}'}" TextWrapping="Wrap" />
             <TextBlock Text="{Binding SelectedManualControlStatus}" TextWrapping="Wrap" />
@@ -112,6 +115,12 @@
                 <TextBlock Text="{Binding SelectedBattery}" ToolTip.Tip="{Binding SelectedBatteryTooltip}" />
               </StackPanel>
             </Grid>
+            <Border Classes="panel" IsVisible="{Binding HasSelectedGimbalTelemetry}">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="sectionTitle" Text="Gimbal / camera telemetry" />
+                <TextBlock Text="{Binding SelectedGimbalTelemetry}" />
+              </StackPanel>
+            </Border>
             <Border Classes="panel" IsVisible="{Binding HasSelectedMissionExecution}">
               <StackPanel Spacing="4">
                 <TextBlock Classes="sectionTitle" Text="Mission" />

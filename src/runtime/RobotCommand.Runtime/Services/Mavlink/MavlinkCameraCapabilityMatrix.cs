@@ -50,6 +50,7 @@ public static class MavlinkCameraCapabilityMatrix
         Supported(FlightMissionCameraActionKind.StartVideo, Px4CameraProtocolBaseline, "PX4 mission video capture start"),
         Supported(FlightMissionCameraActionKind.StopVideo, Px4CameraProtocolBaseline, "PX4 mission video capture stop"),
         Supported(FlightMissionCameraActionKind.CameraMode, Px4CameraProtocolBaseline, "PX4 mission camera mode"),
+        Supported(FlightMissionCameraActionKind.CameraZoom, Px4CameraProtocolBaseline, "PX4 camera zoom"),
         Unsupported(FlightMissionCameraActionKind.RegionOfInterest, "ROI is not in PX4's documented mission camera subset."),
         Unsupported(FlightMissionCameraActionKind.Gimbal, "Gimbal positioning is not in PX4's documented mission camera subset.", requiresCamera: false, requiresGimbal: true)
     ];
@@ -63,6 +64,7 @@ public static class MavlinkCameraCapabilityMatrix
         Supported(FlightMissionCameraActionKind.StartVideo, ArduPilotCameraProtocolBaseline, "ArduPilot mission video capture start"),
         Supported(FlightMissionCameraActionKind.StopVideo, ArduPilotCameraProtocolBaseline, "ArduPilot mission video capture stop"),
         Supported(FlightMissionCameraActionKind.CameraMode, ArduPilotCameraProtocolBaseline, "ArduPilot mission camera mode"),
+        Supported(FlightMissionCameraActionKind.CameraZoom, ArduPilotCameraProtocolBaseline, "ArduPilot camera zoom"),
         Supported(FlightMissionCameraActionKind.RegionOfInterest, ArduPilotCameraProtocolBaseline, "ArduPilot mission ROI"),
         Supported(FlightMissionCameraActionKind.Gimbal, ArduPilotCameraProtocolBaseline, "ArduPilot mission gimbal positioning", requiresCamera: false, requiresGimbal: true)
     ];

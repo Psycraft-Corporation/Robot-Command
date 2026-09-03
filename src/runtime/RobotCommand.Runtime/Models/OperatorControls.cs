@@ -10,7 +10,13 @@ public enum OperatorCommandKind
     Land,
     Recover,
     ChangeAltitude,
-    SetHeading
+    SetHeading,
+    CapturePhoto,
+    StartVideo,
+    StopVideo,
+    CenterGimbal,
+    NadirGimbal,
+    SetGimbal
 }
 
 public enum OperatorCommandSafety
@@ -116,7 +122,12 @@ public sealed record OperatorCommandParameters(
     OperatorHeadingTargetKind? HeadingTargetKind = null,
     double? HeadingDegrees = null,
     double? RelativeYawDegrees = null,
-    bool AirborneDisarmConfirmed = false)
+    bool AirborneDisarmConfirmed = false,
+    double? GimbalPitchDegrees = null,
+    double? GimbalYawDegrees = null,
+    double? GimbalRollDegrees = null,
+    double? GimbalZoomPercent = null,
+    bool GimbalEarthFrame = false)
 {
     public static OperatorCommandParameters None { get; } = new();
 

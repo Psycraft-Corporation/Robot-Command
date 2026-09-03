@@ -319,7 +319,8 @@ internal static class AppHost
                 serviceProvider.GetServices<IFormationProvider>(),
                 serviceProvider.GetRequiredService<IUnitSettingsService>(),
                 serviceProvider.GetRequiredService<IUiDispatcher>(),
-                serviceProvider.GetRequiredService<IOperatorTargetScopeWorkflow>()));
+                serviceProvider.GetRequiredService<IOperatorTargetScopeWorkflow>(),
+                serviceProvider.GetRequiredService<ITerrainElevationService>()));
         services.AddSingleton<ManualControlViewModel>();
         services.AddSingleton<OperateViewModel>();
         services.AddSingleton<EventsViewModel>();

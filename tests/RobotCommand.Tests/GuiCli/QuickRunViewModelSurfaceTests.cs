@@ -8,7 +8,7 @@ namespace RobotCommand.Tests;
 public sealed class QuickRunViewModelSurfaceTests
 {
     [Fact]
-    public void DeveloperPreviewVehicleOperationsPanel_ExcludesUnfinishedRunComposition()
+    public void DeveloperPreviewVehicleOperationsPanel_ExposesQueuedGimbalControls()
     {
         var root = FindRepositoryRoot();
         var panel = File.ReadAllText(Path.Combine(
@@ -32,7 +32,8 @@ public sealed class QuickRunViewModelSurfaceTests
         Assert.Contains("ShowPendingFindings", panel);
         Assert.Contains("ParameterValidationMessage", panel);
         Assert.Contains("VerticalDistanceUnitSuffix", panel);
-        Assert.DoesNotContain("Content=\"Queue", panel);
+        Assert.Contains("Content=\"Queue photo", panel);
+        Assert.Contains("PrepareSetGimbalCommand", panel);
         Assert.DoesNotContain("Vehicle operations are submitted", panel);
         Assert.DoesNotContain("Logos, MAVLink, or simulated backend", panel);
         Assert.Contains("HorizontalContentAlignment=\"Center\"", panel);
@@ -161,6 +162,14 @@ public sealed class QuickRunViewModelSurfaceTests
             "Workspaces",
             "OperateView.axaml"));
         Assert.Contains("CurrentViewport=\"{Binding Map.CurrentViewport}\"", view);
+        var mapControl = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "app",
+            "RobotCommand",
+            "Controls",
+            "NativeOperationalMapControl.cs"));
+        Assert.Contains("OpenMapContextMenu(default, target, awaitingConfirmation: true)", mapControl);
     }
 
     [Theory]
@@ -177,6 +186,13 @@ public sealed class QuickRunViewModelSurfaceTests
     {
         Assert.Equal(expected, MapCommandMath.BearingDegrees(
             originLatitude, originLongitude, targetLatitude, targetLongitude), 0);
+    }
+
+    [Fact]
+    public void MapCommandRelativeBearing_UsesNegativeYawForTargetOnVehicleLeft()
+    {
+        Assert.Equal(-90, MapCommandMath.RelativeBearingDegrees(
+            43.65, -79.38, 90, 44.65, -79.38), 0);
     }
 
     private static string FindRepositoryRoot()

@@ -20,7 +20,8 @@ public sealed class FlightMissionCameraActionTests
             FlightMissionCameraAction.StopVideo(),
             FlightMissionCameraAction.SetCameraMode(FlightMissionCameraMode.Video),
             FlightMissionCameraAction.SetRegionOfInterest(roi),
-            FlightMissionCameraAction.SetGimbal(-30, 90, 0, FlightMissionGimbalFrame.Earth)
+            FlightMissionCameraAction.SetGimbal(-30, 90, 0, FlightMissionGimbalFrame.Earth),
+            FlightMissionCameraAction.SetZoom(75)
         };
 
         Assert.Equal(
@@ -33,12 +34,14 @@ public sealed class FlightMissionCameraActionTests
                 FlightMissionCameraActionKind.StopVideo,
                 FlightMissionCameraActionKind.CameraMode,
                 FlightMissionCameraActionKind.RegionOfInterest,
-                FlightMissionCameraActionKind.Gimbal
+                FlightMissionCameraActionKind.Gimbal,
+                FlightMissionCameraActionKind.CameraZoom
             ],
             actions.Select(action => action.Kind));
         Assert.All(actions, action => Assert.True(action.IsValid));
         Assert.Equal(roi, actions[7].RegionOfInterest);
         Assert.Equal(FlightMissionGimbalFrame.Earth, actions[8].GimbalFrame);
+        Assert.Equal(75, actions[9].GimbalZoomPercent);
     }
 
     [Fact]
@@ -50,6 +53,7 @@ public sealed class FlightMissionCameraActionTests
         Assert.Contains(new FlightMissionCameraAction(FlightMissionCameraActionKind.RegionOfInterest).ValidationErrors, error => error.Contains("coordinate", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(FlightMissionCameraAction.SetGimbal().ValidationErrors, error => error.Contains("angle", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(FlightMissionCameraAction.SetGimbal(-91).ValidationErrors, error => error.Contains("pitch", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(FlightMissionCameraAction.SetZoom(101).ValidationErrors, error => error.Contains("zoom", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

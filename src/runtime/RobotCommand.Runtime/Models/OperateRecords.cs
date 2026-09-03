@@ -196,6 +196,12 @@ public sealed record MapVehicleVisual(
     bool TeamSelected = false)
 {
     public MapCameraConeVisual? CameraCone { get; init; }
+
+    public double? GimbalPitchDegrees { get; init; }
+
+    public double? GimbalYawDegrees { get; init; }
+
+    public bool? GimbalYawInEarthFrame { get; init; }
 }
 
 /// <summary>Presentation-only footprint of a vehicle-mounted camera view.</summary>

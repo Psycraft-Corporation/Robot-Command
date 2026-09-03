@@ -12,8 +12,10 @@ internal static class MavlinkCameraActionMissionCompiler
 {
     private const byte MissionCommandFrame = 2;
     private const byte GlobalRelativeAltInt = 6;
-    private const int GimbalManagerYawInVehicleFrame = 32;
-    private const int GimbalManagerYawInEarthFrame = 64;
+    private const int GimbalManagerRollLock = 4;
+    private const int GimbalManagerPitchLock = 8;
+    private const int GimbalManagerYawInVehicleFrame = GimbalManagerRollLock | GimbalManagerPitchLock | 32;
+    private const int GimbalManagerYawInEarthFrame = GimbalManagerRollLock | GimbalManagerPitchLock | 64;
     private const float MountModeMavlinkTargeting = 2;
 
     public static void EnsureCanCompile(
@@ -93,6 +95,10 @@ internal static class MavlinkCameraActionMissionCompiler
                 MavlinkCommandIds.SetCameraMode,
                 "Set camera mode",
                 cameraId, action.CameraMode == FlightMissionCameraMode.Video ? 1 : 0, 0, 0, 0, 0, 0),
+            FlightMissionCameraActionKind.CameraZoom => Command(
+                MavlinkCommandIds.SetCameraZoom,
+                "Set camera zoom",
+                2, ToFloat(action.GimbalZoomPercent), 0, 0, 0, 0, 0),
             FlightMissionCameraActionKind.RegionOfInterest => new(
                 MavlinkCommandIds.DoSetRoiLocation,
                 [cameraId, 0, 0, 0, 0, 0, 0],
@@ -165,6 +171,8 @@ internal static class MavlinkCameraActionMissionCompiler
                 => FlightMissionCameraAction.SetCameraMode(
                     item.Param2 == 1 ? FlightMissionCameraMode.Video : FlightMissionCameraMode.Photo,
                     cameraId: CameraId(item.Param1)),
+            MavlinkCommandIds.SetCameraZoom when item.Param1 == 2 && float.IsFinite(item.Param2)
+                => FlightMissionCameraAction.SetZoom(item.Param2),
             MavlinkCommandIds.DoSetRoiLocation
                 => FlightMissionCameraAction.SetRegionOfInterest(
                     new FlightMissionCoordinate(item.LatitudeE7 / 10_000_000d, item.LongitudeE7 / 10_000_000d),
@@ -227,6 +235,9 @@ internal static class MavlinkCameraActionMissionCompiler
             FlightMissionCameraActionKind.CameraMode => new MavlinkMissionItem(
                 sequence, MavlinkCommandIds.SetCameraMode, MissionCommandFrame, 0, 0, 0,
                 Param1: cameraId, Param2: action.CameraMode == FlightMissionCameraMode.Video ? 1 : 0),
+            FlightMissionCameraActionKind.CameraZoom => new MavlinkMissionItem(
+                sequence, MavlinkCommandIds.SetCameraZoom, MissionCommandFrame, 0, 0, 0,
+                Param1: 2, Param2: ToWireFloat(action.GimbalZoomPercent!.Value)),
             FlightMissionCameraActionKind.RegionOfInterest => CompileRegionOfInterest(action, sequence, cameraId),
             FlightMissionCameraActionKind.Gimbal => CompileGimbal(action, profile, sequence, cameraId),
             _ => throw new InvalidOperationException($"Camera action {action.Kind} is not supported by the mission compiler.")

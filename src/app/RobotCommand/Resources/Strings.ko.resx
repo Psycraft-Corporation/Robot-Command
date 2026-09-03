@@ -624,6 +624,8 @@
   <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>카메라 모드 설정</value></data>
   <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>관심 영역 설정</value></data>
   <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>짐벌 조준</value></data>
+  <data name="GimbalCameraControls" xml:space="preserve"><value>짐벌 및 카메라 제어</value></data>
+  <data name="GimbalCameraAvailableCount" xml:space="preserve"><value>선택한 {1}대 중 {0}대에서 짐벌/카메라 사용 가능</value></data>
   <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>사진</value></data>
   <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>비디오</value></data>
   <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>기체 기준</value></data>

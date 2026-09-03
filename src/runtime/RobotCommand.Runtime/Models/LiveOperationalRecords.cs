@@ -57,7 +57,16 @@ public sealed record VehicleTelemetryRecord(
     string Code,
     string Message,
     DateTimeOffset ObservedAt,
-    bool IsGhost = false);
+    bool IsGhost = false,
+    double? GimbalPitchDegrees = null,
+    double? GimbalYawDegrees = null,
+    double? GimbalRollDegrees = null,
+    double? CameraZoomPercent = null,
+    bool? CameraRecordingVideo = null,
+    double? BatteryRemainingPercent = null,
+    double? BatteryVoltageVolts = null,
+    DateTimeOffset? BatteryObservedAt = null,
+    bool? GimbalYawInEarthFrame = null);
 
 public sealed record LinkRecord(
     string Id,

@@ -371,6 +371,9 @@ public sealed class UnitsPanelViewModel : ObservableObject
     }
     public string SelectedTitle => SelectedUnit?.VehicleName ?? SelectedUnit?.Name ?? LocalizationService.Current.Get("UnitNoSelected");
     public string SelectionSummary => string.Format(CultureInfo.CurrentCulture, LocalizationService.Current.Get("UnitSelectedCount"), SelectedUnitCount);
+    public bool HasSelectedGimbalCamera => _operatorControls?.HasGimbalCameraSelection == true;
+    public string SelectedGimbalCameraSummary => _operatorControls?.GimbalCameraSupportedSummary ?? string.Empty;
+    public string SelectedGimbalCameraTooltip => _operatorControls?.GimbalCameraSupportedTooltip ?? string.Empty;
     public string SelectedSubtitle => SelectedUnit is null
         ? LocalizationService.Current.Get("UnitConnectHint")
         : string.IsNullOrWhiteSpace(SelectedUnit.Role)
@@ -515,6 +518,32 @@ public sealed class UnitsPanelViewModel : ObservableObject
 
             var normalized = ((value % 360d) + 360d) % 360d;
             return $"{normalized:0.0}°";
+        }
+    }
+
+    public bool HasSelectedGimbalTelemetry
+    {
+        get
+        {
+            var telemetry = SelectedTelemetry;
+            return telemetry?.GimbalPitchDegrees is not null || telemetry?.GimbalYawDegrees is not null ||
+                   telemetry?.GimbalRollDegrees is not null || telemetry?.CameraZoomPercent is not null ||
+                   telemetry?.CameraRecordingVideo is not null;
+        }
+    }
+
+    public string SelectedGimbalTelemetry
+    {
+        get
+        {
+            var telemetry = SelectedTelemetry;
+            if (telemetry is null) return string.Empty;
+            var pitch = telemetry.GimbalPitchDegrees is { } p ? $"{p:0.#}°" : "—";
+            var yaw = telemetry.GimbalYawDegrees is { } y ? $"{y:0.#}°" : "—";
+            var roll = telemetry.GimbalRollDegrees is { } r ? $"{r:0.#}°" : "—";
+            var zoom = telemetry.CameraZoomPercent is { } z ? $"{z:0.#}%" : "—";
+            var video = telemetry.CameraRecordingVideo switch { true => "Recording", false => "Not recording", _ => "Video state unknown" };
+            return $"Pitch {pitch} · Yaw {yaw} · Roll {roll} · Zoom {zoom} · {video}";
         }
     }
 
@@ -663,7 +692,9 @@ public sealed class UnitsPanelViewModel : ObservableObject
                 (ManagedConnectionState)(int)telemetry.State, telemetry.Armed, telemetry.LandedState, telemetry.AirframeMode,
                 telemetry.LatitudeDegrees, telemetry.LongitudeDegrees, telemetry.AltitudeMslMetres, telemetry.AltitudeAglMetres,
                 telemetry.VelocityNorthMetresPerSecond, telemetry.VelocityEastMetresPerSecond, telemetry.VelocityDownMetresPerSecond,
-                telemetry.HeadingDegrees, telemetry.IsStale, telemetry.ObservedAt, diagnostics?.BatteryRemainingPercent, diagnostics?.BatteryVoltageVolts, diagnostics?.ObservedAt);
+                telemetry.HeadingDegrees, telemetry.IsStale, telemetry.ObservedAt, telemetry.BatteryRemainingPercent, telemetry.BatteryVoltageVolts, telemetry.BatteryObservedAt,
+                telemetry.GimbalPitchDegrees, telemetry.GimbalYawDegrees, telemetry.GimbalRollDegrees,
+                telemetry.CameraZoomPercent, telemetry.CameraRecordingVideo);
     public ICommand ClearSelectionCommand { get; }
     public ICommand SelectTeamCommand { get; }
     public ICommand CreateGhostCommand { get; }
@@ -1538,9 +1569,11 @@ public sealed class UnitsPanelViewModel : ObservableObject
         OnPropertyChanged(nameof(CanManageUnitConnections));
         OnPropertyChanged(nameof(SelectedConnectionAssociationSummary));
         OnPropertyChanged(nameof(SelectedUnitCount)); OnPropertyChanged(nameof(SelectionSummary));
+        OnPropertyChanged(nameof(HasSelectedGimbalCamera)); OnPropertyChanged(nameof(SelectedGimbalCameraSummary)); OnPropertyChanged(nameof(SelectedGimbalCameraTooltip));
         OnPropertyChanged(nameof(SelectedIdentity)); OnPropertyChanged(nameof(SelectedHealth)); OnPropertyChanged(nameof(SelectedReadiness));
         OnPropertyChanged(nameof(SelectedOverallStatus)); OnPropertyChanged(nameof(SelectedBlockerSummary));
         OnPropertyChanged(nameof(SelectedPosition)); OnPropertyChanged(nameof(SelectedHeading)); OnPropertyChanged(nameof(SelectedVehicleState)); OnPropertyChanged(nameof(SelectedCurrentAction));
+        OnPropertyChanged(nameof(HasSelectedGimbalTelemetry)); OnPropertyChanged(nameof(SelectedGimbalTelemetry));
         OnPropertyChanged(nameof(SelectedVelocity)); OnPropertyChanged(nameof(SelectedVerticalSpeed)); OnPropertyChanged(nameof(SelectedOperatorDistance));
         OnPropertyChanged(nameof(SelectedBattery)); OnPropertyChanged(nameof(SelectedBatteryTooltip)); OnPropertyChanged(nameof(SelectedSignalTooltip));
         OnPropertyChanged(nameof(HasSelectedConnectionChips));

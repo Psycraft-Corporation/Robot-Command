@@ -7,6 +7,20 @@ namespace RobotCommand.Tests;
 public sealed class OperatorControlRulesTests
 {
     [Fact]
+    public void CameraAndGimbalCommandsDoNotRequireArmedOrNavigationState()
+    {
+        var findings = OperatorControlRules.Evaluate(
+            Vehicle(capabilities: ["camera_photo", "camera_video", "gimbal"]),
+            Telemetry(armed: false, landedState: "Landed"),
+            Connection(),
+            OperatorCommandKind.SetGimbal,
+            new OperatorCommandParameters(GimbalPitchDegrees: -90, GimbalYawDegrees: 180));
+
+        Assert.DoesNotContain(findings, item => item.Severity == OperatorPreflightSeverity.Blocking);
+        Assert.Equal(OperatorCommandSafety.Routine, OperatorControlRules.SafetyFor(OperatorCommandKind.SetGimbal, null));
+    }
+
+    [Fact]
     public void Arm_IsAllowedWithWarning_WhenTelemetryIsStale()
     {
         var findings = OperatorControlRules.Evaluate(
