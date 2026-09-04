@@ -281,8 +281,15 @@ public sealed class UnitsPanelViewModelTests
         var connections = new EntityStore<string, ConnectionRecord>(item => item.Id, StringComparer.Ordinal);
         var vehicles = new EntityStore<string, VehicleRecord>(item => item.Id, StringComparer.Ordinal);
         var telemetry = new EntityStore<string, VehicleTelemetryRecord>(item => item.Id, StringComparer.Ordinal);
+        var diagnostics = new EntityStore<string, VehicleDiagnosticsSnapshot>(item => item.Id, StringComparer.Ordinal);
         var selection = new SelectionService();
-        var viewModel = new UnitsPanelViewModel(runtimes, connections, selection, vehicles, telemetry);
+        var viewModel = new UnitsPanelViewModel(
+            runtimes,
+            connections,
+            selection,
+            vehicles,
+            telemetry,
+            diagnosticsStore: diagnostics);
         var vehicle = new VehicleRecord(
             "digital_dracula", "Dracula", ["connection-1"], "logos-sitl", null,
             "Multicopter", "Air", "sitl", AvailabilityState.Online, "Ready", "Running",
@@ -300,8 +307,26 @@ public sealed class UnitsPanelViewModelTests
         vehicles.Upsert(vehicle);
         runtimes.Upsert(runtime);
         telemetry.Upsert(sample);
+        diagnostics.Upsert(new VehicleDiagnosticsSnapshot(
+            "diagnostics-1",
+            vehicle.Id,
+            "connection-1",
+            "logos-sitl",
+            VehicleDiagnosticStatus.Ready,
+            "Ready",
+            VehicleDiagnosticStatus.Ready,
+            "Ready",
+            VehicleDiagnosticStatus.Ready,
+            "Ready",
+            VehicleDiagnosticStatus.Ready,
+            "Ready",
+            [],
+            [],
+            DateTimeOffset.UtcNow,
+            BatteryRemainingPercent: 100));
         viewModel.SelectedUnit = runtime;
 
+        Assert.Empty(viewModel.SelectedBattery);
         Assert.Equal("5.5°", viewModel.SelectedHeading);
     }
 

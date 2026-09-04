@@ -1117,7 +1117,15 @@ public sealed class OperatorControlsViewModel : ObservableObject
         IsPreparingMapCommand = true;
         try
         {
-            var targetIds = TargetUnitIds.Where(IsGimbalCameraSupported).ToArray();
+            // A single selected vehicle can be represented by the legacy
+            // current-selection field while the selected-id list is still
+            // empty. Use the same target fallback as the other map commands;
+            // otherwise CanExecute succeeds but no gimbal command is queued,
+            // so the confirmation menu is immediately dismissed.
+            var selectedIds = TargetUnitIds.Count > 0
+                ? TargetUnitIds
+                : _selectedVehicleId is null ? [] : [_selectedVehicleId];
+            var targetIds = selectedIds.Where(IsGimbalCameraSupported).ToArray();
             if (targetIds.Length == 0)
             {
                 StatusMessage = "No selected unit reports a gimbal or camera.";

@@ -463,7 +463,7 @@ public sealed class UnitsPanelViewModel : ObservableObject
             var telemetry = SelectedObservation?.Telemetry ?? ToTelemetryObservation(SelectedTelemetry, SelectedDiagnostics);
             return telemetry?.BatteryRemainingPercent is double percent && double.IsFinite(percent)
                 ? $"{Math.Clamp(percent, 0, 100):0}%"
-                : "—";
+                : string.Empty;
         }
     }
 
@@ -1611,9 +1611,9 @@ public sealed class UnitsPanelViewModel : ObservableObject
 
         var battery = SelectedBattery;
         yield return new UnitStatusIndicatorViewModel(
-            battery == "—" ? "?" : "▣",
+            string.IsNullOrEmpty(battery) ? "?" : "▣",
             battery,
-            battery == "—" ? "#8A96A8" : battery.TrimEnd('%') is { } raw && double.TryParse(raw, out var percent) && percent <= 20 ? "#F5C451" : "#32D583",
+            string.IsNullOrEmpty(battery) ? "#8A96A8" : battery.TrimEnd('%') is { } raw && double.TryParse(raw, out var percent) && percent <= 20 ? "#F5C451" : "#32D583",
             SelectedBatteryTooltip);
 
         var signal = BuildSignalIndicator(observation);
@@ -1909,9 +1909,9 @@ public sealed class UnitListItemViewModel : ObservableObject
         var telemetry = observation?.Telemetry;
         var battery = telemetry?.BatteryRemainingPercent is double percent && double.IsFinite(percent)
             ? $"{Math.Clamp(percent, 0, 100):0}%"
-            : "—";
-        var batteryBrush = battery == "—" ? "#8A96A8" : battery.TrimEnd('%') is { } raw && double.TryParse(raw, out var value) && value <= 20 ? "#F5C451" : "#32D583";
-        var batteryTooltip = battery == "—" ? localization.Get("UnitBatteryNotReported") : string.Format(CultureInfo.CurrentCulture, localization.Get("UnitBatteryTooltipShort"), battery);
+            : string.Empty;
+        var batteryBrush = string.IsNullOrEmpty(battery) ? "#8A96A8" : battery.TrimEnd('%') is { } raw && double.TryParse(raw, out var value) && value <= 20 ? "#F5C451" : "#32D583";
+        var batteryTooltip = string.IsNullOrEmpty(battery) ? localization.Get("UnitBatteryNotReported") : string.Format(CultureInfo.CurrentCulture, localization.Get("UnitBatteryTooltipShort"), battery);
 
         var links = observation?.Links ?? [];
         var degraded = links.Any(item => item.IsStale || !item.Connected || item.PacketLoss is >= 10 || item.SnrDb is < 10);

@@ -2905,9 +2905,9 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
                         system.SensorsUpdatedAt = packet.ReceivedAt;
                         system.DropRateComm = packet.UInt16("drop_rate_comm", ushort.MaxValue) is var drop && drop != ushort.MaxValue ? drop : null;
                         system.CommunicationErrors = packet.UInt16("errors_comm", ushort.MaxValue) is var errors && errors != ushort.MaxValue ? errors : null;
-                        system.BatteryVoltageMillivolts = packet.UInt16("voltage_battery", ushort.MaxValue) is var voltage && voltage != ushort.MaxValue ? voltage : null;
+                        system.BatteryVoltageMillivolts = packet.UInt16("voltage_battery", ushort.MaxValue) is var voltage && voltage is > 0 and < ushort.MaxValue ? voltage : null;
                         system.BatteryCurrentCentiamps = packet.Int16("current_battery", -1) is var current && current >= 0 ? current : null;
-                        system.BatteryRemainingPercent = packet.Int8("battery_remaining", -1) is var remaining && remaining >= 0 ? remaining : null;
+                        system.BatteryRemainingPercent = packet.Int8("battery_remaining", -1) is var remaining && remaining is >= 0 and <= 100 ? remaining : null;
                         system.BatteryObservedAt = packet.ReceivedAt;
                         system.Health = "Diagnostics available";
                         break;
@@ -2918,13 +2918,13 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
                         system.GpsVerticalAccuracyMetres = packet.UInt16("epv", ushort.MaxValue) is var epv && epv != ushort.MaxValue ? epv / 100d : null;
                         break;
                     case MavlinkMessageIds.BatteryStatus:
-                        system.BatteryVoltageMillivolts = TryReadBatteryVoltage(packet, out var batteryVoltage)
+                        system.BatteryStatusVoltageMillivolts = TryReadBatteryVoltage(packet, out var batteryVoltage)
                             ? batteryVoltage
                             : null;
-                        system.BatteryCurrentCentiamps = packet.Int16("current_battery", -1) is var batteryCurrent && batteryCurrent >= 0 ? batteryCurrent : null;
-                        system.BatteryRemainingPercent = packet.Int8("battery_remaining", -1) is var batteryRemaining && batteryRemaining >= 0 ? batteryRemaining : null;
+                        system.BatteryStatusCurrentCentiamps = packet.Int16("current_battery", -1) is var batteryCurrent && batteryCurrent >= 0 ? batteryCurrent : null;
+                        system.BatteryStatusRemainingPercent = packet.Int8("battery_remaining", -1) is var batteryRemaining && batteryRemaining is >= 0 and <= 100 ? batteryRemaining : null;
                         system.BatteryFaults = packet.UInt32("fault_bitmask");
-                        system.BatteryObservedAt = packet.ReceivedAt;
+                        system.BatteryStatusObservedAt = packet.ReceivedAt;
                         break;
                     case MavlinkMessageIds.EstimatorStatus:
                         system.EstimatorFlags = packet.UInt32("flags");
@@ -3236,6 +3236,20 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
 
         return false;
     }
+
+    private static ushort? BatteryVoltageMillivolts(SystemState system)
+        => system.BatteryStatusVoltageMillivolts ?? system.BatteryVoltageMillivolts;
+
+    private static short? BatteryCurrentCentiamps(SystemState system)
+        => system.BatteryStatusCurrentCentiamps ?? system.BatteryCurrentCentiamps;
+
+    private static sbyte? BatteryRemainingPercent(SystemState system)
+        => BatteryVoltageMillivolts(system) is > 0
+            ? system.BatteryStatusRemainingPercent ?? system.BatteryRemainingPercent
+            : null;
+
+    private static DateTimeOffset? BatteryObservedAt(SystemState system)
+        => system.BatteryStatusObservedAt ?? system.BatteryObservedAt;
 
     private static (double Roll, double Pitch, double Yaw) QuaternionToEulerDegrees(
         double w,
@@ -4251,7 +4265,7 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
             system.DropRateComm, system.CommunicationErrors, system.GpsFixType, system.GpsSatellites,
             system.GpsHorizontalAccuracyMetres, system.GpsVerticalAccuracyMetres, system.EstimatorFlags,
             system.LatitudeDegrees, system.LongitudeDegrees, system.AltitudeMslMetres,
-            system.BatteryVoltageMillivolts, system.BatteryCurrentCentiamps, system.BatteryRemainingPercent,
+            BatteryVoltageMillivolts(system), BatteryCurrentCentiamps(system), BatteryRemainingPercent(system),
             system.BatteryFaults, system.VibrationX, system.VibrationY, system.VibrationZ,
             system.Clipping0, system.Clipping1, system.Clipping2, packetLoss,
             RadioSnr(system.Rssi, system.Noise), system.RecentDiagnosticMessages.ToArray(),
@@ -4357,9 +4371,9 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
             GimbalRollDegrees: GimbalTelemetryFor(system)?.RollDegrees,
             CameraZoomPercent: CameraFor(system)?.ZoomPercent,
             CameraRecordingVideo: CameraFor(system)?.RecordingVideo,
-            BatteryRemainingPercent: system.BatteryRemainingPercent,
-            BatteryVoltageVolts: system.BatteryVoltageMillivolts is { } voltage ? voltage / 1000d : null,
-            BatteryObservedAt: system.BatteryObservedAt,
+            BatteryRemainingPercent: BatteryRemainingPercent(system),
+            BatteryVoltageVolts: BatteryVoltageMillivolts(system) is { } voltage ? voltage / 1000d : null,
+            BatteryObservedAt: BatteryObservedAt(system),
             GimbalYawInEarthFrame: GimbalTelemetryFor(system)?.YawInEarthFrame);
     }
 
@@ -5251,6 +5265,10 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
         public short? BatteryCurrentCentiamps { get; set; }
         public sbyte? BatteryRemainingPercent { get; set; }
         public DateTimeOffset? BatteryObservedAt { get; set; }
+        public ushort? BatteryStatusVoltageMillivolts { get; set; }
+        public short? BatteryStatusCurrentCentiamps { get; set; }
+        public sbyte? BatteryStatusRemainingPercent { get; set; }
+        public DateTimeOffset? BatteryStatusObservedAt { get; set; }
         public uint? BatteryFaults { get; set; }
         public float? VibrationX { get; set; }
         public float? VibrationY { get; set; }

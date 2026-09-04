@@ -168,6 +168,19 @@ public sealed class MapNavigationTests
     }
 
     [Fact]
+    public void OperatorContextMenuWaitsForSourceCloseBeforeOpeningConfirmation()
+    {
+        var root = FindRepositoryRoot();
+        var mapControl = File.ReadAllText(Path.Combine(
+            root, "src", "app", "RobotCommand", "Controls", "NativeOperationalMapControl.cs"));
+
+        Assert.Contains("sourceMenu.Closed += reopenConfirmationMenu", mapControl, StringComparison.Ordinal);
+        Assert.Contains("sourceMenu.Closed -= reopenConfirmationMenu", mapControl, StringComparison.Ordinal);
+        Assert.Contains("DispatcherPriority.Background", mapControl, StringComparison.Ordinal);
+        Assert.Contains("OpenMapContextMenu(default, target, awaitingConfirmation: true)", mapControl, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RecreatedMapRestoresSharedViewportInsteadOfWorldPlaceholder()
     {
         var root = FindRepositoryRoot();

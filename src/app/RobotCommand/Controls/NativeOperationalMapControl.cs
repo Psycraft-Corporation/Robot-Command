@@ -175,6 +175,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     private bool _mapAssemblyCapturingEnd;
     private bool _mapAssemblyChoosingFormation;
     private bool _mapAwaitingConfirmation;
+    private bool _mapConfirmationMenuPending;
     private OperatorControlsViewModel? _mapOperatorControls;
     private UnitsPanelViewModel? _mapUnitsPanel;
     private KeyModifiers _lastMapKeyModifiers;
@@ -3818,6 +3819,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     {
         if (!awaitingConfirmation)
         {
+            _mapConfirmationMenuPending = false;
             _mapAssemblyStart = null;
             _mapAssemblyEnd = null;
             _mapAssemblyFormationId = null;
@@ -3876,6 +3878,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         _mapContextMenuSignature = null;
         _mapContextTarget = null;
         _mapAwaitingConfirmation = false;
+        _mapConfirmationMenuPending = false;
         _mapAssemblyStart = null;
         _mapAssemblyEnd = null;
         _mapAssemblyFormationId = null;
@@ -3887,21 +3890,49 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private void ExecuteMapContextCommand(ICommand? command, object? parameter)
     {
+        if (_mapContextTarget is not { } target)
+        {
+            return;
+        }
+
         _mapAwaitingConfirmation = true;
+        _mapConfirmationMenuPending = true;
+
+        // Avalonia closes a ContextMenu after a MenuItem command has handled
+        // the pointer event. Wait for that close notification before opening
+        // the confirmation menu; opening it from inside the original click
+        // causes the new popup to be closed by the original menu's close pass.
+        var sourceMenu = _mapContextMenu;
+        EventHandler<RoutedEventArgs>? reopenConfirmationMenu = null;
+        reopenConfirmationMenu = (_, _) =>
+        {
+            if (sourceMenu is not null)
+                sourceMenu.Closed -= reopenConfirmationMenu;
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!_mapConfirmationMenuPending || !_mapAwaitingConfirmation)
+                {
+                    return;
+                }
+
+                _mapConfirmationMenuPending = false;
+                OpenMapContextMenu(default, target, awaitingConfirmation: true);
+            }, DispatcherPriority.Background);
+        };
+
+        if (sourceMenu is not null)
+            sourceMenu.Closed += reopenConfirmationMenu;
+
         command?.Execute(parameter);
         if (ReferenceEquals(command, MapAssembleCommand))
             MapOperatorControls?.ClearFormationPreview();
-        // Match the Go To/formation flow: clicking a queue action opens a new
-        // context menu in confirmation mode. Defer creation until the original
-        // menu has completed its close cycle; otherwise Avalonia closes the
-        // newly-created menu along with the first one.
-        if (_mapContextTarget is not null)
+
+        // A command can be invoked programmatically without a source popup.
+        // Preserve the same confirmation flow in that case.
+        if (sourceMenu is null)
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                if (_mapAwaitingConfirmation && _mapContextTarget is { } currentTarget)
-                    OpenMapContextMenu(default, currentTarget, awaitingConfirmation: true);
-            });
+            reopenConfirmationMenu(null, new RoutedEventArgs());
         }
     }
 
@@ -3919,6 +3950,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
         Dispatcher.UIThread.Post(() =>
         {
+            if (_mapConfirmationMenuPending)
+            {
+                return;
+            }
+
             if (_mapAwaitingConfirmation &&
                 _mapOperatorControls?.PendingPlan is null &&
                 _mapOperatorControls?.IsPreparingMapCommand != true)
@@ -3936,6 +3972,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         await Task.Delay(75);
         await Dispatcher.UIThread.InvokeAsync(() =>
         {
+            if (_mapConfirmationMenuPending)
+            {
+                return;
+            }
+
             if (_mapAwaitingConfirmation &&
                 _mapOperatorControls?.PendingPlan is null &&
                 _mapOperatorControls?.IsPreparingMapCommand != true)
@@ -3960,6 +4001,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
         Dispatcher.UIThread.Post(() =>
         {
+            if (_mapConfirmationMenuPending)
+            {
+                return;
+            }
+
             if (_mapAwaitingConfirmation &&
                 _mapUnitsPanel?.PendingFormationOperation is null &&
                 _mapOperatorControls?.PendingPlan is null)
