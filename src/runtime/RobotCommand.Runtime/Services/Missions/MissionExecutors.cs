@@ -26,6 +26,9 @@ public interface IFlightMissionExecutor
 
 public sealed class Px4MissionExecutor(IMavlinkConnectionRegistry connections) : IFlightMissionExecutor
 {
+    // MAV_MISSION_STATE_COMPLETE from common.xml.  Older firmware may omit
+    // mission_state, so the final-item/landed checks remain the fallback.
+    private const byte MissionStateComplete = 5;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<(string Connection, string Vehicle), UploadedMission> _uploadedMissions = new();
     public string ExecutorKind => "PX4 MAVLink";
     public bool Supports(UnitObservationSnapshot target) =>
@@ -82,7 +85,8 @@ public sealed class Px4MissionExecutor(IMavlinkConnectionRegistry connections) :
         var finalLandingObserved = !missionState.IsArmed && string.Equals(missionState.LandedState, "Landed", StringComparison.OrdinalIgnoreCase);
         var finalEndFinished = !uploaded.FinalItemIsLand && !uploaded.FinalItemIsRtl ||
             ((uploaded.FinalItemIsLand || uploaded.FinalItemIsRtl) && finalLandingObserved);
-        var state = finalItemReached && finalEndFinished
+        var missionFinished = missionState.MissionState == MissionStateComplete;
+        var state = (finalItemReached || missionFinished) && finalEndFinished
             ? FlightMissionExecutionState.Completed
             : FlightMissionExecutionState.Running;
         var postLanding = state == FlightMissionExecutionState.Completed && uploaded.FinalItemIsLand && finalEndFinished;
@@ -141,6 +145,7 @@ public sealed class GhostMissionExecutor(IGhostUnitService ghosts, IFormationLoc
 
 public sealed class ArduPilotMissionExecutor(IMavlinkConnectionRegistry connections) : IFlightMissionExecutor
 {
+    private const byte MissionStateComplete = 5;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<(string Connection, string Vehicle), UploadedMission> _uploadedMissions = new();
 
     public string ExecutorKind => "ArduPilot MAVLink";
@@ -212,7 +217,7 @@ public sealed class ArduPilotMissionExecutor(IMavlinkConnectionRegistry connecti
         var finalLandingObserved = !state.IsArmed && string.Equals(state.LandedState, "Landed", StringComparison.OrdinalIgnoreCase);
         var finalEndFinished = !uploaded.FinalItemIsLand && !uploaded.FinalItemIsRtl ||
             ((uploaded.FinalItemIsLand || uploaded.FinalItemIsRtl) && finalLandingObserved);
-        var completed = finalItemReached && finalEndFinished;
+        var completed = (finalItemReached || state.MissionState == MissionStateComplete) && finalEndFinished;
 
         if (completed)
         {

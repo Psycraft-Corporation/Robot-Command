@@ -31,7 +31,8 @@ public sealed record MavlinkMissionState(
     DateTimeOffset UpdatedAt,
     bool IsArmed,
     string LandedState,
-    string Mode);
+    string Mode,
+    byte? MissionState = null);
 
 public interface IMavlinkMissionClient
 {

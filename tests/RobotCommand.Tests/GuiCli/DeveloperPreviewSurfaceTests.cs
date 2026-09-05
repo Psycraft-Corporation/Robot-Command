@@ -133,10 +133,15 @@ public sealed class DeveloperPreviewSurfaceTests
         Assert.Contains("AddMissionStartCameraActionCommand", mission);
         Assert.Contains("SelectedStepCameraActions", mission);
         Assert.Contains("AddSelectedStepCameraActionCommand", mission);
+        Assert.Contains("FlightMissionNoCameraActions", mission);
+        Assert.Contains("CameraPlanSummary", mission);
+        Assert.DoesNotContain("CaptureEvents", mission);
         Assert.DoesNotContain("AddCameraIntentCommand", mission);
         Assert.Contains("SetMissionCameraActionsAsync", viewModel);
         Assert.Contains("SetStepCameraActionsAsync", viewModel);
         Assert.Contains("CameraActionKinds", viewModel);
+        Assert.Contains("FlightMissionExecutionRouteItem", viewModel);
+        Assert.Contains("FlightMissionExecutionUnconfirmed", viewModel);
     }
 
     [Fact]

@@ -248,6 +248,22 @@ public sealed class MavlinkCodecTests
     }
 
     [Fact]
+    public void Decode_MissionCurrentPreservesCompletionStateFromMavlink2Extensions()
+    {
+        var codec = new MavlinkSharpCodec();
+        // MISSION_CURRENT: seq 0, total 7, MAV_MISSION_STATE_COMPLETE (5),
+        // mission mode 0. This is a MAVLink 2 frame with the newer fields
+        // that older MavLinkSharp metadata does not expose.
+        var bytes = Convert.FromHexString("FD0600000101012A000000000700050032F7");
+
+        Assert.True(codec.TryDecode(bytes, DateTimeOffset.UtcNow, out var packet, out var error), error);
+        Assert.NotNull(packet);
+        Assert.Equal(MavlinkMessageIds.MissionCurrent, packet!.MessageId);
+        Assert.Equal((ushort)7, packet.UInt16("total"));
+        Assert.Equal((byte)5, packet.Byte("mission_state"));
+    }
+
+    [Fact]
     public void SetMode_RoundTripsPositionModeWithoutCommandAckProtocol()
     {
         var codec = new MavlinkSharpCodec();

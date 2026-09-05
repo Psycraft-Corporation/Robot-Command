@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows.Input;
 using RobotCommand.Core;
 using RobotCommand.Infrastructure;
@@ -125,7 +126,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         RemoveOnboardCommand = new AsyncRelayCommand(token => PlanAsync("remove", token), CanOperate);
         SetEndActionCommand = new AsyncRelayCommand(SetEndActionAsync, HasMissionSelected);
         ExecuteCommand = new AsyncRelayCommand(ExecuteAsync, () => PendingOperation?.CanExecute == true);
-        CancelOperationCommand = new AsyncRelayCommand(CancelOperationAsync, () => PendingOperation is not null);
+        CancelOperationCommand = new AsyncRelayCommand(CancelOperationAsync, () => HasPendingOperation);
         _workflow.Changed += OnChanged; _geometry.Changed += OnChanged; _units.Changed += OnChanged; _fences.Changed += OnChanged; _reviewed.Changed += OnChanged; _operatorLocation.Changed += OnChanged; _localization.PropertyChanged += OnLocalizationChanged; Refresh();
     }
 
@@ -234,8 +235,11 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             RequestPreview();
             OnPropertyChanged(nameof(MissionStartCameraActions));
             OnPropertyChanged(nameof(HasMissionStartCameraActions));
+            OnPropertyChanged(nameof(HasNoMissionStartCameraActions));
             OnPropertyChanged(nameof(SelectedStepCameraActions));
             OnPropertyChanged(nameof(HasSelectedStepCameraActions));
+            OnPropertyChanged(nameof(HasNoSelectedStepCameraActions));
+            OnPropertyChanged(nameof(CameraPlanSummary));
             OnPropertyChanged(nameof(CanStartMission));
             OnPropertyChanged(nameof(StartMissionUnavailableReason));
             RaiseCommands();
@@ -276,6 +280,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             RaiseStepOptionVisibility();
             OnPropertyChanged(nameof(SelectedStepCameraActions));
             OnPropertyChanged(nameof(HasSelectedStepCameraActions));
+            OnPropertyChanged(nameof(HasNoSelectedStepCameraActions));
             RaiseCommands();
         }
     }
@@ -284,7 +289,8 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     public OperatorLocationSnapshot PreviewOperatorLocation => _operatorLocation.Snapshot;
     public FenceSnapshot? SelectedFence { get => _selectedFence; set => SetProperty(ref _selectedFence, value); }
     public ReviewedOperationSnapshot? PendingOperation { get => _pendingOperation; private set { if (SetProperty(ref _pendingOperation, value)) RaiseCommands(); } }
-    public bool HasPendingOperation => PendingOperation is not null;
+    public bool HasPendingOperation => PendingOperation is not null &&
+        PendingOperation.State is ReviewedOperationState.Ready or ReviewedOperationState.Unavailable or ReviewedOperationState.Executing or ReviewedOperationState.Failed;
     public string PendingOperationOutcome => PendingOperation is null ? string.Empty : PendingOperation.State switch
     {
         ReviewedOperationState.Ready => "Ready to execute",
@@ -395,9 +401,23 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     public bool ShowCameraActionGimbal => CameraActionKind == FlightMissionCameraActionKind.Gimbal;
     public IReadOnlyList<FlightMissionCameraAction> MissionStartCameraActions => SelectedMission?.CameraIntent?.Actions ?? [];
     public bool HasMissionStartCameraActions => MissionStartCameraActions.Count > 0;
+    public bool HasNoMissionStartCameraActions => !HasMissionStartCameraActions;
     public IReadOnlyList<FlightMissionCameraAction> SelectedStepCameraActions
         => SelectedStep is { } step ? CameraIntentForStep(step)?.Actions ?? [] : [];
     public bool HasSelectedStepCameraActions => SelectedStepCameraActions.Count > 0;
+    public bool HasNoSelectedStepCameraActions => SelectedStep is not null && !HasSelectedStepCameraActions;
+    public string CameraPlanSummary
+    {
+        get
+        {
+            if (SelectedMission is null) return string.Empty;
+            var count = MissionStartCameraActions.Count + SelectedMission.Steps
+                .Sum(step => CameraIntentForStep(step)?.Actions?.Count ?? 0);
+            return count == 0
+                ? _localization.Get("FlightMissionNoCameraActions")
+                : string.Format(CultureInfo.CurrentCulture, _localization.Get("FlightMissionCameraActionsConfigured"), count);
+        }
+    }
     public bool TerrainFollowing { get => _terrainFollowing; set => SetProperty(ref _terrainFollowing, value); }
     public bool ShowSurveyOptions => SelectedStep?.Kind == FlightMissionStepKind.SurveyZone;
     public bool ShowCorridorOptions => SelectedStep?.Kind == FlightMissionStepKind.CorridorScan;
@@ -421,16 +441,29 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             var execution = Execution;
             if (execution is null) return string.Empty;
 
+            var stateKey = execution.State switch
+            {
+                FlightMissionExecutionState.Uploaded => "FlightMissionExecutionReady",
+                FlightMissionExecutionState.Running => "FlightMissionExecutionRunning",
+                FlightMissionExecutionState.Paused => "FlightMissionExecutionPaused",
+                FlightMissionExecutionState.Completed => "FlightMissionExecutionComplete",
+                FlightMissionExecutionState.Interrupted => "FlightMissionExecutionInterrupted",
+                FlightMissionExecutionState.Failed => "FlightMissionExecutionError",
+                FlightMissionExecutionState.NotUploaded => "FlightMissionExecutionNotUploaded",
+                _ => "FlightMissionExecutionUnknown"
+            };
             var lines = new List<string>
             {
-                $"State: {execution.State}",
-                $"Target: {execution.ExecutorKind}",
-                execution.Summary
+                string.Format(CultureInfo.CurrentCulture, _localization.Get("FlightMissionExecutionStatus"), _localization.Get(stateKey))
             };
-            if (!string.IsNullOrWhiteSpace(execution.ActiveStepName)) lines.Add($"Step: {execution.ActiveStepName}");
-            if (!string.IsNullOrWhiteSpace(execution.LastEvent) && !string.Equals(execution.LastEvent, execution.Summary, StringComparison.Ordinal)) lines.Add($"Latest: {execution.LastEvent}");
-            if (execution.CurrentItemIndex is { } index) lines.Add($"Route item: {index}");
-            if (execution.PostLandingState == FlightMissionPostLandingState.AwaitingDecision) lines.Add("Mission landed; choose Retain, Remove, or Resume.");
+            if (execution.CurrentItemIndex is { } index && execution.ItemCount > 0)
+                lines.Add(string.Format(CultureInfo.CurrentCulture, _localization.Get("FlightMissionExecutionRouteItem"), Math.Min(index + 1, execution.ItemCount), execution.ItemCount));
+            if (execution.State == FlightMissionExecutionState.Unknown)
+                lines.Add(_localization.Get("FlightMissionExecutionUnconfirmed"));
+            else if ((execution.State is FlightMissionExecutionState.Interrupted or FlightMissionExecutionState.Failed) && !string.IsNullOrWhiteSpace(execution.Summary))
+                lines.Add(execution.Summary);
+            if (execution.PostLandingState == FlightMissionPostLandingState.AwaitingDecision)
+                lines.Add(_localization.Get("FlightMissionExecutionPostLandingDecision"));
             return string.Join(Environment.NewLine, lines.Distinct(StringComparer.Ordinal));
         }
     }
@@ -776,9 +809,9 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             Status = MissionOperationStatus;
             var result = await _reviewed.ExecuteAsync(plan.Id, token);
             MissionOperationStatus = result.Succeeded
-                ? result.Summary
+                ? string.Empty
                 : HumanReadableResult("Mission upload", result, plan);
-            Status = MissionOperationStatus;
+            Status = result.Succeeded ? string.Empty : MissionOperationStatus;
             Refresh();
         }
         finally
@@ -905,9 +938,9 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             }
             var startResult = await _reviewed.ExecuteAsync(startPlan.Id, token);
             MissionStartStatus = startResult.Succeeded
-                ? startResult.Summary
+                ? string.Empty
                 : HumanReadableMissionStartFailure(startResult, startPlan);
-            Status = MissionStartStatus;
+            Status = startResult.Succeeded ? string.Empty : MissionStartStatus;
             Refresh();
         }
         finally
@@ -960,8 +993,8 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         {
             var result = await _reviewed.ExecuteAsync(operation.Id, token);
             if (isMissionUpload)
-                MissionOperationStatus = result.Succeeded ? result.Summary : HumanReadableResult("Mission upload", result, operation);
-            Status = isMissionUpload ? MissionOperationStatus : result.Summary;
+                MissionOperationStatus = result.Succeeded ? string.Empty : HumanReadableResult("Mission upload", result, operation);
+            Status = result.Succeeded ? string.Empty : result.Summary;
             Refresh();
         }
         finally
@@ -1046,7 +1079,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         RaiseStepOptionVisibility();
         if (PendingOperation is not null && _reviewed.TryGet(PendingOperation.Id, out var current)) _pendingOperation = current;
         EndAction = _selectedMission?.EndAction ?? FlightMissionEndAction.Hold;
-        OnPropertyChanged(nameof(SelectedMission)); OnPropertyChanged(nameof(HasMission)); OnPropertyChanged(nameof(IsMissionNameDisplayVisible)); OnPropertyChanged(nameof(IsNameEditorVisible)); OnPropertyChanged(nameof(SelectedTarget)); OnPropertyChanged(nameof(PreviewUnit)); OnPropertyChanged(nameof(PreviewOperatorLocation)); OnPropertyChanged(nameof(SelectedFence)); OnPropertyChanged(nameof(SelectedStep)); OnPropertyChanged(nameof(SelectedStepGeometryOptions)); OnPropertyChanged(nameof(SelectedStepGeometry)); OnPropertyChanged(nameof(MissionStartCameraActions)); OnPropertyChanged(nameof(HasMissionStartCameraActions)); OnPropertyChanged(nameof(SelectedStepCameraActions)); OnPropertyChanged(nameof(HasSelectedStepCameraActions)); OnPropertyChanged(nameof(PendingOperation)); OnPropertyChanged(nameof(HasPendingOperation)); OnPropertyChanged(nameof(PendingOperationOutcome)); OnPropertyChanged(nameof(Execution)); OnPropertyChanged(nameof(HasExecution)); OnPropertyChanged(nameof(IsAwaitingPostLandingDecision)); OnPropertyChanged(nameof(ExecutionStatusText)); OnPropertyChanged(nameof(CanStartMission)); OnPropertyChanged(nameof(StartMissionUnavailableReason)); RaiseCommands();
+        OnPropertyChanged(nameof(SelectedMission)); OnPropertyChanged(nameof(HasMission)); OnPropertyChanged(nameof(IsMissionNameDisplayVisible)); OnPropertyChanged(nameof(IsNameEditorVisible)); OnPropertyChanged(nameof(SelectedTarget)); OnPropertyChanged(nameof(PreviewUnit)); OnPropertyChanged(nameof(PreviewOperatorLocation)); OnPropertyChanged(nameof(SelectedFence)); OnPropertyChanged(nameof(SelectedStep)); OnPropertyChanged(nameof(SelectedStepGeometryOptions)); OnPropertyChanged(nameof(SelectedStepGeometry)); OnPropertyChanged(nameof(MissionStartCameraActions)); OnPropertyChanged(nameof(HasMissionStartCameraActions)); OnPropertyChanged(nameof(HasNoMissionStartCameraActions)); OnPropertyChanged(nameof(SelectedStepCameraActions)); OnPropertyChanged(nameof(HasSelectedStepCameraActions)); OnPropertyChanged(nameof(HasNoSelectedStepCameraActions)); OnPropertyChanged(nameof(CameraPlanSummary)); OnPropertyChanged(nameof(PendingOperation)); OnPropertyChanged(nameof(HasPendingOperation)); OnPropertyChanged(nameof(PendingOperationOutcome)); OnPropertyChanged(nameof(Execution)); OnPropertyChanged(nameof(HasExecution)); OnPropertyChanged(nameof(IsAwaitingPostLandingDecision)); OnPropertyChanged(nameof(ExecutionStatusText)); OnPropertyChanged(nameof(CanStartMission)); OnPropertyChanged(nameof(StartMissionUnavailableReason)); RaiseCommands();
         RequestPreview();
     }
 
@@ -1282,7 +1315,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
 
     private void RaiseStepOptionVisibility()
     {
-        OnPropertyChanged(nameof(ShowSurveyOptions)); OnPropertyChanged(nameof(ShowCorridorOptions)); OnPropertyChanged(nameof(ShowLoiterOptions)); OnPropertyChanged(nameof(ShowCameraOptions)); OnPropertyChanged(nameof(ShowStepGeometrySelector)); OnPropertyChanged(nameof(ShowTakeoffAltitude)); OnPropertyChanged(nameof(ShowStepOverrides)); OnPropertyChanged(nameof(HasSelectedStepCameraActions));
+        OnPropertyChanged(nameof(ShowSurveyOptions)); OnPropertyChanged(nameof(ShowCorridorOptions)); OnPropertyChanged(nameof(ShowLoiterOptions)); OnPropertyChanged(nameof(ShowCameraOptions)); OnPropertyChanged(nameof(ShowStepGeometrySelector)); OnPropertyChanged(nameof(ShowTakeoffAltitude)); OnPropertyChanged(nameof(ShowStepOverrides)); OnPropertyChanged(nameof(HasSelectedStepCameraActions)); OnPropertyChanged(nameof(HasNoSelectedStepCameraActions)); OnPropertyChanged(nameof(CameraPlanSummary));
     }
 
     private void OnLocalizationChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

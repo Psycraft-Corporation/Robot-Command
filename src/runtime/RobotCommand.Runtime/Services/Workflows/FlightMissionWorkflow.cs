@@ -681,6 +681,32 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
         try
         {
             foreach (var execution in _executions.Values.Where(item => item.State is FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused).ToArray())
+            {
+                var target = Target(execution.VehicleId);
+                var telemetryUnavailable = target is null ||
+                    target.State is ManagedConnectionState.Stale or ManagedConnectionState.Offline or ManagedConnectionState.Faulted ||
+                    target.Telemetry is { IsStale: true } or { State: ManagedConnectionState.Stale or ManagedConnectionState.Offline or ManagedConnectionState.Faulted } ||
+                    !_connections.TryGet(execution.ConnectionId, out _);
+                if (telemetryUnavailable)
+                {
+                    SetExecution(
+                        execution.MissionId,
+                        execution.ConnectionId,
+                        execution.VehicleId,
+                        FlightMissionExecutionState.Unknown,
+                        execution.CurrentItemIndex,
+                        execution.ItemCount,
+                        "Mission completion is unconfirmed because vehicle telemetry is unavailable.",
+                        execution.ExecutorKind,
+                        execution.TerrainFallbackUsed,
+                        null,
+                        execution.ActiveStepId,
+                        execution.ActiveStepName,
+                        "Vehicle disconnected before mission completion was confirmed.",
+                        execution.CaptureEvents);
+                    continue;
+                }
+
                 if (TryGetExecutor(execution.VehicleId, out var executor) && executor.TryGetProgress(execution.ConnectionId, ResolveCommandVehicleId(execution.VehicleId), out var progress))
                 {
                     var wasActive = execution.State is FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused;
@@ -689,6 +715,7 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
                     if (wasActive && progress.State == FlightMissionExecutionState.Completed && _completionFinalizationStarted.Add(ExecutionKey(execution.MissionId, execution.VehicleId)))
                         _ = FinalizeCompletedMissionAsync(execution, executor);
                 }
+            }
             Changed?.Invoke(this, EventArgs.Empty);
         }
         finally

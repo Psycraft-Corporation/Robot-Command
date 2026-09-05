@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using RobotCommand.Localization;
 using RobotCommand.Services;
@@ -59,6 +60,11 @@ public sealed partial class MainWindow : Window
     private void ApplyBrightMode(bool enabled)
     {
         Classes.Set("brightMode", enabled);
+        // Fluent popups (combo-box dropdowns, menus, and flyouts) are hosted
+        // outside the Window visual tree, so the bright-mode class alone does
+        // not change their theme resources. Keep the actual window theme in
+        // sync so those popup roots use the same light palette.
+        RequestedThemeVariant = enabled ? ThemeVariant.Light : ThemeVariant.Dark;
     }
 
     private void UpdateResponsiveLayout()

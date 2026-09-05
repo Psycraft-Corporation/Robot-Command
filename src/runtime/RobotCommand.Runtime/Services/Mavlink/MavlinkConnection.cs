@@ -1169,7 +1169,8 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
                 system.MissionUpdatedAt,
                 Armed(system),
                 system.LandedState,
-                AdapterFor(system)?.DecodeMode(system.CustomMode) ?? "Unknown");
+                AdapterFor(system)?.DecodeMode(system.CustomMode) ?? "Unknown",
+                system.MissionState);
             return true;
         }
     }
@@ -2689,6 +2690,8 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
                 if (_systems.TryGetValue(packet.SystemId, out var missionSystem))
                 {
                     missionSystem.CurrentMissionItem = packet.UInt16("seq");
+                    var missionState = packet.Byte("mission_state", byte.MaxValue);
+                    missionSystem.MissionState = missionState == byte.MaxValue ? null : missionState;
                     missionSystem.MissionUpdatedAt = packet.ReceivedAt;
                 }
                 RaiseChanged();
@@ -5298,6 +5301,7 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
         public int? CurrentMissionItem { get; set; }
         public int? LastReachedMissionItem { get; set; }
         public DateTimeOffset MissionUpdatedAt { get; set; }
+        public byte? MissionState { get; set; }
         public DateTimeOffset? ManualInputEchoAt { get; set; }
     }
 

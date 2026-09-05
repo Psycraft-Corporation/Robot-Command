@@ -416,6 +416,18 @@
   <data name="FlightMissionRetain" xml:space="preserve"><value>Retain</value></data>
   <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>Remove</value></data>
   <data name="FlightMissionStatus" xml:space="preserve"><value>Mission status</value></data>
+  <data name="FlightMissionExecutionStatus" xml:space="preserve"><value>Status: {0}</value></data>
+  <data name="FlightMissionExecutionRouteItem" xml:space="preserve"><value>Route item: {0}/{1}</value></data>
+  <data name="FlightMissionExecutionReady" xml:space="preserve"><value>Ready</value></data>
+  <data name="FlightMissionExecutionRunning" xml:space="preserve"><value>Running</value></data>
+  <data name="FlightMissionExecutionPaused" xml:space="preserve"><value>Paused</value></data>
+  <data name="FlightMissionExecutionComplete" xml:space="preserve"><value>Complete</value></data>
+  <data name="FlightMissionExecutionInterrupted" xml:space="preserve"><value>Interrupted</value></data>
+  <data name="FlightMissionExecutionError" xml:space="preserve"><value>Error</value></data>
+  <data name="FlightMissionExecutionUnknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="FlightMissionExecutionNotUploaded" xml:space="preserve"><value>Not uploaded</value></data>
+  <data name="FlightMissionExecutionUnconfirmed" xml:space="preserve"><value>Completion could not be confirmed because vehicle telemetry is unavailable.</value></data>
+  <data name="FlightMissionExecutionPostLandingDecision" xml:space="preserve"><value>Mission landed; choose Retain, Remove, or Resume.</value></data>
   <data name="FlightMissionPreview" xml:space="preserve"><value>Mission preview</value></data>
   <data name="FlightMissionVehicleActions" xml:space="preserve"><value>Vehicle and actions</value></data>
   <data name="FlightMissionAddStep" xml:space="preserve"><value>Add step</value></data>
@@ -442,6 +454,8 @@
   <data name="FlightMissionMissionStartCameraActions" xml:space="preserve"><value>Mission-start camera actions</value></data>
   <data name="FlightMissionStepCameraActions" xml:space="preserve"><value>Step camera actions</value></data>
   <data name="FlightMissionAddStepCameraAction" xml:space="preserve"><value>Add a camera action to this step</value></data>
+  <data name="FlightMissionNoCameraActions" xml:space="preserve"><value>No camera actions added.</value></data>
+  <data name="FlightMissionCameraActionsConfigured" xml:space="preserve"><value>{0} camera actions configured.</value></data>
   <data name="FlightMissionAddCameraAction" xml:space="preserve"><value>Add camera action</value></data>
   <data name="FlightMissionRemoveCameraAction" xml:space="preserve"><value>Remove</value></data>
   <data name="FlightMissionCameraActionCameraName" xml:space="preserve"><value>Camera name (optional)</value></data>

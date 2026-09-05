@@ -286,6 +286,7 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
 
             var fields = new Dictionary<string, object>(frame.Fields, StringComparer.Ordinal);
             AddMissionTypeExtension(bytes, frame.MessageId, fields);
+            AddMissionCurrentExtension(bytes, frame.MessageId, fields);
             packet = new MavlinkPacket(
                 frame.StartMarker == Protocol.V2.StartMarker ? (byte)2 : (byte)1,
                 frame.PacketSequence,
@@ -350,7 +351,13 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
                 break;
             case MavlinkMessageIds.MissionCurrent when payload.Length >= 2:
                 fields["seq"] = BitConverter.ToUInt16(payload[..2]);
-                if (payload.Length >= 3) fields["total"] = payload[2];
+                if (payload.Length >= 4) fields["total"] = BitConverter.ToUInt16(payload.Slice(2, 2));
+                else if (payload.Length >= 3) fields["total"] = payload[2];
+                // MAVLink 2 MISSION_CURRENT adds mission_state after seq and
+                // total. Keep this in the extension fallback as well as the
+                // generated decoder so completion is not lost on older codec
+                // metadata.
+                if (payload.Length >= 5) fields["mission_state"] = payload[4];
                 break;
             case MavlinkMessageIds.MissionItemReached when payload.Length >= 2:
                 fields["seq"] = BitConverter.ToUInt16(payload[..2]);
@@ -836,6 +843,26 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
         // parser's default when the payload actually carries the extension.
         var extension = bytes[10 + bytes[1] - 1];
         fields["mission_type"] = extension;
+    }
+
+    private static void AddMissionCurrentExtension(
+        ReadOnlySpan<byte> bytes,
+        uint messageId,
+        IDictionary<string, object> fields)
+    {
+        if (messageId != MavlinkMessageIds.MissionCurrent ||
+            bytes.Length < 12 ||
+            bytes[0] != Protocol.V2.StartMarker ||
+            bytes[1] < 5)
+            return;
+
+        // MISSION_CURRENT is seq (uint16), total (uint16), mission_state
+        // (uint8), followed by mission_mode (uint8). The bundled dialect may
+        // decode only the older seq field, so read the stable extension bytes
+        // directly from the validated MAVLink 2 payload.
+        var payload = bytes.Slice(10, bytes[1]);
+        fields["total"] = BitConverter.ToUInt16(payload.Slice(2, 2));
+        fields["mission_state"] = payload[4];
     }
 
     private static byte[] AppendMavlinkV2Extension(byte[] frame, byte value, byte crcExtra)

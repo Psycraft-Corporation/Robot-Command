@@ -72,6 +72,7 @@
               <Border Classes="subtle" Padding="8">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionMissionStartCameraActions}" />
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionNoCameraActions}" IsVisible="{Binding HasNoMissionStartCameraActions}" />
                   <ItemsControl IsVisible="{Binding HasMissionStartCameraActions}" ItemsSource="{Binding MissionStartCameraActions}">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate x:DataType="core:FlightMissionCameraAction">
@@ -156,7 +157,6 @@
                 <StackPanel Spacing="3">
                   <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=FlightMissionStatus}" />
                   <TextBlock TextWrapping="Wrap" Text="{Binding ExecutionStatusText}" />
-                  <ItemsControl ItemsSource="{Binding Execution.CaptureEvents}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="core:FlightMissionCaptureEvent"><TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Summary}" /></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
                 </StackPanel>
               </Border>
               <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Status}" />
@@ -253,6 +253,7 @@
               <Border Classes="subtle" Padding="8" IsVisible="{Binding HasMission}">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionAddStepCameraAction}" />
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionNoCameraActions}" IsVisible="{Binding HasNoSelectedStepCameraActions}" />
                   <Grid ColumnDefinitions="2*,*,Auto" ColumnSpacing="6">
                     <ComboBox ItemsSource="{Binding CameraActionKinds}" SelectedItem="{Binding CameraActionKind}">
                       <ComboBox.ItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraActionKind"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
@@ -298,6 +299,7 @@
           <Border Classes="panel" Padding="12">
             <StackPanel Spacing="6">
               <TextBlock Classes="eyebrow" Text="{loc:Loc Key=FlightMissionAuthoringPreview}" />
+              <TextBlock Classes="muted" Text="{Binding CameraPlanSummary}" />
               <TextBlock Classes="muted" Text="{Binding CaptureStatisticsSummary}" IsVisible="{Binding HasCaptureStatistics}" />
               <controls:FlightMissionPreviewControl Mission="{Binding SelectedMission}" Preview="{Binding Preview}" Unit="{Binding PreviewUnit}" OperatorLocation="{Binding PreviewOperatorLocation}" MinHeight="300" Height="360" />
             </StackPanel>

@@ -636,4 +636,18 @@
   <data name="CameraStopVideo" xml:space="preserve"><value>Arrêter la vidéo caméra</value></data>
   <data name="CameraCenterGimbal" xml:space="preserve"><value>Centrer la nacelle</value></data>
   <data name="CameraDefinition" xml:space="preserve"><value>Définition de la caméra</value></data>
+  <data name="FlightMissionExecutionStatus" xml:space="preserve"><value>&#201;tat : {0}</value></data>
+  <data name="FlightMissionExecutionRouteItem" xml:space="preserve"><value>&#201;l&#233;ment de route : {0}/{1}</value></data>
+  <data name="FlightMissionExecutionReady" xml:space="preserve"><value>Pr&#234;te</value></data>
+  <data name="FlightMissionExecutionRunning" xml:space="preserve"><value>En cours</value></data>
+  <data name="FlightMissionExecutionPaused" xml:space="preserve"><value>En pause</value></data>
+  <data name="FlightMissionExecutionComplete" xml:space="preserve"><value>Termin&#233;e</value></data>
+  <data name="FlightMissionExecutionInterrupted" xml:space="preserve"><value>Interrompue</value></data>
+  <data name="FlightMissionExecutionError" xml:space="preserve"><value>Erreur</value></data>
+  <data name="FlightMissionExecutionUnknown" xml:space="preserve"><value>Inconnue</value></data>
+  <data name="FlightMissionExecutionNotUploaded" xml:space="preserve"><value>Non t&#233;l&#233;vers&#233;e</value></data>
+  <data name="FlightMissionExecutionUnconfirmed" xml:space="preserve"><value>La fin de mission n&apos;a pas pu &#234;tre confirm&#233;e : la t&#233;l&#233;m&#233;trie du v&#233;hicule est indisponible.</value></data>
+  <data name="FlightMissionExecutionPostLandingDecision" xml:space="preserve"><value>Mission atterrie ; choisissez Conserver, Supprimer ou Reprendre.</value></data>
+  <data name="FlightMissionNoCameraActions" xml:space="preserve"><value>Aucune action cam&#233;ra ajout&#233;e.</value></data>
+  <data name="FlightMissionCameraActionsConfigured" xml:space="preserve"><value>{0} actions cam&#233;ra configur&#233;es.</value></data>
 </root>

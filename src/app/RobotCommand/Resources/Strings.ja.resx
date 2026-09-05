@@ -636,4 +636,18 @@
   <data name="CameraStopVideo" xml:space="preserve"><value>カメラ動画を停止</value></data>
   <data name="CameraCenterGimbal" xml:space="preserve"><value>ジンバルを中央に戻す</value></data>
   <data name="CameraDefinition" xml:space="preserve"><value>カメラ定義</value></data>
+  <data name="FlightMissionExecutionStatus" xml:space="preserve"><value>状態: {0}</value></data>
+  <data name="FlightMissionExecutionRouteItem" xml:space="preserve"><value>ルート項目: {0}/{1}</value></data>
+  <data name="FlightMissionExecutionReady" xml:space="preserve"><value>準備完了</value></data>
+  <data name="FlightMissionExecutionRunning" xml:space="preserve"><value>実行中</value></data>
+  <data name="FlightMissionExecutionPaused" xml:space="preserve"><value>一時停止</value></data>
+  <data name="FlightMissionExecutionComplete" xml:space="preserve"><value>完了</value></data>
+  <data name="FlightMissionExecutionInterrupted" xml:space="preserve"><value>中断</value></data>
+  <data name="FlightMissionExecutionError" xml:space="preserve"><value>エラー</value></data>
+  <data name="FlightMissionExecutionUnknown" xml:space="preserve"><value>不明</value></data>
+  <data name="FlightMissionExecutionNotUploaded" xml:space="preserve"><value>未アップロード</value></data>
+  <data name="FlightMissionExecutionUnconfirmed" xml:space="preserve"><value>機体のテレメトリが利用できないため、完了を確認できません。</value></data>
+  <data name="FlightMissionExecutionPostLandingDecision" xml:space="preserve"><value>ミッションは着陸しました。保持、削除、再開を選択してください。</value></data>
+  <data name="FlightMissionNoCameraActions" xml:space="preserve"><value>カメラ操作は追加されていません。</value></data>
+  <data name="FlightMissionCameraActionsConfigured" xml:space="preserve"><value>{0} 件のカメラ操作を設定済み。</value></data>
 </root>
