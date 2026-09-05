@@ -335,6 +335,8 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
         => PlanAsync(kind, title, missionId, connectionId, vehicleId, allowTerrainFallback, async token =>
         {
             var execution = _executions.TryGetValue(missionId, out var state) ? state : null;
+            if (kind == ReviewedOperationKind.FlightMissionStart && execution?.State is FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused)
+                return new("", ReviewedOperationState.Failed, false, "Start is available only when this mission is not active.", ["MISSION_ALREADY_ACTIVE: Pause or complete the active mission before starting it again."]);
             if (kind == ReviewedOperationKind.FlightMissionStart && execution?.State != FlightMissionExecutionState.Uploaded)
             {
                 var targetName = Target(vehicleId)?.Name ?? vehicleId;
@@ -342,6 +344,8 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
                     $"Mission '{Require(missionId).DisplayName}' has not been uploaded to {targetName} in this session. Upload the mission and execute that operation before starting it.",
                     [$"No uploaded mission artifact is available for {targetName}."]);
             }
+            if (paused && execution?.State != FlightMissionExecutionState.Running)
+                return new("", ReviewedOperationState.Failed, false, "Pause is available only for a running mission.", ["MISSION_NOT_RUNNING: Start the mission before pausing it."]);
             var executor = Executor(vehicleId);
             if (!paused && kind == ReviewedOperationKind.FlightMissionStart && Target(vehicleId)?.IsGhost == true && Target(vehicleId)?.ArmState != "Armed")
                 return new("", ReviewedOperationState.Failed, false, "Arm the Ghost before starting the mission.", []);

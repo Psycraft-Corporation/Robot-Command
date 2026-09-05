@@ -32,6 +32,7 @@
       <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasDeleteConfirmation}">
         <CheckBox VerticalAlignment="Center" Content="{loc:Loc Key=FlightMissionDeleteAssociatedGeometry}" IsChecked="{Binding DeleteAssociatedGeometry}" />
         <Button Classes="danger" Content="{loc:Loc Key=FlightMissionConfirmDelete}" Command="{Binding ConfirmDeleteCommand}" />
+        <Button Content="{loc:Loc Key=FlightMissionCancel}" Command="{Binding CancelDeleteCommand}" />
         <Button Classes="danger" IsVisible="{Binding HasDeleteConflict}" Content="{loc:Loc Key=FlightMissionDeleteMissionOnly}" Command="{Binding DeleteMissionOnlyCommand}" />
         <TextBlock Classes="muted" VerticalAlignment="Center" MaxWidth="500" TextWrapping="Wrap" IsVisible="{Binding HasDeleteConflict}" Text="{Binding DeleteConflictMessage}" />
       </StackPanel>
@@ -54,6 +55,7 @@
 
       <ScrollViewer Grid.Column="1"
                     HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto"
                     IsVisible="{Binding HasMission}">
         <StackPanel Spacing="10">
           <!-- One compact control/status surface replaces the former side rail. -->
@@ -67,7 +69,7 @@
                 <Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionUpload}" Command="{Binding UploadCommand}" />
                 <Button Grid.Column="2" Content="{loc:Loc Key=FlightMissionDownload}" Command="{Binding DownloadCommand}" />
                 <Button Grid.Column="3" Classes="confirm" Content="{loc:Loc Key=FlightMissionStart}" Command="{Binding StartCommand}" ToolTip.Tip="{Binding StartMissionUnavailableReason}" />
-                <Button Grid.Column="4" Content="{loc:Loc Key=FlightMissionPause}" Command="{Binding PauseCommand}" />
+                <Button Grid.Column="4" IsVisible="{Binding CanPauseMission}" Content="{loc:Loc Key=FlightMissionPause}" Command="{Binding PauseCommand}" />
               </Grid>
               <Border Classes="subtle" Padding="8">
                 <StackPanel Spacing="6">
@@ -122,8 +124,8 @@
                 </StackPanel>
               </Border>
               <WrapPanel>
-                <Button Content="{loc:Loc Key=FlightMissionContinue}" Command="{Binding ContinueCommand}" />
-                <WrapPanel IsVisible="{Binding IsAwaitingPostLandingDecision}">
+                <Button Content="{loc:Loc Key=FlightMissionContinue}" IsVisible="{Binding CanContinueMission}" Command="{Binding ContinueCommand}" />
+                <WrapPanel IsVisible="{Binding CanPostLandingDecision}">
                   <Button Content="{loc:Loc Key=FlightMissionResume}" Command="{Binding ResumeCommand}" />
                   <Button Content="{loc:Loc Key=FlightMissionRetain}" Command="{Binding RetainCommand}" />
                   <Button Classes="danger" Content="{loc:Loc Key=FlightMissionRemoveOnboard}" Command="{Binding RemoveOnboardCommand}" />
@@ -139,7 +141,7 @@
                 </ComboBox>
                 <Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionSetFence}" Command="{Binding SetFenceCommand}" />
               </Grid>
-              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasPendingOperation}">
+              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasVisiblePendingOperation}">
                 <StackPanel Spacing="5">
                   <Grid ColumnDefinitions="*,Auto"><TextBlock FontWeight="SemiBold" Text="{Binding PendingOperation.Title}" /><TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding PendingOperationOutcome}" /></Grid>
                   <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding PendingOperation.Summary}" />
@@ -153,7 +155,7 @@
               <Border Classes="subtle" Padding="8" IsVisible="{Binding HasMissionStartStatus}">
                 <TextBlock TextWrapping="Wrap" Text="{Binding MissionStartStatus}" />
               </Border>
-              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasExecution}">
+              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasVisibleExecutionStatus}">
                 <StackPanel Spacing="3">
                   <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=FlightMissionStatus}" />
                   <TextBlock TextWrapping="Wrap" Text="{Binding ExecutionStatusText}" />
@@ -328,7 +330,9 @@
               <TextBlock Classes="eyebrow" Text="{loc:Loc Key=FlightMissionAuthoringPreview}" />
               <TextBlock Classes="muted" Text="{Binding CameraPlanSummary}" />
               <TextBlock Classes="muted" Text="{Binding CaptureStatisticsSummary}" IsVisible="{Binding HasCaptureStatistics}" />
-              <controls:FlightMissionPreviewControl Mission="{Binding SelectedMission}" Preview="{Binding Preview}" Unit="{Binding PreviewUnit}" OperatorLocation="{Binding PreviewOperatorLocation}" MinHeight="300" Height="360" />
+              <ScrollViewer MaxHeight="520" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <controls:FlightMissionPreviewControl Mission="{Binding SelectedMission}" Preview="{Binding Preview}" Unit="{Binding PreviewUnit}" OperatorLocation="{Binding PreviewOperatorLocation}" MinHeight="300" Height="360" />
+              </ScrollViewer>
             </StackPanel>
           </Border>
         </StackPanel>

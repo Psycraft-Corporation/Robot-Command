@@ -111,6 +111,8 @@ public sealed class DeveloperPreviewSurfaceTests
         Assert.DoesNotContain("Mission step added.", viewModel);
         Assert.Contains("ConfirmDeleteCommand", viewModel);
         Assert.Contains("DeleteMissionOnlyCommand", viewModel);
+        Assert.Contains("CancelDeleteCommand", viewModel);
+        Assert.Contains("Content=\"{loc:Loc Key=FlightMissionCancel}\" Command=\"{Binding CancelDeleteCommand}\"", mission);
         Assert.Contains("Delete associated geometry", File.ReadAllText(Path.Combine(
             root, "src", "app", "RobotCommand", "Resources", "Strings.resx")));
         Assert.Contains("DeleteConflictMessage", mission);
@@ -149,6 +151,13 @@ public sealed class DeveloperPreviewSurfaceTests
         Assert.Contains("FlightMissionAutomaticPhotoCapture", mission);
         Assert.Contains("AutomaticPhotoCaptureEnabled", mission);
         Assert.Contains("HasStandaloneStatus", mission);
+        Assert.Contains("HasVisiblePendingOperation", mission);
+        Assert.Contains("HasVisibleExecutionStatus", mission);
+        Assert.Contains("CanPauseMission", mission);
+        Assert.Contains("CanContinueMission", mission);
+        Assert.Contains("VerticalScrollBarVisibility=\"Auto\"", mission);
+        Assert.Contains("Uploading...", viewModel);
+        Assert.DoesNotContain("Uploading mission to the drone...", viewModel);
         Assert.DoesNotContain("CameraCaptureModes", mission);
         Assert.DoesNotContain("CameraCaptureMode", mission);
     }
