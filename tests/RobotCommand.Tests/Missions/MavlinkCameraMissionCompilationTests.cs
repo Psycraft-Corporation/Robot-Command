@@ -114,7 +114,7 @@ public sealed class MavlinkCameraMissionCompilationTests
             ],
             Survey: new FlightMissionSurveyOptions(
                 LineSpacingMetres: 25,
-                CameraIntent: new FlightMissionCameraIntent("Photo", TriggerDistanceMetres: 20)));
+                CameraIntent: new FlightMissionCameraIntent("Photo", TriggerDistanceMetres: 20, AutomaticPhotoCaptureEnabled: true)));
         var mission = MissionWith(null) with
         {
             Steps =
@@ -132,7 +132,7 @@ public sealed class MavlinkCameraMissionCompilationTests
                     Corridor: new FlightMissionCorridorOptions(
                         CorridorWidthMetres: 20,
                         LineSpacingMetres: 20,
-                        CameraIntent: new FlightMissionCameraIntent("Photo", TriggerIntervalSeconds: 3)))
+                        CameraIntent: new FlightMissionCameraIntent("Photo", TriggerIntervalSeconds: 3, AutomaticPhotoCaptureEnabled: true)))
             ]
         };
 

@@ -79,9 +79,9 @@ internal static class WorkflowCommands
                         double.TryParse(args.Get("front-lap"), out var frontLap) ? frontLap : 70,
                         double.TryParse(args.Get("side-lap"), out var sideLap) ? sideLap : 70,
                         args.Has("images-in-turnarounds"),
-                        new FlightMissionCameraIntent(args.Get("mode") ?? "Photo", double.TryParse(args.Get("distance"), out var corridorDistance) ? corridorDistance : null, double.TryParse(args.Get("interval"), out var corridorInterval) ? corridorInterval : null, args.Get("camera"), args.Get("notes"))), token),
+                        BuildCameraIntent(args)), token),
                     "add-loiter" => await workflow.AddTimedLoiterAsync(id, args.Required("geometry"), double.Parse(args.Required("seconds"), CultureInfo.InvariantCulture), token),
-                    "add-camera-intent" => await workflow.AddCameraIntentAsync(id, new(args.Get("mode") ?? "Photo", double.TryParse(args.Get("distance"), out var distance) ? distance : null, double.TryParse(args.Get("interval"), out var interval) ? interval : null, args.Get("camera"), args.Get("notes")), token),
+                    "add-camera-intent" => await workflow.AddCameraIntentAsync(id, BuildCameraIntent(args), token),
                     "add-rtl" => await workflow.AddReturnToLaunchAsync(id, token),
                     "add-land" => await workflow.AddLandAsync(id, token),
                     "remove" => await workflow.RemoveStepAsync(id, args.Required("step"), token),
@@ -122,6 +122,19 @@ internal static class WorkflowCommands
         if (args.Get("step") is not { } stepId) return workflow.SetAltitudeAsync(missionId, altitude, token);
         var step = MissionStep(workflow, missionId, stepId);
         return workflow.SetStepOverridesAsync(missionId, stepId, altitude, step.CruiseSpeedMetresPerSecond, step.TerrainFollowing, token);
+    }
+
+    private static FlightMissionCameraIntent BuildCameraIntent(CliArguments args)
+    {
+        var distance = double.TryParse(args.Get("distance"), out var parsedDistance) ? parsedDistance : (double?)null;
+        var interval = double.TryParse(args.Get("interval"), out var parsedInterval) ? parsedInterval : (double?)null;
+        return new(
+            args.Get("mode") ?? "Photo",
+            distance,
+            interval,
+            args.Get("camera"),
+            args.Get("notes"),
+            AutomaticPhotoCaptureEnabled: args.Has("automatic-photo") || distance is not null || interval is not null);
     }
 
     private static Task<FlightMissionSnapshot> SetTerrainAsync(IFlightMissionWorkflow workflow, string missionId, CliArguments args, CancellationToken token)

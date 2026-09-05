@@ -186,6 +186,15 @@ public sealed class WindowsOperatorLocationService :
     {
         var coordinate = position.Coordinate;
         var point = coordinate.Point.Position;
+        if (coordinate.PositionSource is PositionSource.IPAddress or
+            PositionSource.Default or
+            PositionSource.Unknown or
+            PositionSource.Obfuscated)
+        {
+            SetUnavailable("Windows did not provide a current, trustworthy operator location.");
+            return;
+        }
+
         if (DateTimeOffset.UtcNow - coordinate.Timestamp > MaximumAge)
         {
             SetUnavailable("The latest location fix is stale.");

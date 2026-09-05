@@ -405,14 +405,15 @@ public sealed record FlightMissionCameraAction(
     public bool IsValid => ValidationErrors.Count == 0;
 }
 
-/// <summary>Camera metadata and an optional ordered list of portable actions.</summary>
+/// <summary>Camera metadata, opt-in automatic photo triggering, and portable actions.</summary>
 public sealed record FlightMissionCameraIntent(
     string Mode = "None",
     double? TriggerDistanceMetres = null,
     double? TriggerIntervalSeconds = null,
     string? CameraName = null,
     string? Notes = null,
-    IReadOnlyList<FlightMissionCameraAction>? Actions = null);
+    IReadOnlyList<FlightMissionCameraAction>? Actions = null,
+    bool AutomaticPhotoCaptureEnabled = false);
 
 public sealed record FlightMissionSurveyOptions(
     double LineSpacingMetres = 25,

@@ -43,7 +43,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     private bool _corridorReverseDirection;
     private FlightMissionCorridorEntrySide _corridorEntrySide;
     private bool _corridorImagesInTurnarounds;
-    private string _cameraMode = "Photo";
+    private bool _automaticPhotoCaptureEnabled;
     private double? _cameraDistance;
     private double? _cameraInterval;
     private FlightMissionCameraActionKind _cameraActionKind = FlightMissionCameraActionKind.PhotoOnce;
@@ -72,6 +72,11 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     private bool _refreshQueued;
     private CancellationTokenSource? _previewCancellation;
     private CancellationTokenSource? _stepOptionsCancellation;
+    private string? _stepOptionsMissionId;
+    private string? _stepOptionsStepId;
+    private bool _pendingAutomaticPhotoCaptureEnabled;
+    private double? _pendingCameraDistance;
+    private double? _pendingCameraInterval;
     private CancellationTokenSource? _stepGeometryCancellation;
     private bool _loadingStepOptions;
     private bool _loadingStepGeometry;
@@ -97,7 +102,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         AddLoiterCommand = new AsyncRelayCommand(AddLoiterAsync, () => HasMissionSelected() && LoiterSeconds > 0);
         AddCameraIntentCommand = new AsyncRelayCommand(token => AddAsync(() => _workflow.AddCameraIntentAsync(
             Require().Id,
-            new FlightMissionCameraIntent(CameraMode, CameraDistance, CameraInterval),
+            BuildAutomaticPhotoCaptureIntent(),
             token)), HasMissionSelected);
         AddMissionStartCameraActionCommand = new AsyncRelayCommand(AddMissionStartCameraActionAsync, HasMissionSelected);
         AddSelectedStepCameraActionCommand = new AsyncRelayCommand(AddSelectedStepCameraActionAsync, () => HasMissionSelected() && SelectedStep is not null);
@@ -226,6 +231,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             DeleteConfirmationPending = false;
             DeleteAssociatedGeometry = false;
             DeleteConflictMessage = string.Empty;
+            CancelStepOptionsUpdate();
             CancelStepGeometryUpdate();
             _workflow.SetMapPreviewMission(value?.Id);
             NewName = value?.Name ?? LocalizationService.Current.Get("FlightMissionDefaultName");
@@ -272,6 +278,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         {
             if (!ReferenceEquals(_selectedStep, value))
             {
+                CancelStepOptionsUpdate();
                 CancelStepGeometryUpdate();
             }
             if (!SetProperty(ref _selectedStep, value)) return;
@@ -365,7 +372,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     public FlightMissionCorridorEntrySide CorridorEntrySide { get => _corridorEntrySide; set { if (SetProperty(ref _corridorEntrySide, value)) { OnPropertyChanged(nameof(CorridorEntryRight)); ScheduleStepOptionsUpdate(); } } }
     public bool CorridorEntryRight { get => CorridorEntrySide == FlightMissionCorridorEntrySide.Right; set => CorridorEntrySide = value ? FlightMissionCorridorEntrySide.Right : FlightMissionCorridorEntrySide.Left; }
     public bool CorridorImagesInTurnarounds { get => _corridorImagesInTurnarounds; set { if (SetProperty(ref _corridorImagesInTurnarounds, value)) ScheduleStepOptionsUpdate(); } }
-    public string CameraMode { get => _cameraMode; set { if (SetProperty(ref _cameraMode, value)) ScheduleStepOptionsUpdate(); } }
+    public bool AutomaticPhotoCaptureEnabled { get => _automaticPhotoCaptureEnabled; set { if (SetProperty(ref _automaticPhotoCaptureEnabled, value)) ScheduleStepOptionsUpdate(); } }
     public double? CameraDistance { get => _cameraDistance; set { if (SetProperty(ref _cameraDistance, value)) ScheduleStepOptionsUpdate(); } }
     public double? CameraInterval { get => _cameraInterval; set { if (SetProperty(ref _cameraInterval, value)) ScheduleStepOptionsUpdate(); } }
     public IReadOnlyList<FlightMissionCameraActionKind> CameraActionKinds { get; } = Enum.GetValues<FlightMissionCameraActionKind>();
@@ -422,7 +429,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     public bool ShowSurveyOptions => SelectedStep?.Kind == FlightMissionStepKind.SurveyZone;
     public bool ShowCorridorOptions => SelectedStep?.Kind == FlightMissionStepKind.CorridorScan;
     public bool ShowLoiterOptions => SelectedStep?.Kind == FlightMissionStepKind.TimedLoiter;
-    public bool ShowCameraOptions => SelectedStep?.Kind is FlightMissionStepKind.CameraCaptureIntent or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan;
+    public bool ShowCameraOptions => SelectedStep?.Kind is FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan;
     public bool ShowStepGeometrySelector => SelectedStep?.Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter;
     public bool ShowTakeoffAltitude => SelectedStep?.Kind == FlightMissionStepKind.Takeoff;
     public bool ShowStepOverrides => SelectedStep?.Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter;
@@ -653,12 +660,12 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     }
     private async Task AddSurveyAsync(CancellationToken token)
         => await AddAsync(() => _workflow.AddSurveyAsync(Require().Id, null,
-            new FlightMissionSurveyOptions(SurveySpacing, SurveyBearing, SurveyTurnaround, SurveyReverseEntry, new FlightMissionCameraIntent(CameraMode, CameraDistance, CameraInterval)), token));
+            new FlightMissionSurveyOptions(SurveySpacing, SurveyBearing, SurveyTurnaround, SurveyReverseEntry, BuildAutomaticPhotoCaptureIntent()), token));
     private async Task AddCorridorAsync(CancellationToken token)
         => await AddAsync(() => _workflow.AddCorridorAsync(Require().Id, null,
             new FlightMissionCorridorOptions(CorridorWidth, CorridorSpacing, CorridorTurnaround, CorridorReverseDirection,
                 CorridorEntrySide, CorridorFrontLap, CorridorSideLap, CorridorImagesInTurnarounds,
-                new FlightMissionCameraIntent(CameraMode, CameraDistance, CameraInterval)), token));
+                BuildAutomaticPhotoCaptureIntent()), token));
     private async Task AddLoiterAsync(CancellationToken token)
         => await AddAsync(() => _workflow.AddTimedLoiterAsync(Require().Id, null, LoiterSeconds, token));
     private async Task AddMissionStartCameraActionAsync(CancellationToken token)
@@ -1073,7 +1080,15 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         // while still requiring an explicit choice when multiple vehicles are
         // available.
         var effectiveTargetId = targetId ?? (Targets.Count == 1 ? Targets[0].Id : null);
-        _selectedTarget = Targets.FirstOrDefault(item => item.Id == effectiveTargetId); _selectedFence = Fences.FirstOrDefault(item => item.Document.FenceId == (fenceId ?? _selectedMission?.TargetAssignment?.ActiveFenceId)); _selectedStep = _selectedMission?.Steps.FirstOrDefault(item => item.Id == stepId);
+        _selectedTarget = Targets.FirstOrDefault(item => item.Id == effectiveTargetId); _selectedFence = Fences.FirstOrDefault(item => item.Document.FenceId == (fenceId ?? _selectedMission?.TargetAssignment?.ActiveFenceId));
+        var refreshedStep = _selectedMission?.Steps.FirstOrDefault(item => item.Id == stepId);
+        if (_stepOptionsMissionId is not null &&
+            (!string.Equals(_stepOptionsMissionId, _selectedMission?.Id, StringComparison.Ordinal) ||
+             !string.Equals(_stepOptionsStepId, refreshedStep?.Id, StringComparison.Ordinal)))
+        {
+            CancelStepOptionsUpdate();
+        }
+        _selectedStep = refreshedStep;
         LoadStepOptions(_selectedStep);
         LoadStepGeometry(_selectedStep);
         RaiseStepOptionVisibility();
@@ -1250,25 +1265,50 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             if (survey is not null)
             {
                 SurveySpacing = survey.LineSpacingMetres; SurveyBearing = survey.BearingDegrees; SurveyTurnaround = survey.TurnaroundDistanceMetres; SurveyReverseEntry = survey.ReverseEntry;
-                LoadCamera(survey.CameraIntent);
+                LoadCamera(survey.CameraIntent, step);
             }
             var corridor = step.Corridor;
             if (corridor is not null)
             {
                 CorridorWidth = corridor.CorridorWidthMetres; CorridorSpacing = corridor.LineSpacingMetres; CorridorTurnaround = corridor.TurnaroundDistanceMetres; CorridorReverseDirection = corridor.ReverseDirection; CorridorEntrySide = corridor.EntrySide; CorridorFrontLap = corridor.FrontLapPercent; CorridorSideLap = corridor.SideLapPercent; CorridorImagesInTurnarounds = corridor.TakeImagesInTurnarounds;
-                LoadCamera(corridor.CameraIntent);
+                LoadCamera(corridor.CameraIntent, step);
             }
             if (step.Kind == FlightMissionStepKind.TimedLoiter) LoiterSeconds = step.LoiterDurationSeconds ?? 30;
-            if (step.Kind == FlightMissionStepKind.CameraCaptureIntent) LoadCamera(step.CameraIntent);
+            if (step.Kind == FlightMissionStepKind.CameraCaptureIntent) LoadCamera(step.CameraIntent, step);
         }
         finally { _loadingStepOptions = false; }
     }
 
-    private void LoadCamera(FlightMissionCameraIntent? intent)
+    private void LoadCamera(FlightMissionCameraIntent? intent, FlightMissionStep step)
     {
-        if (intent is null) return;
-        CameraMode = intent.Mode; CameraDistance = intent.TriggerDistanceMetres; CameraInterval = intent.TriggerIntervalSeconds;
+        if (string.Equals(_stepOptionsMissionId, SelectedMission?.Id, StringComparison.Ordinal) &&
+            string.Equals(_stepOptionsStepId, step.Id, StringComparison.Ordinal))
+        {
+            AutomaticPhotoCaptureEnabled = _pendingAutomaticPhotoCaptureEnabled;
+            CameraDistance = _pendingCameraDistance;
+            CameraInterval = _pendingCameraInterval;
+            return;
+        }
+
+        AutomaticPhotoCaptureEnabled = intent?.AutomaticPhotoCaptureEnabled == true;
+        CameraDistance = intent?.TriggerDistanceMetres;
+        CameraInterval = intent?.TriggerIntervalSeconds;
     }
+
+    private FlightMissionCameraIntent BuildAutomaticPhotoCaptureIntent(IReadOnlyList<FlightMissionCameraAction>? actions = null)
+        => BuildAutomaticPhotoCaptureIntent(actions, AutomaticPhotoCaptureEnabled, CameraDistance, CameraInterval);
+
+    private static FlightMissionCameraIntent BuildAutomaticPhotoCaptureIntent(
+        IReadOnlyList<FlightMissionCameraAction>? actions,
+        bool automaticPhotoCaptureEnabled,
+        double? cameraDistance,
+        double? cameraInterval)
+        => new(
+            Mode: "Photo",
+            TriggerDistanceMetres: automaticPhotoCaptureEnabled ? cameraDistance : null,
+            TriggerIntervalSeconds: automaticPhotoCaptureEnabled ? cameraInterval : null,
+            Actions: actions,
+            AutomaticPhotoCaptureEnabled: automaticPhotoCaptureEnabled);
 
     private static FlightMissionCameraIntent? CameraIntentForStep(FlightMissionStep step)
         => step.Kind == FlightMissionStepKind.SurveyZone
@@ -1280,37 +1320,70 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     private void ScheduleStepOptionsUpdate()
     {
         if (_loadingStepOptions || SelectedMission is null || SelectedStep is null) return;
-        if (SelectedStep.Kind is not (FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter or FlightMissionStepKind.CameraCaptureIntent)) return;
+        if (SelectedStep.Kind is not (FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan)) return;
         _stepOptionsCancellation?.Cancel(); _stepOptionsCancellation?.Dispose();
+        var missionId = SelectedMission.Id;
+        var stepId = SelectedStep.Id;
+        _stepOptionsMissionId = missionId;
+        _stepOptionsStepId = stepId;
+        _pendingAutomaticPhotoCaptureEnabled = AutomaticPhotoCaptureEnabled;
+        _pendingCameraDistance = CameraDistance;
+        _pendingCameraInterval = CameraInterval;
         var cancellation = new CancellationTokenSource(); _stepOptionsCancellation = cancellation;
-        _ = PersistStepOptionsAsync(cancellation);
+        _ = PersistStepOptionsAsync(cancellation, missionId, stepId,
+            _pendingAutomaticPhotoCaptureEnabled, _pendingCameraDistance, _pendingCameraInterval);
     }
 
-    private async Task PersistStepOptionsAsync(CancellationTokenSource cancellation)
+    private async Task PersistStepOptionsAsync(
+        CancellationTokenSource cancellation,
+        string missionId,
+        string stepId,
+        bool automaticPhotoCaptureEnabled,
+        double? cameraDistance,
+        double? cameraInterval)
     {
         try
         {
             await Task.Delay(150, cancellation.Token);
             var mission = SelectedMission; var step = SelectedStep;
-            if (mission is null || step is null || cancellation.IsCancellationRequested) return;
+            if (mission is null || step is null || cancellation.IsCancellationRequested ||
+                !string.Equals(mission.Id, missionId, StringComparison.Ordinal) ||
+                !string.Equals(step.Id, stepId, StringComparison.Ordinal)) return;
             FlightMissionSurveyOptions? survey = step.Survey;
             FlightMissionCorridorOptions? corridor = step.Corridor;
             double? loiter = step.LoiterDurationSeconds;
             FlightMissionCameraIntent? camera = step.CameraIntent;
             if (step.Kind == FlightMissionStepKind.SurveyZone)
                 survey = new(SurveySpacing, SurveyBearing, SurveyTurnaround, SurveyReverseEntry,
-                    new(CameraMode, CameraDistance, CameraInterval, Actions: CameraIntentForStep(step)?.Actions));
+                    BuildAutomaticPhotoCaptureIntent(CameraIntentForStep(step)?.Actions, automaticPhotoCaptureEnabled, cameraDistance, cameraInterval));
             else if (step.Kind == FlightMissionStepKind.CorridorScan)
                 corridor = new(CorridorWidth, CorridorSpacing, CorridorTurnaround, CorridorReverseDirection, CorridorEntrySide, CorridorFrontLap, CorridorSideLap, CorridorImagesInTurnarounds,
-                    new(CameraMode, CameraDistance, CameraInterval, Actions: CameraIntentForStep(step)?.Actions));
+                    BuildAutomaticPhotoCaptureIntent(CameraIntentForStep(step)?.Actions, automaticPhotoCaptureEnabled, cameraDistance, cameraInterval));
             else if (step.Kind == FlightMissionStepKind.TimedLoiter)
                 loiter = LoiterSeconds;
-            else if (step.Kind == FlightMissionStepKind.CameraCaptureIntent)
-                camera = new(CameraMode, CameraDistance, CameraInterval, Actions: step.CameraIntent?.Actions);
             await _workflow.SetStepOptionsAsync(mission.Id, step.Id, survey, corridor, loiter, camera, cancellation.Token);
         }
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
         catch (Exception exception) { Status = $"Step settings could not be saved: {exception.Message}"; }
+        finally
+        {
+            if (ReferenceEquals(_stepOptionsCancellation, cancellation))
+            {
+                _stepOptionsCancellation = null;
+                _stepOptionsMissionId = null;
+                _stepOptionsStepId = null;
+                cancellation.Dispose();
+            }
+        }
+    }
+
+    private void CancelStepOptionsUpdate()
+    {
+        _stepOptionsCancellation?.Cancel();
+        _stepOptionsCancellation?.Dispose();
+        _stepOptionsCancellation = null;
+        _stepOptionsMissionId = null;
+        _stepOptionsStepId = null;
     }
 
     private void RaiseStepOptionVisibility()

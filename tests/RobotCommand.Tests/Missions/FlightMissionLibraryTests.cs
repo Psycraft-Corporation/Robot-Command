@@ -347,7 +347,7 @@ public sealed class FlightMissionLibraryTests
             Steps =
             [
                 new FlightMissionStep("takeoff", FlightMissionStepKind.Takeoff),
-                new FlightMissionStep("camera", FlightMissionStepKind.CameraCaptureIntent, CameraIntent: new FlightMissionCameraIntent("Photo", TriggerDistanceMetres: 5)),
+                new FlightMissionStep("camera", FlightMissionStepKind.CameraCaptureIntent, CameraIntent: new FlightMissionCameraIntent("Photo", TriggerDistanceMetres: 5, AutomaticPhotoCaptureEnabled: true)),
                 new FlightMissionStep("poi", FlightMissionStepKind.PointOfInterest, Coordinates: [new FlightMissionCoordinate(43.7001, -79.4001)]),
                 new FlightMissionStep("rtl", FlightMissionStepKind.ReturnToLaunch)
             ]

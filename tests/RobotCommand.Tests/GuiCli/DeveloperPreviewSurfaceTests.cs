@@ -142,6 +142,14 @@ public sealed class DeveloperPreviewSurfaceTests
         Assert.Contains("CameraActionKinds", viewModel);
         Assert.Contains("FlightMissionExecutionRouteItem", viewModel);
         Assert.Contains("FlightMissionExecutionUnconfirmed", viewModel);
+        Assert.Contains("ColumnDefinitions=\"125,125,145,110,110\"", mission);
+        Assert.Contains("Width=\"120\" Value=\"{Binding CorridorWidth", mission);
+        Assert.Contains("FlightMissionCorridorFrontLap", mission);
+        Assert.Contains("FlightMissionCorridorImagesInTurns", mission);
+        Assert.Contains("FlightMissionAutomaticPhotoCapture", mission);
+        Assert.Contains("AutomaticPhotoCaptureEnabled", mission);
+        Assert.DoesNotContain("CameraCaptureModes", mission);
+        Assert.DoesNotContain("CameraCaptureMode", mission);
     }
 
     [Fact]

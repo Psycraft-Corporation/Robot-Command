@@ -32,9 +32,9 @@ public sealed record FlightMissionCaptureStatistics(
 }
 
 /// <summary>
-/// Shared preview logic for legacy survey/corridor camera trigger settings and
-/// the newer explicit action list. Runtime compilers call the trigger helpers
-/// so the preview and emitted MAVLink items describe the same operation.
+/// Shared preview logic for opt-in survey/corridor photo triggering and the
+/// explicit action list. Runtime compilers call the trigger helpers so the
+/// preview and emitted MAVLink items describe the same operation.
 /// </summary>
 public static class FlightMissionPreviewCaptureBuilder
 {
@@ -46,7 +46,7 @@ public static class FlightMissionPreviewCaptureBuilder
     {
         if (kind is not (FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan) ||
             intent is null ||
-            intent.Actions is { Count: > 0 })
+            !intent.AutomaticPhotoCaptureEnabled)
         {
             return [];
         }

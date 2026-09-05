@@ -439,6 +439,7 @@
   <data name="FlightMissionCameraMode" xml:space="preserve"><value>Mode de capture caméra</value></data>
   <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Distance de déclenchement caméra (m)</value></data>
   <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Intervalle de déclenchement caméra (s)</value></data>
+  <data name="FlightMissionAutomaticPhotoCapture" xml:space="preserve"><value>Capture automatique de photos</value></data>
   <data name="FlightMissionSetStep" xml:space="preserve"><value>Appliquer les r&#233;glages de l&apos;&#233;tape</value></data>
   <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>Altitude relative (m)</value></data>
   <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>Vitesse de croisi&#232;re (m/s)</value></data>

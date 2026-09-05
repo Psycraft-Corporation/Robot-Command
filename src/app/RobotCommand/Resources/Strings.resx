@@ -451,6 +451,7 @@
   <data name="FlightMissionCameraMode" xml:space="preserve"><value>Camera capture mode</value></data>
   <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Camera trigger distance (m)</value></data>
   <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Camera trigger interval (s)</value></data>
+  <data name="FlightMissionAutomaticPhotoCapture" xml:space="preserve"><value>Automatic photo capture</value></data>
   <data name="FlightMissionMissionStartCameraActions" xml:space="preserve"><value>Mission-start camera actions</value></data>
   <data name="FlightMissionStepCameraActions" xml:space="preserve"><value>Step camera actions</value></data>
   <data name="FlightMissionAddStepCameraAction" xml:space="preserve"><value>Add a camera action to this step</value></data>

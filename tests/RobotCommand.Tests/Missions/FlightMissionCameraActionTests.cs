@@ -57,6 +57,23 @@ public sealed class FlightMissionCameraActionTests
     }
 
     [Fact]
+    public void AutomaticPhotoCaptureIsOptInAndDoesNotSuppressExplicitActions()
+    {
+        var disabled = new FlightMissionCameraIntent(
+            TriggerDistanceMetres: 10,
+            Actions: [FlightMissionCameraAction.StartVideo()],
+            AutomaticPhotoCaptureEnabled: false);
+        var enabled = disabled with { AutomaticPhotoCaptureEnabled = true };
+
+        Assert.Empty(FlightMissionPreviewCaptureBuilder.RouteTriggerStartActions(FlightMissionStepKind.CorridorScan, disabled));
+
+        var generated = Assert.Single(FlightMissionPreviewCaptureBuilder.RouteTriggerStartActions(
+            FlightMissionStepKind.CorridorScan, enabled));
+        Assert.Equal(FlightMissionCameraActionKind.PhotoByDistance, generated.Kind);
+        Assert.Equal(10, generated.DistanceMetres);
+    }
+
+    [Fact]
     public async Task CameraActionsRoundTripAndInvalidActionsAreRejected()
     {
         var root = Path.Combine(Path.GetTempPath(), $"robot-command-camera-actions-{Guid.NewGuid():N}");

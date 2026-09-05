@@ -438,6 +438,7 @@
   <data name="FlightMissionCameraMode" xml:space="preserve"><value>카메라 촬영 모드</value></data>
   <data name="FlightMissionCameraDistance" xml:space="preserve"><value>카메라 트리거 거리 (m)</value></data>
   <data name="FlightMissionCameraInterval" xml:space="preserve"><value>카메라 트리거 간격 (초)</value></data>
+  <data name="FlightMissionAutomaticPhotoCapture" xml:space="preserve"><value>자동 사진 촬영</value></data>
    <data name="FlightMissionSetStep" xml:space="preserve"><value>단계 설정 적용</value></data>
    <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>상대 고도(m)</value></data>
    <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>순항 속도(m/s)</value></data>

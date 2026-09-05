@@ -66,6 +66,25 @@ public sealed class OperatorLocationSurfaceTests
     }
 
     [Fact]
+    public void WindowsLocation_DoesNotPublishCoarseOrRemoteCoordinates()
+    {
+        var root = FindRepositoryRoot();
+        var source = File.ReadAllText(Path.Combine(
+            root,
+            "src",
+            "runtime",
+            "RobotCommand.Runtime",
+            "Services",
+            "Location",
+            "WindowsOperatorLocationService.cs"));
+
+        Assert.Contains("PositionSource.IPAddress", source, StringComparison.Ordinal);
+        Assert.Contains("PositionSource.Default", source, StringComparison.Ordinal);
+        Assert.Contains("PositionSource.Obfuscated", source, StringComparison.Ordinal);
+        Assert.Contains("SetUnavailable", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void App_StartsHostedServicesAfterTheMainWindowIsOpened()
     {
         var root = FindRepositoryRoot();

@@ -299,6 +299,7 @@
   <data name="FlightMissionCameraMode" xml:space="preserve"><value>Режим зйомки камерою</value></data>
   <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Відстань спрацювання камери (м)</value></data>
   <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Інтервал спрацювання камери (с)</value></data>
+  <data name="FlightMissionAutomaticPhotoCapture" xml:space="preserve"><value>Автоматична фотозйомка</value></data>
   <data name="FlightMissionSetStep" xml:space="preserve"><value>Застосувати параметри кроку</value></data>
   <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>Відносна висота (м)</value></data>
   <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>Крейсерська швидкість (м/с)</value></data>
