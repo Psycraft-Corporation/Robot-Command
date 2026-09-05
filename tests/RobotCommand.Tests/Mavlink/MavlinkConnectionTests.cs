@@ -5,6 +5,7 @@ using RobotCommand.Core;
 using RobotCommand.Infrastructure;
 using RobotCommand.Models;
 using RobotCommand.Services.Mavlink;
+using RobotCommand.Services.Missions;
 using RobotCommand.State;
 using Xunit;
 
@@ -474,6 +475,27 @@ public sealed class MavlinkConnectionTests
         Assert.True(result.Succeeded, result.Summary);
         Assert.Contains(transport.SentPayloads, payload => payload is [15]);
         Assert.Contains(transport.SentPayloads, payload => payload is [5]);
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Px4MissionProgress_ReportsRcManualModeAsInterrupted()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(Heartbeat(1, customMode: 1u << 16));
+
+        var executor = new Px4MissionExecutor(new SingleConnectionRegistry(connection));
+        Assert.True(executor.TryGetProgress(
+            connection.Definition.Id,
+            "mavlink:mavlink:1",
+            out var progress));
+        Assert.Equal(FlightMissionExecutionState.Interrupted, progress.State);
+        Assert.Contains("Manual", progress.Summary, StringComparison.OrdinalIgnoreCase);
+
         await connection.DisposeAsync();
     }
 
@@ -1776,6 +1798,15 @@ public sealed class MavlinkConnectionTests
         {
             action();
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class SingleConnectionRegistry(MavlinkConnection connection) : IMavlinkConnectionRegistry
+    {
+        public bool TryGet(string connectionId, out MavlinkConnection? found)
+        {
+            found = connectionId == connection.Definition.Id ? connection : null;
+            return found is not null;
         }
     }
 }

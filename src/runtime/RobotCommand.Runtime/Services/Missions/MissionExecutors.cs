@@ -86,11 +86,23 @@ public sealed class Px4MissionExecutor(IMavlinkConnectionRegistry connections) :
         var finalEndFinished = !uploaded.FinalItemIsLand && !uploaded.FinalItemIsRtl ||
             ((uploaded.FinalItemIsLand || uploaded.FinalItemIsRtl) && finalLandingObserved);
         var missionFinished = missionState.MissionState == MissionStateComplete;
+        var mode = missionState.Mode ?? string.Empty;
         var state = (finalItemReached || missionFinished) && finalEndFinished
             ? FlightMissionExecutionState.Completed
-            : FlightMissionExecutionState.Running;
+            : mode.Equals("Hold", StringComparison.OrdinalIgnoreCase)
+                ? FlightMissionExecutionState.Paused
+                : mode.Equals("Mission", StringComparison.OrdinalIgnoreCase) || mode.Equals("Auto", StringComparison.OrdinalIgnoreCase)
+                    ? FlightMissionExecutionState.Running
+                    : FlightMissionExecutionState.Interrupted;
         var postLanding = state == FlightMissionExecutionState.Completed && uploaded.FinalItemIsLand && finalEndFinished;
-        progress = new(state, index, itemCount, state == FlightMissionExecutionState.Completed ? "PX4 mission completed; vehicle is being held safely." : "PX4 mission progress", UpdatedStep(index), PostLandingDecisionAvailable: postLanding, ResumeItemIndex: postLanding ? FindResumeIndex(uploaded.Items) : null);
+        var summary = state switch
+        {
+            FlightMissionExecutionState.Completed => "PX4 mission completed; vehicle is being held safely.",
+            FlightMissionExecutionState.Paused => "PX4 mission paused in Hold.",
+            FlightMissionExecutionState.Running => "PX4 mission progress",
+            _ => $"PX4 mission interrupted because the vehicle is in {(string.IsNullOrWhiteSpace(mode) ? "an unknown mode" : mode)}."
+        };
+        progress = new(state, index, itemCount, summary, UpdatedStep(index), PostLandingDecisionAvailable: postLanding, ResumeItemIndex: postLanding ? FindResumeIndex(uploaded.Items) : null);
         return true;
         string? UpdatedStep(int? _) => null;
     }

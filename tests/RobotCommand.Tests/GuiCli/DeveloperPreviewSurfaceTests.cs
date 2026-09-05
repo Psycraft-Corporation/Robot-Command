@@ -148,6 +148,7 @@ public sealed class DeveloperPreviewSurfaceTests
         Assert.Contains("FlightMissionCorridorImagesInTurns", mission);
         Assert.Contains("FlightMissionAutomaticPhotoCapture", mission);
         Assert.Contains("AutomaticPhotoCaptureEnabled", mission);
+        Assert.Contains("HasStandaloneStatus", mission);
         Assert.DoesNotContain("CameraCaptureModes", mission);
         Assert.DoesNotContain("CameraCaptureMode", mission);
     }

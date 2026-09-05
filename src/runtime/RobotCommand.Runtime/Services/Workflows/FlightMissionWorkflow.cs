@@ -654,7 +654,10 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
     private void SetExecution(string missionId, string connectionId, string vehicleId, FlightMissionExecutionState state, int? index, int count, string summary, string executorKind = "PX4", bool terrainFallback = false, string? terrainWarning = null, string? activeStepId = null, string? activeStepName = null, string? lastEvent = null, IReadOnlyList<FlightMissionCaptureEvent>? captures = null, FlightMissionPostLandingState postLandingState = FlightMissionPostLandingState.None, int? resumeItemIndex = null)
     {
         var now = DateTimeOffset.UtcNow;
-        _executions[missionId] = new(missionId, connectionId, vehicleId, state, index, count, terrainWarning is null ? summary : $"{summary} {terrainWarning}", now, executorKind, activeStepId, activeStepName, lastEvent, terrainFallback, captures, postLandingState, resumeItemIndex);
+        var next = new FlightMissionExecutionSnapshot(missionId, connectionId, vehicleId, state, index, count, terrainWarning is null ? summary : $"{summary} {terrainWarning}", now, executorKind, activeStepId, activeStepName, lastEvent, terrainFallback, captures, postLandingState, resumeItemIndex);
+        if (_executions.TryGetValue(missionId, out var current) && ExecutionEquivalent(current, next))
+            return;
+        _executions[missionId] = next;
         var commandState = state switch
         {
             FlightMissionExecutionState.Uploaded => OperationalCommandState.Accepted,
@@ -671,6 +674,23 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
             Reason: state.ToString())));
         Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    private static bool ExecutionEquivalent(FlightMissionExecutionSnapshot left, FlightMissionExecutionSnapshot right)
+        => left.MissionId == right.MissionId &&
+           left.ConnectionId == right.ConnectionId &&
+           left.VehicleId == right.VehicleId &&
+           left.State == right.State &&
+           left.CurrentItemIndex == right.CurrentItemIndex &&
+           left.ItemCount == right.ItemCount &&
+           left.Summary == right.Summary &&
+           left.ExecutorKind == right.ExecutorKind &&
+           left.ActiveStepId == right.ActiveStepId &&
+           left.ActiveStepName == right.ActiveStepName &&
+           left.LastEvent == right.LastEvent &&
+           left.TerrainFallbackUsed == right.TerrainFallbackUsed &&
+           left.PostLandingState == right.PostLandingState &&
+           left.ResumeItemIndex == right.ResumeItemIndex &&
+           (left.CaptureEvents ?? []).SequenceEqual(right.CaptureEvents ?? []);
     private void RefreshProgress()
     {
         // Unit observation is also updated by SetExecution (the mission command

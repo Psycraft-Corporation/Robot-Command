@@ -159,7 +159,7 @@
                   <TextBlock TextWrapping="Wrap" Text="{Binding ExecutionStatusText}" />
                 </StackPanel>
               </Border>
-              <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Status}" />
+              <TextBlock Classes="muted" IsVisible="{Binding HasStandaloneStatus}" TextWrapping="Wrap" Text="{Binding Status}" />
             </StackPanel>
           </Border>
 

@@ -433,10 +433,11 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
     public bool ShowStepGeometrySelector => SelectedStep?.Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter;
     public bool ShowTakeoffAltitude => SelectedStep?.Kind == FlightMissionStepKind.Takeoff;
     public bool ShowStepOverrides => SelectedStep?.Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter;
-    public string Status { get => _status; private set => SetProperty(ref _status, value); }
-    public string MissionStartStatus { get => _missionStartStatus; private set { if (SetProperty(ref _missionStartStatus, value)) OnPropertyChanged(nameof(HasMissionStartStatus)); } }
+    public string Status { get => _status; private set { if (SetProperty(ref _status, value)) OnPropertyChanged(nameof(HasStandaloneStatus)); } }
+    public bool HasStandaloneStatus => !string.IsNullOrWhiteSpace(Status) && !HasMissionOperationStatus && !HasMissionStartStatus;
+    public string MissionStartStatus { get => _missionStartStatus; private set { if (SetProperty(ref _missionStartStatus, value)) { OnPropertyChanged(nameof(HasMissionStartStatus)); OnPropertyChanged(nameof(HasStandaloneStatus)); } } }
     public bool HasMissionStartStatus => !string.IsNullOrWhiteSpace(MissionStartStatus);
-    public string MissionOperationStatus { get => _missionOperationStatus; private set { if (SetProperty(ref _missionOperationStatus, value)) OnPropertyChanged(nameof(HasMissionOperationStatus)); } }
+    public string MissionOperationStatus { get => _missionOperationStatus; private set { if (SetProperty(ref _missionOperationStatus, value)) { OnPropertyChanged(nameof(HasMissionOperationStatus)); OnPropertyChanged(nameof(HasStandaloneStatus)); } } }
     public bool HasMissionOperationStatus => !string.IsNullOrWhiteSpace(MissionOperationStatus);
     public FlightMissionExecutionSnapshot? Execution => SelectedMission is null ? null : _workflow.Executions.FirstOrDefault(item => item.MissionId == SelectedMission.Id);
     public bool HasExecution => Execution is not null;
@@ -786,13 +787,11 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         if (!CanPrepareUpload())
         {
             MissionOperationStatus = UploadUnavailableReason;
-            Status = MissionOperationStatus;
             return;
         }
 
         _missionOperationInProgress = true;
         MissionOperationStatus = "Preparing mission upload...";
-        Status = MissionOperationStatus;
         RaiseCommands();
         try
         {
@@ -802,23 +801,21 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             if (plan is null)
             {
                 MissionOperationStatus = "Mission upload could not be prepared.";
-                Status = MissionOperationStatus;
                 return;
             }
             if (!plan.CanExecute)
             {
                 MissionOperationStatus = HumanReadableBlock(plan);
-                Status = MissionOperationStatus;
                 return;
             }
 
             MissionOperationStatus = "Uploading mission to the drone...";
-            Status = MissionOperationStatus;
             var result = await _reviewed.ExecuteAsync(plan.Id, token);
             MissionOperationStatus = result.Succeeded
                 ? string.Empty
                 : HumanReadableResult("Mission upload", result, plan);
-            Status = result.Succeeded ? string.Empty : MissionOperationStatus;
+            if (!result.Succeeded)
+                Status = MissionOperationStatus;
             Refresh();
         }
         finally
@@ -863,25 +860,21 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         if (SelectedMission is null)
         {
             MissionStartStatus = "Select a mission before starting it.";
-            Status = MissionStartStatus;
             return;
         }
         if (SelectedTarget is null)
         {
             MissionStartStatus = "Select a drone before starting the mission.";
-            Status = MissionStartStatus;
             return;
         }
         if (_missionStartInProgress)
         {
             MissionStartStatus = "Mission upload and start are already in progress for this drone.";
-            Status = MissionStartStatus;
             return;
         }
         if (ActiveExecutionForTarget is not null)
         {
             MissionStartStatus = StartMissionUnavailableReason;
-            Status = MissionStartStatus;
             return;
         }
 
@@ -904,18 +897,15 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             if (Execution is not { State: FlightMissionExecutionState.Uploaded or FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused })
             {
                 MissionStartStatus = "Starting mission: uploading it to the drone...";
-                Status = MissionStartStatus;
                 var uploadPlan = await CreatePlanAsync("upload", token);
                 if (uploadPlan is null)
                 {
                     MissionStartStatus = "Mission could not start because its upload could not be prepared.";
-                    Status = MissionStartStatus;
                     return;
                 }
                 if (!uploadPlan.CanExecute)
                 {
                     MissionStartStatus = HumanReadableBlock(uploadPlan);
-                    Status = MissionStartStatus;
                     return;
                 }
                 var uploadResult = await _reviewed.ExecuteAsync(uploadPlan.Id, token);
@@ -923,31 +913,28 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
                 if (!uploadResult.Succeeded)
                 {
                     MissionStartStatus = HumanReadableResult("Mission upload", uploadResult, uploadPlan);
-                    Status = MissionStartStatus;
                     return;
                 }
             }
 
             MissionStartStatus = "Mission uploaded. Requesting Mission mode from the drone...";
-            Status = MissionStartStatus;
             var startPlan = await CreatePlanAsync("start", token);
             if (startPlan is null)
             {
                 MissionStartStatus = "Mission start could not be prepared.";
-                Status = MissionStartStatus;
                 return;
             }
             if (!startPlan.CanExecute)
             {
                 MissionStartStatus = HumanReadableBlock(startPlan);
-                Status = MissionStartStatus;
                 return;
             }
             var startResult = await _reviewed.ExecuteAsync(startPlan.Id, token);
             MissionStartStatus = startResult.Succeeded
                 ? string.Empty
                 : HumanReadableMissionStartFailure(startResult, startPlan);
-            Status = startResult.Succeeded ? string.Empty : MissionStartStatus;
+            if (!startResult.Succeeded)
+                Status = MissionStartStatus;
             Refresh();
         }
         finally
@@ -993,7 +980,6 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
         {
             _missionOperationInProgress = true;
             MissionOperationStatus = "Uploading mission to the drone...";
-            Status = MissionOperationStatus;
             RaiseCommands();
         }
         try
@@ -1001,7 +987,8 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
             var result = await _reviewed.ExecuteAsync(operation.Id, token);
             if (isMissionUpload)
                 MissionOperationStatus = result.Succeeded ? string.Empty : HumanReadableResult("Mission upload", result, operation);
-            Status = result.Succeeded ? string.Empty : result.Summary;
+            if (!result.Succeeded)
+                Status = result.Summary;
             Refresh();
         }
         finally
