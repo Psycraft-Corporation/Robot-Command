@@ -423,6 +423,7 @@
   <data name="FlightMissionExecutionPaused" xml:space="preserve"><value>Paused</value></data>
   <data name="FlightMissionExecutionComplete" xml:space="preserve"><value>Complete</value></data>
   <data name="FlightMissionExecutionInterrupted" xml:space="preserve"><value>Interrupted</value></data>
+  <data name="FlightMissionExecutionFailsafe" xml:space="preserve"><value>Failsafe</value></data>
   <data name="FlightMissionExecutionError" xml:space="preserve"><value>Error</value></data>
   <data name="FlightMissionExecutionUnknown" xml:space="preserve"><value>Unknown</value></data>
   <data name="FlightMissionExecutionNotUploaded" xml:space="preserve"><value>Not uploaded</value></data>

@@ -651,6 +651,7 @@
   <data name="FlightMissionExecutionPaused" xml:space="preserve"><value>Призупинено</value></data>
   <data name="FlightMissionExecutionComplete" xml:space="preserve"><value>Завершено</value></data>
   <data name="FlightMissionExecutionInterrupted" xml:space="preserve"><value>Перервано</value></data>
+  <data name="FlightMissionExecutionFailsafe" xml:space="preserve"><value>Фейлсейф</value></data>
   <data name="FlightMissionExecutionError" xml:space="preserve"><value>Помилка</value></data>
   <data name="FlightMissionExecutionUnknown" xml:space="preserve"><value>Невідомо</value></data>
   <data name="FlightMissionExecutionNotUploaded" xml:space="preserve"><value>Не завантажено</value></data>

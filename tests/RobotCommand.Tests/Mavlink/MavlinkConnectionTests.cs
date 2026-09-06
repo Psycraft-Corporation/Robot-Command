@@ -500,6 +500,45 @@ public sealed class MavlinkConnectionTests
     }
 
     [Fact]
+    public async Task Px4MissionProgress_ReportsTelemetryFailsafeAsDistinctState()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+        transport.OnSend = payload =>
+        {
+            if (payload.SequenceEqual(new byte[] { 10 })) transport.Emit(MissionRequest(1, 0));
+            if (payload.SequenceEqual(new byte[] { 11 })) transport.Emit(MissionAck(1, 0));
+        };
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        var executor = new Px4MissionExecutor(new SingleConnectionRegistry(connection));
+        var artifact = new FlightMissionExecutionArtifact(
+            "failsafe-mission",
+            "PX4",
+            [new FlightMissionCompiledItem(0, "takeoff", FlightMissionStepKind.Takeoff, null, 20, 5)],
+            "test-hash");
+        var upload = await executor.UploadAsync(
+            connection.Definition.Id,
+            "mavlink:mavlink:1",
+            artifact,
+            [new MavlinkMissionItem(0, MavlinkCommandIds.NavTakeoff, 6, 0, 0, 20)],
+            TestContext.Current.CancellationToken);
+
+        Assert.True(upload.Succeeded, upload.Summary);
+        transport.Emit(StatusText(1, "Failsafe activated: entering Hold for 5 seconds"));
+
+        Assert.True(executor.TryGetProgress(
+            connection.Definition.Id,
+            "mavlink:mavlink:1",
+            out var progress));
+        Assert.Equal(FlightMissionExecutionState.Failsafe, progress.State);
+        Assert.Contains("Failsafe activated", progress.Summary, StringComparison.Ordinal);
+
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
     public async Task ArduPilotMissionStart_ConfirmsAutoThenSendsMissionStartCommand()
     {
         var transport = new FakeTransport();

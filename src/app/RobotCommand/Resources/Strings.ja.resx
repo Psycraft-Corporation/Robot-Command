@@ -644,6 +644,7 @@
   <data name="FlightMissionExecutionPaused" xml:space="preserve"><value>一時停止</value></data>
   <data name="FlightMissionExecutionComplete" xml:space="preserve"><value>完了</value></data>
   <data name="FlightMissionExecutionInterrupted" xml:space="preserve"><value>中断</value></data>
+  <data name="FlightMissionExecutionFailsafe" xml:space="preserve"><value>フェイルセーフ</value></data>
   <data name="FlightMissionExecutionError" xml:space="preserve"><value>エラー</value></data>
   <data name="FlightMissionExecutionUnknown" xml:space="preserve"><value>不明</value></data>
   <data name="FlightMissionExecutionNotUploaded" xml:space="preserve"><value>未アップロード</value></data>

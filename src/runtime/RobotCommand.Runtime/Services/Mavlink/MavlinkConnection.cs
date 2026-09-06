@@ -1170,7 +1170,9 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
                 Armed(system),
                 system.LandedState,
                 AdapterFor(system)?.DecodeMode(system.CustomMode) ?? "Unknown",
-                system.MissionState);
+                system.MissionState,
+                system.RecentDiagnosticMessages.LastOrDefault(item =>
+                    item.Text.Contains("failsafe", StringComparison.OrdinalIgnoreCase)));
             return true;
         }
     }

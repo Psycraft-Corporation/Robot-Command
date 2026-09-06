@@ -1,4 +1,5 @@
 using RobotCommand.Core;
+using RobotCommand.Models;
 
 namespace RobotCommand.Services.Mavlink;
 
@@ -32,7 +33,8 @@ public sealed record MavlinkMissionState(
     bool IsArmed,
     string LandedState,
     string Mode,
-    byte? MissionState = null);
+    byte? MissionState = null,
+    VehicleDiagnosticMessage? RecentFailsafeMessage = null);
 
 public interface IMavlinkMissionClient
 {

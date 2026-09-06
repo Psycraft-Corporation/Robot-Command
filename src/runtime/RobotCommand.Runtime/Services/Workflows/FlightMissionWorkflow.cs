@@ -668,6 +668,7 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
             FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused => OperationalCommandState.InProgress,
             FlightMissionExecutionState.Completed => OperationalCommandState.Succeeded,
             FlightMissionExecutionState.Interrupted => OperationalCommandState.Cancelled,
+            FlightMissionExecutionState.Failsafe => OperationalCommandState.Failed,
             FlightMissionExecutionState.Failed => OperationalCommandState.Failed,
             _ => OperationalCommandState.Draft
         };

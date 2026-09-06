@@ -464,6 +464,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
                 FlightMissionExecutionState.Paused => "FlightMissionExecutionPaused",
                 FlightMissionExecutionState.Completed => "FlightMissionExecutionComplete",
                 FlightMissionExecutionState.Interrupted => "FlightMissionExecutionInterrupted",
+                FlightMissionExecutionState.Failsafe => "FlightMissionExecutionFailsafe",
                 FlightMissionExecutionState.Failed => "FlightMissionExecutionError",
                 FlightMissionExecutionState.NotUploaded => "FlightMissionExecutionNotUploaded",
                 _ => "FlightMissionExecutionUnknown"
@@ -476,7 +477,7 @@ public sealed class FlightMissionViewModel : ObservableObject, IDisposable
                 lines.Add(string.Format(CultureInfo.CurrentCulture, _localization.Get("FlightMissionExecutionRouteItem"), Math.Min(index + 1, execution.ItemCount), execution.ItemCount));
             if (execution.State == FlightMissionExecutionState.Unknown)
                 lines.Add(_localization.Get("FlightMissionExecutionUnconfirmed"));
-            else if ((execution.State is FlightMissionExecutionState.Interrupted or FlightMissionExecutionState.Failed) && !string.IsNullOrWhiteSpace(execution.Summary))
+            else if ((execution.State is FlightMissionExecutionState.Interrupted or FlightMissionExecutionState.Failsafe or FlightMissionExecutionState.Failed) && !string.IsNullOrWhiteSpace(execution.Summary))
                 lines.Add(execution.Summary);
             if (execution.PostLandingState == FlightMissionPostLandingState.AwaitingDecision)
                 lines.Add(_localization.Get("FlightMissionExecutionPostLandingDecision"));

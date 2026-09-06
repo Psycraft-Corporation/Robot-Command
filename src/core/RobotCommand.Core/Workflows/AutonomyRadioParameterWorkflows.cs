@@ -245,7 +245,7 @@ public enum FlightMissionStepKind
     Land = 7,
     CorridorScan = 8
 }
-public enum FlightMissionExecutionState { NotUploaded, Uploaded, Running, Paused, Completed, Interrupted, Failed, Unknown }
+public enum FlightMissionExecutionState { NotUploaded, Uploaded, Running, Paused, Completed, Interrupted, Failed, Unknown, Failsafe }
 
 /// <summary>Action PX4 should take after the final authored mission item.</summary>
 public enum FlightMissionEndAction
