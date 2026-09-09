@@ -1,7 +1,7 @@
+using System.Xml.Linq;
 using RobotCommand.Core;
 using RobotCommand.Models;
 using RobotCommand.Services.Mavlink;
-using System.Xml.Linq;
 using Xunit;
 
 namespace RobotCommand.Tests.Missions;
