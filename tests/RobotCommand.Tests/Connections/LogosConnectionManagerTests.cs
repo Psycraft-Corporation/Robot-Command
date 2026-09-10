@@ -181,7 +181,11 @@ public sealed class LogosConnectionManagerTests
         Assert.Empty(stores.Telemetry.Items);
 
         factory.Created.Single().PublishLive(CreateLiveSnapshot(factory.Created.Single().Definition));
-        await WaitUntilAsync(() => stores.Telemetry.Items.Count == 1);
+        await WaitUntilAsync(() =>
+            stores.Telemetry.Items.Count == 1 &&
+            stores.Links.Items.Count == 1 &&
+            stores.Events.Items.Count == 1 &&
+            stores.Streams.Items.Count == 7);
 
         Assert.Single(stores.Links.Items);
         Assert.Single(stores.Events.Items);
