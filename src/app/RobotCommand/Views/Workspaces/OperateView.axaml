@@ -125,6 +125,27 @@
                       </Flyout>
                     </Button.Flyout>
                   </Button>
+                  <Button Classes="toolbarButton" Content="{loc:Loc Key=MapMissionPreviews}" IsVisible="{Binding Map.HasMissionPreviewLayers}">
+                    <Button.Flyout>
+                      <Flyout Placement="Bottom">
+                        <Border Width="300" Margin="0,10,0,0" Padding="10" Classes="panel">
+                          <StackPanel Spacing="6">
+                            <TextBlock Classes="eyebrow" Text="{loc:Loc Key=MapMissionPreviewLayers}" />
+                            <ItemsControl ItemsSource="{Binding Map.MissionPreviewLayers}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:MissionPreviewLayerItemViewModel">
+                                  <StackPanel Margin="0,0,0,6" Spacing="1">
+                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding IsVisible, Mode=TwoWay}" />
+                                    <TextBlock Classes="muted" FontSize="9" Margin="24,0,0,0" Text="{Binding CaptureSummary}" IsVisible="{Binding HasCaptureSummary}" />
+                                  </StackPanel>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </StackPanel>
+                        </Border>
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
                 </StackPanel>
             </Border>
 
@@ -143,6 +164,7 @@
                                                     MapGoToCommand="{Binding Controls.PrepareMapGoToCommand}"
                                                     MapSetHeadingCommand="{Binding Controls.PrepareMapSetHeadingCommand}"
                                                     MapAssembleCommand="{Binding Controls.PrepareMapAssembleCommand}"
+                                                    MapPointGimbalCommand="{Binding Controls.PrepareMapPointGimbalCommand}"
                                                     MapOperatorControls="{Binding Controls}"
                                                     MapUnitsPanel="{Binding Units}"
                                                     UserPannedCommand="{Binding Map.UserPannedCommand}"
@@ -224,15 +246,9 @@
                       Classes="panel"
                        IsVisible="{Binding Map.HasGeometryDraft}">
                 <StackPanel Spacing="6">
-                  <Grid ColumnDefinitions="*,34" ColumnSpacing="6" IsVisible="{Binding Map.GeometryRenameVisible}">
-                    <TextBox PlaceholderText="{loc:Loc Key=GeometryName}"
-                             Text="{Binding Map.GeometryRenameText, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Grid.Column="1" Classes="primary" Width="34" Height="30" Padding="0"
-                            Content="&#x2713;"
-                            FontSize="17"
-                            ToolTip.Tip="{loc:Loc Key=GeometryRename}"
-                            Command="{Binding Map.ApplyGeometryRenameCommand}" />
-                  </Grid>
+                  <TextBox PlaceholderText="{loc:Loc Key=GeometryName}"
+                           IsVisible="{Binding Map.HasGeometryDraft}"
+                           Text="{Binding Map.GeometryNameText, UpdateSourceTrigger=PropertyChanged}" />
                   <WrapPanel Orientation="Horizontal">
                     <Button Classes="toolbarButton" Width="34" Height="30" Padding="0"
                             Margin="0,0,5,0"
@@ -258,12 +274,6 @@
                             FontSize="17"
                             ToolTip.Tip="{loc:Loc Key=GeometrySave}"
                             Command="{Binding Map.CompleteGeometryEditCommand}" />
-                    <Button Classes="toolbarButton" Width="34" Height="30" Padding="0"
-                             Margin="0,0,5,0"
-                              Content="&#x270e;"
-                             FontSize="17"
-                             ToolTip.Tip="{loc:Loc Key=GeometryRename}"
-                             Command="{Binding Map.BeginGeometryRenameCommand}" />
                        <Button Classes="danger" Width="34" Height="30" Padding="0"
                               Margin="0,0,5,0"
                                Content="&#x232b;"
@@ -287,7 +297,7 @@
                 IsVisible="{Binding VideoVisible}">
           <Grid RowDefinitions="Auto,*,Auto,Auto">
             <Border Classes="surfaceHeader">
-              <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+              <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                   <StackPanel Spacing="2">
                     <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=VideoCamera}" />
@@ -336,6 +346,71 @@
                           AutomationProperties.Name="Close stream"
                           Command="{Binding Camera.CloseStreamCommand}" />
                 </Grid>
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6">
+                    <Button Classes="primary"
+                            Content="{loc:Loc Key=CameraCapturePhoto}"
+                            ToolTip.Tip="{Binding Camera.CapturePhotoTooltip}"
+                            AutomationProperties.Name="{loc:Loc Key=CameraCapturePhoto}"
+                            Command="{Binding Camera.CapturePhotoCommand}" />
+                    <Button Content="{loc:Loc Key=CameraStartVideo}"
+                            ToolTip.Tip="{Binding Camera.StartRemoteVideoTooltip}"
+                            AutomationProperties.Name="{loc:Loc Key=CameraStartVideo}"
+                            Command="{Binding Camera.StartRemoteVideoCommand}" />
+                    <Button Content="{loc:Loc Key=CameraStopVideo}"
+                            ToolTip.Tip="{Binding Camera.StopRemoteVideoTooltip}"
+                            AutomationProperties.Name="{loc:Loc Key=CameraStopVideo}"
+                            Command="{Binding Camera.StopRemoteVideoCommand}" />
+                    <Button Content="{loc:Loc Key=CameraCenterGimbal}"
+                            ToolTip.Tip="{Binding Camera.CenterGimbalTooltip}"
+                            AutomationProperties.Name="{loc:Loc Key=CameraCenterGimbal}"
+                            Command="{Binding Camera.CenterGimbalCommand}" />
+                  <TextBlock Classes="muted"
+                             VerticalAlignment="Center"
+                             Text="{Binding Camera.CameraControlStatus}" />
+                </StackPanel>
+                <Border Grid.Row="3" Classes="surfaceInset" Padding="8" IsVisible="{Binding Camera.HasCameraDefinition}">
+                  <StackPanel Spacing="5">
+                    <TextBlock FontSize="10" FontWeight="SemiBold" Text="{loc:Loc Key=CameraDefinition}" />
+                    <TextBlock Classes="muted" FontSize="10" Text="{Binding Camera.CameraDefinitionSummary}" />
+                    <ItemsControl ItemsSource="{Binding Camera.CameraSettings}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:MavlinkCameraSettingRecord">
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,1">
+                            <TextBlock Text="{Binding Label}" />
+                            <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Summary}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+                <Border Grid.Row="4" Classes="surfaceInset" Padding="8" IsVisible="{Binding Controls.HasGimbalCameraSelection}">
+                  <StackPanel Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=GimbalCameraControls}" />
+                      <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Controls.GimbalCameraSupportedSummary}" ToolTip.Tip="{Binding Controls.GimbalCameraSupportedTooltip}" />
+                    </Grid>
+                    <TextBlock Classes="muted" Text="{Binding Controls.GimbalTelemetrySummary}" />
+                    <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
+                      <Button Classes="primary" Content="Queue photo" Command="{Binding Controls.PrepareCapturePhotoCommand}" />
+                      <Button Content="{Binding Controls.VideoToggleText}" Command="{Binding Controls.ToggleVideoCommand}" />
+                      <Button Content="Centre gimbal" Command="{Binding Controls.PrepareCenterGimbalCommand}" />
+                      <Button Content="Nadir gimbal" Command="{Binding Controls.PrepareNadirGimbalCommand}" />
+                    </WrapPanel>
+                    <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="5">
+                      <TextBlock VerticalAlignment="Center" Text="Pitch" />
+                      <TextBox Grid.Column="1" Text="{Binding Controls.GimbalPitchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="degrees" />
+                      <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Roll" />
+                      <TextBox Grid.Column="3" Text="{Binding Controls.GimbalRollText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="degrees" />
+                      <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="Yaw" />
+                      <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Controls.GimbalYawText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="degrees" />
+                      <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Text="Zoom" />
+                      <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Controls.GimbalZoomText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="0–100%" />
+                    </Grid>
+                    <Button HorizontalAlignment="Left" Content="Queue gimbal settings" Command="{Binding Controls.PrepareSetGimbalCommand}" />
+                    <TextBlock Classes="muted" Text="Commands are queued for operator review and execution." />
+                  </StackPanel>
+                </Border>
               </Grid>
             </Border>
 

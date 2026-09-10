@@ -117,6 +117,7 @@ public sealed class FlightMissionLibraryStore : IDisposable
             throw new InvalidDataException("Mission altitude must be between 0 and 5000 metres.");
         if (!double.IsFinite(document.CruiseSpeedMetresPerSecond) || document.CruiseSpeedMetresPerSecond is <= 0 or > 30)
             throw new InvalidDataException("Mission cruise speed must be between 0 and 30 metres per second.");
+        ValidateCameraActions(document.CameraIntent, "Mission");
         for (var index = 0; index < document.Steps.Count; index++)
         {
             var step = document.Steps[index];
@@ -129,15 +130,19 @@ public sealed class FlightMissionLibraryStore : IDisposable
                 throw new InvalidDataException("RTL must be the final step or immediately precede Land.");
             if (step.Kind == FlightMissionStepKind.Land && index != document.Steps.Count - 1)
                 throw new InvalidDataException("Land must be the final mission step.");
-            if (step.Kind is FlightMissionStepKind.PointOfInterest && step.FrozenCoordinates.Count != 1)
+            // Geometry-backed steps may be authored before a reusable geometry
+            // is chosen. They remain incomplete until the selected-step binding
+            // is set, and the compiler reports that state before upload.
+            var missingGeometry = string.IsNullOrWhiteSpace(step.SourceGeometryId) && step.FrozenCoordinates.Count == 0;
+            if (step.Kind is FlightMissionStepKind.PointOfInterest && !missingGeometry && step.FrozenCoordinates.Count != 1)
                 throw new InvalidDataException("A point-of-interest step must contain one coordinate.");
-            if (step.Kind is FlightMissionStepKind.WaypointSequence && step.FrozenCoordinates.Count < 2)
+            if (step.Kind is FlightMissionStepKind.WaypointSequence && !missingGeometry && step.FrozenCoordinates.Count < 2)
                 throw new InvalidDataException("A waypoint-sequence step must contain at least two coordinates.");
-            if (step.Kind is FlightMissionStepKind.SurveyZone && step.FrozenCoordinates.Count < 3)
+            if (step.Kind is FlightMissionStepKind.SurveyZone && !missingGeometry && step.FrozenCoordinates.Count < 3)
                 throw new InvalidDataException("A survey-zone step must contain at least three zone coordinates.");
-            if (step.Kind is FlightMissionStepKind.CorridorScan && step.FrozenCoordinates.Count < 2)
+            if (step.Kind is FlightMissionStepKind.CorridorScan && !missingGeometry && step.FrozenCoordinates.Count < 2)
                 throw new InvalidDataException("A corridor scan needs a waypoint sequence with at least two points.");
-            if (step.Kind is FlightMissionStepKind.TimedLoiter && (step.FrozenCoordinates.Count != 1 || step.LoiterDurationSeconds is not > 0 or > 3600))
+            if (step.Kind is FlightMissionStepKind.TimedLoiter && ((!missingGeometry && step.FrozenCoordinates.Count != 1) || step.LoiterDurationSeconds is not > 0 or > 3600))
                 throw new InvalidDataException("A timed loiter needs one point and a duration between 0 and 3600 seconds.");
             if (step.RelativeAltitudeMetres is { } altitude && (!double.IsFinite(altitude) || altitude is <= 0 or > 5000))
                 throw new InvalidDataException("Step altitude must be between 0 and 5000 metres.");
@@ -153,6 +158,9 @@ public sealed class FlightMissionLibraryStore : IDisposable
                  !double.IsFinite(corridor.FrontLapPercent) || corridor.FrontLapPercent is < 0 or >= 100 ||
                  !double.IsFinite(corridor.SideLapPercent) || corridor.SideLapPercent is < 0 or >= 100))
                 throw new InvalidDataException("Corridor width, spacing, turnaround, and overlap values are invalid.");
+            ValidateCameraActions(step.CameraIntent, $"Step '{step.Id}'");
+            ValidateCameraActions(step.Survey?.CameraIntent, $"Step '{step.Id}' survey");
+            ValidateCameraActions(step.Corridor?.CameraIntent, $"Step '{step.Id}' corridor");
             foreach (var point in step.FrozenCoordinates)
                 if (!double.IsFinite(point.LatitudeDegrees) || !double.IsFinite(point.LongitudeDegrees) || point.LatitudeDegrees is < -90 or > 90 || point.LongitudeDegrees is < -180 or > 180)
                     throw new InvalidDataException("A mission geometry snapshot contains invalid WGS84 coordinates.");
@@ -166,6 +174,17 @@ public sealed class FlightMissionLibraryStore : IDisposable
         if (!Enum.IsDefined(document.EndAction))
             throw new InvalidDataException("Mission end action is invalid.");
 
+    }
+
+    private static void ValidateCameraActions(FlightMissionCameraIntent? intent, string context)
+    {
+        if (intent?.Actions is null) return;
+        foreach (var action in intent.Actions)
+        {
+            var errors = action.ValidationErrors;
+            if (errors.Count > 0)
+                throw new InvalidDataException($"{context} camera action is invalid: {string.Join(" ", errors)}");
+        }
     }
 
     public void Dispose() => _gate.Dispose();

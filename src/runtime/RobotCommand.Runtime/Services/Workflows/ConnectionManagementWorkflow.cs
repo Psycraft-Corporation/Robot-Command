@@ -341,11 +341,13 @@ public sealed class UnitObservationWorkflow : IUnitObservationWorkflow, IDisposa
                 telemetry.LandedState, flightMode ?? telemetry.AdapterState, telemetry.LatitudeDegrees, telemetry.LongitudeDegrees, telemetry.AltitudeMslMetres,
                 telemetry.AltitudeAglMetres, telemetry.VelocityNorthMetresPerSecond, telemetry.VelocityEastMetresPerSecond,
                 telemetry.VelocityDownMetresPerSecond, telemetry.HeadingDegrees, telemetry.IsStale, telemetry.ObservedAt,
-                diagnostic?.BatteryRemainingPercent, diagnostic?.BatteryVoltageVolts, diagnostic?.ObservedAt),
+                telemetry.BatteryRemainingPercent, telemetry.BatteryVoltageVolts, telemetry.BatteryObservedAt,
+                telemetry.GimbalPitchDegrees, telemetry.GimbalYawDegrees, telemetry.GimbalRollDegrees,
+                telemetry.CameraZoomPercent, telemetry.CameraRecordingVideo),
             diagnostic is null ? null : new UnitDiagnosticsObservation(diagnostic.OverallStatus.ToString(), diagnostic.Summary,
                 diagnostic.ArmReadiness.ToString(), diagnostic.ArmReadinessDetail, diagnostic.NavigationReadiness.ToString(), diagnostic.NavigationReadinessDetail,
                 diagnostic.TelemetryStatus.ToString(), diagnostic.TelemetryDetail, diagnostic.Blockers.Select(item => item.Detail).ToArray(),
-                diagnostic.Warnings.Select(item => item.Detail).ToArray(), diagnostic.ObservedAt), links, new UnitActionObservation(current, queued),
+                diagnostic.Warnings.Select(item => item.Detail).ToArray(), diagnostic.ObservedAt, diagnostic.Version), links, new UnitActionObservation(current, queued),
             associatedConnections, DistanceFromOperator(telemetry), canAcceptOperatorCommands);
         if (vehicle.IsGhost)
         {

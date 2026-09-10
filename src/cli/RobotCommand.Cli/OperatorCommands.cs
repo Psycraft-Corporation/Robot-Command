@@ -61,7 +61,7 @@ internal static class OperatorCommands
             switch (command)
             {
                 case "help":
-                    reporter.Info("units [id]; commands [--unit id | --team id] [--state state]; inspect <queue-or-command-id>; queue <operation> --unit id [--unit id] | --team id [options] [--execute]; execute <queue-or-batch-id>; cancel <queue-or-batch-id> [message]; cancel-active --unit id [--unit id] | --team id; watch [--unit id] [--queue id]; status; stop");
+                    reporter.Info("units [id]; commands [--unit id | --team id] [--state state]; inspect <queue-or-command-id>; queue <operation> --unit id [--unit id] | --team id [options] [--execute]; operations include photo, start-video, stop-video, center-gimbal, nadir-gimbal, set-gimbal; execute <queue-or-batch-id>; cancel <queue-or-batch-id> [message]; cancel-active --unit id [--unit id] | --team id; watch [--unit id] [--queue id]; status; stop");
                     return true;
                 case "status":
                     reporter.Event("operator.status", new { workflow.Status, Queued = workflow.QueuedCommands.Count, Active = workflow.ActiveCommands.Count });
@@ -147,6 +147,12 @@ internal static class OperatorCommands
                 GoToAltitudeAmslMetres: Number("altitude-amsl"), GoToAcceptanceRadiusMetres: Number("acceptance") ?? 2),
             OperatorWorkflowCommandKind.ChangeAltitude => AltitudeParameters(Number),
             OperatorWorkflowCommandKind.SetHeading => HeadingParameters(Number),
+            OperatorWorkflowCommandKind.SetGimbal => new(
+                GimbalPitchDegrees: Number("pitch"),
+                GimbalYawDegrees: Number("yaw"),
+                GimbalRollDegrees: Number("roll"),
+                GimbalZoomPercent: Number("zoom"),
+                GimbalEarthFrame: string.Equals(args.Get("frame"), "earth", StringComparison.OrdinalIgnoreCase)),
             _ => OperatorWorkflowParameters.None
         };
     }
@@ -215,7 +221,13 @@ internal static class OperatorCommands
         "goto" or "go-to" => OperatorWorkflowCommandKind.GoTo,
         "altitude" or "change-altitude" => OperatorWorkflowCommandKind.ChangeAltitude,
         "heading" or "set-heading" => OperatorWorkflowCommandKind.SetHeading,
-        _ => throw new ArgumentException("Operation must be arm, disarm, takeoff, land, hold, rtl, goto, altitude, or heading.")
+        "photo" or "capture-photo" => OperatorWorkflowCommandKind.CapturePhoto,
+        "start-video" => OperatorWorkflowCommandKind.StartVideo,
+        "stop-video" => OperatorWorkflowCommandKind.StopVideo,
+        "center-gimbal" or "centre-gimbal" => OperatorWorkflowCommandKind.CenterGimbal,
+        "nadir-gimbal" => OperatorWorkflowCommandKind.NadirGimbal,
+        "set-gimbal" or "gimbal" => OperatorWorkflowCommandKind.SetGimbal,
+        _ => throw new ArgumentException("Operation must be arm, disarm, takeoff, land, hold, rtl, goto, altitude, heading, photo, start-video, stop-video, center-gimbal, nadir-gimbal, or set-gimbal.")
     };
 
 

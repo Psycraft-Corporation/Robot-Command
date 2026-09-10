@@ -36,6 +36,13 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
         if (mission.Steps.Count == 0) findings.Add(new("MISSION_EMPTY", WorkflowFindingSeverity.Blocking, "Add at least one mission step before uploading."));
         if (mission.Steps.Count > 0 && mission.Steps.All(step => step.Kind is FlightMissionStepKind.Takeoff or FlightMissionStepKind.ReturnToLaunch or FlightMissionStepKind.Land))
             findings.Add(new("MISSION_NO_NAVIGATION", WorkflowFindingSeverity.Blocking, "Add a saved PoI or waypoint sequence to the mission."));
+        var missingGeometrySteps = mission.Steps
+            .Where(step => IsNavigation(step.Kind) && step.FrozenCoordinates.Count == 0)
+            .Select(step => step.DisplayName)
+            .ToArray();
+        if (missingGeometrySteps.Length > 0)
+            findings.Add(new("MISSION_STEP_GEOMETRY_REQUIRED", WorkflowFindingSeverity.Blocking,
+                $"Select geometry for: {string.Join(", ", missingGeometrySteps)}."));
         // Mission end behavior is explicit and backend-neutral.  A mission
         // may end on its last navigation item and then apply Hold (the
         // default) or an automatically appended RTL.  Authored RTL/Land
@@ -46,8 +53,10 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
         foreach (var corridor in mission.Steps.Where(step => step.Kind == FlightMissionStepKind.CorridorScan))
             if (CorridorRoute(corridor).Count < 2)
                 findings.Add(new("MISSION_CORRIDOR_UNUSABLE", WorkflowFindingSeverity.Blocking, "The corridor route is too short or its width and spacing are invalid."));
-        if (mission.CameraIntent is not null || mission.Steps.Any(step => step.Kind == FlightMissionStepKind.CameraCaptureIntent || step.Survey?.CameraIntent is not null || step.Corridor?.CameraIntent is not null))
-            findings.Add(new("MISSION_CAMERA_INTENT_NOT_TRANSMITTED", WorkflowFindingSeverity.Warning, "Camera capture intent is retained in this mission but is not sent to PX4 yet."));
+        var hasCameraMetadata = mission.CameraIntent is not null || mission.Steps.Any(step => step.Kind == FlightMissionStepKind.CameraCaptureIntent || step.Survey?.CameraIntent is not null || step.Corridor?.CameraIntent is not null);
+        if (hasCameraMetadata && MavlinkCameraCapabilityMatrix.ActionsFor(mission).Count == 0)
+            findings.Add(new("MISSION_CAMERA_INTENT_NOT_TRANSMITTED", WorkflowFindingSeverity.Warning, "Camera capture intent is retained in this mission but is not transmitted by the current compiler."));
+        findings.AddRange(MavlinkCameraCapabilityMatrix.ValidateMissionActions(MavlinkAutopilotProfile.Px4, mission, target));
         if (target is not null)
         {
             if (!target.ProfileKey.Contains("px4", StringComparison.OrdinalIgnoreCase)) findings.Add(new("MISSION_BACKEND_UNSUPPORTED", WorkflowFindingSeverity.Blocking, "Mission execution is currently available for PX4 MAVLink multicopters only."));
@@ -61,8 +70,16 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
     }
 
     public IReadOnlyList<MavlinkMissionItem> Compile(FlightMissionDocument mission, UnitObservationSnapshot? target = null, FlightMissionTerrainProfile? terrainProfile = null)
+        => CompileForBackend(mission, target, terrainProfile, MavlinkAutopilotProfile.Px4);
+
+    internal IReadOnlyList<MavlinkMissionItem> CompileForBackend(
+        FlightMissionDocument mission,
+        UnitObservationSnapshot? target,
+        FlightMissionTerrainProfile? terrainProfile,
+        MavlinkAutopilotProfile profile)
     {
         FlightMissionLibraryStore.Validate(mission);
+        MavlinkCameraActionMissionCompiler.EnsureCanCompile(profile, mission, target);
         var takeoffLatitude = target?.Telemetry?.LatitudeDegrees;
         var takeoffLongitude = target?.Telemetry?.LongitudeDegrees;
         var homeCoordinate = takeoffLatitude is { } latitude && takeoffLongitude is { } longitude
@@ -70,10 +87,14 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
             : null;
         var output = new List<MavlinkMissionItem>();
         var lastSpeed = double.NaN;
+        var captureSequence = 0;
         FlightMissionCoordinate? lastNavigationCoordinate = null;
+        MavlinkCameraActionMissionCompiler.AppendMissionActions(output, mission.CameraIntent?.Actions ?? [], profile, ref captureSequence);
         FlightMissionStepKind? previousKind = null;
         foreach (var step in mission.Steps)
         {
+            if (IsNavigation(step.Kind) && step.FrozenCoordinates.Count == 0)
+                throw new InvalidOperationException($"Mission step '{step.DisplayName}' is missing geometry.");
             var speed = step.CruiseSpeedMetresPerSecond ?? mission.CruiseSpeedMetresPerSecond;
             if (IsNavigation(step.Kind) && !NearlyEqual(speed, lastSpeed))
             {
@@ -82,9 +103,14 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
                 lastSpeed = speed;
             }
             var altitude = step.RelativeAltitudeMetres ?? mission.RelativeAltitudeMetres;
-            var terrainAltitudes = terrainProfile?.PointsByStepId.TryGetValue(step.Id, out var profile) == true
-                ? profile
+            var terrainAltitudes = terrainProfile?.PointsByStepId.TryGetValue(step.Id, out var terrainPoints) == true
+                ? terrainPoints
                 : null;
+            MavlinkCameraActionMissionCompiler.AppendMissionActions(
+                output,
+                FlightMissionPreviewCaptureBuilder.RouteTriggerStartActions(step.Kind, StepCameraIntent(step)),
+                profile,
+                ref captureSequence);
             switch (step.Kind)
             {
                 case FlightMissionStepKind.Takeoff:
@@ -127,8 +153,6 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
                     lastNavigationCoordinate = point;
                     break;
                 case FlightMissionStepKind.CameraCaptureIntent:
-                    // Intent is preserved for future camera-capable compilers but is not
-                    // represented as a PX4 mission item in this release.
                     break;
                 case FlightMissionStepKind.ReturnToLaunch:
                     output.Add(new(checked((ushort)output.Count), MavlinkCommandIds.NavReturnToLaunch, MissionCommandFrame, 0, 0, 0));
@@ -144,6 +168,12 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
                         ToE7(landingCoordinate?.LatitudeDegrees), ToE7(landingCoordinate?.LongitudeDegrees), 0));
                     break;
             }
+            MavlinkCameraActionMissionCompiler.AppendMissionActions(output, StepCameraActions(step), profile, ref captureSequence);
+            MavlinkCameraActionMissionCompiler.AppendMissionActions(
+                output,
+                FlightMissionPreviewCaptureBuilder.RouteTriggerStopActions(step.Kind, StepCameraIntent(step)),
+                profile,
+                ref captureSequence);
             previousKind = step.Kind;
         }
         if (mission.EndAction == FlightMissionEndAction.ReturnToLaunch && previousKind is not (FlightMissionStepKind.ReturnToLaunch or FlightMissionStepKind.Land))
@@ -163,6 +193,19 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
         var speed = mission.CruiseSpeedMetresPerSecond;
         var seconds = speed > 0 ? distance / speed : 0;
         seconds += mission.Steps.Where(step => step.Kind == FlightMissionStepKind.TimedLoiter).Sum(step => step.LoiterDurationSeconds ?? 0);
+        var segments = mission.Steps
+            .Where(step => IsNavigation(step.Kind))
+            .Select(step =>
+            {
+                var coordinates = NavigationCoordinates(step);
+                var stepSpeed = step.CruiseSpeedMetresPerSecond ?? speed;
+                var duration = stepSpeed > 0 ? coordinates.Zip(coordinates.Skip(1), DistanceMetres).Sum() / stepSpeed : 0;
+                if (step.Kind == FlightMissionStepKind.TimedLoiter)
+                    duration += step.LoiterDurationSeconds ?? 0;
+                return new FlightMissionPreviewRouteSegment(step.Id, step.Kind, coordinates, duration, StepCameraIntent(step));
+            })
+            .ToArray();
+        var captureStatistics = FlightMissionPreviewCaptureBuilder.Build(segments, mission.CameraIntent, speed);
         // Validation is also used by the authoring UI before a target is
         // selected.  A target-free preview is a document/route preview, not a
         // wire compilation; compiling it would dereference the missing target
@@ -174,10 +217,17 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
         var surveys = mission.Steps.Where(step => step.Kind == FlightMissionStepKind.SurveyZone).ToArray();
         var surveyLines = surveys.Sum(step => SurveyRoute(step).Count / 2);
         var surveyArea = surveys.Sum(SurveyAreaSquareMetres);
-        return new(mission.MissionId, route, distance, seconds, items, artifact, findings, $"{route.Length} navigation points · {distance:0} m · {seconds / 60:0.0} min", null, surveyLines, surveyArea);
+        return new(mission.MissionId, route, distance, seconds, items, artifact, findings, $"{route.Length} navigation points · {distance:0} m · {seconds / 60:0.0} min", null, surveyLines, surveyArea, captureStatistics);
     }
 
     private static bool IsNavigation(FlightMissionStepKind kind) => kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter;
+
+    private static IEnumerable<FlightMissionCameraAction> StepCameraActions(FlightMissionStep step)
+        => (step.CameraIntent?.Actions ?? [])
+            .Concat(step.Survey?.CameraIntent?.Actions ?? [])
+            .Concat(step.Corridor?.CameraIntent?.Actions ?? []);
+    private static FlightMissionCameraIntent? StepCameraIntent(FlightMissionStep step)
+        => step.CameraIntent ?? step.Survey?.CameraIntent ?? step.Corridor?.CameraIntent;
     private static bool NearlyEqual(double left, double right) => double.IsFinite(left) && double.IsFinite(right) && Math.Abs(left - right) < 0.001;
     private static double DistanceMetres(FlightMissionCoordinate a, FlightMissionCoordinate b)
     {
@@ -370,6 +420,7 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
     public FlightMissionDocument Decompile(string name, IReadOnlyList<MavlinkMissionItem> items, DateTimeOffset now)
     {
         var steps = new List<FlightMissionStep>();
+        var missionCameraActions = new List<FlightMissionCameraAction>();
         var defaultSpeed = 5d;
         var activeSpeed = defaultSpeed;
         var navigationSeen = false;
@@ -379,6 +430,31 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
                 throw new NotSupportedException($"Vehicle mission item {item.Command} at sequence {item.Sequence} uses unsupported frame {item.Frame}.");
             switch (item.Command)
             {
+                case MavlinkCommandIds.ImageStartCapture:
+                case MavlinkCommandIds.ImageStopCapture:
+                case MavlinkCommandIds.DoSetCameraTriggerDistance:
+                case MavlinkCommandIds.VideoStartCapture:
+                case MavlinkCommandIds.VideoStopCapture:
+                case MavlinkCommandIds.SetCameraMode:
+                case MavlinkCommandIds.DoSetRoiLocation:
+                case MavlinkCommandIds.DoSetRoi:
+                case MavlinkCommandIds.DoGimbalManagerPitchYaw:
+                case MavlinkCommandIds.DoMountControl:
+                    if (!MavlinkCameraActionMissionCompiler.TryDecompile(item, out var cameraAction) || cameraAction is null)
+                        throw new NotSupportedException($"Vehicle camera mission item {item.Command} at sequence {item.Sequence} has invalid parameters.");
+                    if (!navigationSeen || steps.Count == 0)
+                    {
+                        missionCameraActions.Add(cameraAction);
+                    }
+                    else
+                    {
+                        var step = steps[^1];
+                        steps[^1] = step with
+                        {
+                            CameraIntent = AppendCameraAction(step.CameraIntent, cameraAction)
+                        };
+                    }
+                    break;
                 case MavlinkCommandIds.DoChangeSpeed:
                     if (!float.IsFinite(item.Param2) || item.Param2 <= 0)
                         throw new NotSupportedException("PX4 returned an invalid mission speed constraint.");
@@ -412,8 +488,20 @@ public sealed class Px4FlightMissionCompiler : IFlightMissionCompiler
             }
         }
         var altitude = items.FirstOrDefault(item => item.Command is NavWaypoint or MavlinkCommandIds.NavTakeoff)?.AltitudeMetres ?? 20;
-        return new(FlightMissionDocument.CurrentSchemaVersion, $"mission-{Guid.NewGuid():N}", name, altitude, steps, now, now, CruiseSpeedMetresPerSecond: defaultSpeed);
+        return new(FlightMissionDocument.CurrentSchemaVersion, $"mission-{Guid.NewGuid():N}", name, altitude, steps, now, now,
+            CruiseSpeedMetresPerSecond: defaultSpeed,
+            CameraIntent: missionCameraActions.Count == 0
+                ? null
+                : new FlightMissionCameraIntent(Mode: "Actions", Actions: missionCameraActions));
     }
+
+    private static FlightMissionCameraIntent AppendCameraAction(
+        FlightMissionCameraIntent? intent,
+        FlightMissionCameraAction action)
+        => (intent ?? new FlightMissionCameraIntent(Mode: "Actions")) with
+        {
+            Actions = (intent?.Actions ?? []).Append(action).ToArray()
+        };
 }
 
 /// <summary>
@@ -436,6 +524,7 @@ public sealed class ArduPilotFlightMissionCompiler : IFlightMissionCompiler
     public IReadOnlyList<WorkflowFinding> Validate(FlightMissionDocument mission, UnitObservationSnapshot? target)
     {
         var findings = _shared.Validate(mission, null).ToList();
+        findings.AddRange(MavlinkCameraCapabilityMatrix.ValidateMissionActions(MavlinkAutopilotProfile.ArduPilot, mission, target));
         if (target is null) return findings;
 
         if (!SupportsTarget(target))
@@ -468,7 +557,7 @@ public sealed class ArduPilotFlightMissionCompiler : IFlightMissionCompiler
         // commands where yaw is not used. PX4 accepts NaN as the MAVLink
         // "ignore yaw" value, so keep the shared compiler unchanged and
         // normalize only the ArduPilot wire representation.
-        => _shared.Compile(mission, target, terrainProfile)
+        => _shared.CompileForBackend(mission, target, terrainProfile, MavlinkAutopilotProfile.ArduPilot)
             .Select(item => float.IsFinite(item.Param4) ? item : item with { Param4 = 0f })
             .ToArray();
 

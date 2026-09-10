@@ -22,4 +22,19 @@ public static class MapCommandMath
                 Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(deltaLongitude);
         return (Math.Atan2(y, x) * 180d / Math.PI + 360d) % 360d;
     }
+
+    public static double RelativeBearingDegrees(
+        double? originLatitude,
+        double? originLongitude,
+        double? vehicleHeadingDegrees,
+        double targetLatitude,
+        double targetLongitude)
+    {
+        var bearing = BearingDegrees(originLatitude, originLongitude, targetLatitude, targetLongitude);
+        var heading = vehicleHeadingDegrees is double value && double.IsFinite(value) ? value : 0;
+        return NormalizeSigned(bearing - heading);
+    }
+
+    private static double NormalizeSigned(double degrees)
+        => (degrees + 540d) % 360d - 180d;
 }

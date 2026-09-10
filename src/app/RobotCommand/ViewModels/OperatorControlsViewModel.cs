@@ -4,10 +4,12 @@ using System.Globalization;
 using System.Windows.Input;
 using RobotCommand.Core;
 using RobotCommand.Infrastructure;
+using RobotCommand.Localization;
 using RobotCommand.Models;
 using RobotCommand.Services;
 using RobotCommand.Services.Maps;
 using RobotCommand.Services.Operations;
+using RobotCommand.Services.Terrain;
 using RobotCommand.State;
 
 namespace RobotCommand.ViewModels;
@@ -47,6 +49,7 @@ public sealed class OperatorControlsViewModel : ObservableObject
     private bool _isRejectedCommandExpanded;
     private readonly IUnitSettingsService? _unitSettings;
     private readonly IUiDispatcher? _dispatcher;
+    private readonly ITerrainElevationService? _terrain;
 
     public OperatorControlsViewModel(
         IOperatorCommandWorkflow workflow,
@@ -58,7 +61,8 @@ public sealed class OperatorControlsViewModel : ObservableObject
         IEnumerable<IFormationProvider>? formationProviders = null,
         IUnitSettingsService? unitSettings = null,
         IUiDispatcher? dispatcher = null,
-        IOperatorTargetScopeWorkflow? targetScope = null)
+        IOperatorTargetScopeWorkflow? targetScope = null,
+        ITerrainElevationService? terrain = null)
     {
         _workflow = workflow;
         _selection = selection;
@@ -69,6 +73,7 @@ public sealed class OperatorControlsViewModel : ObservableObject
         _formationProviders = (formationProviders ?? []).ToArray();
         _unitSettings = unitSettings;
         _dispatcher = dispatcher;
+        _terrain = terrain;
         if (_unitSettings is not null) _unitSettings.Changed += OnUnitSettingsChanged;
         _takeoffAltitudeText = FormatDisplayValue(TakeoffAltitudeDisplay);
         _altitudeTargetText = AltitudeTargetDisplay is double altitude ? FormatDisplayValue(altitude) : "";
@@ -96,6 +101,13 @@ public sealed class OperatorControlsViewModel : ObservableObject
         PrepareRecoverCommand = CreatePrepareCommand(OperatorCommandKind.Recover);
         PrepareChangeAltitudeCommand = CreatePrepareCommand(OperatorCommandKind.ChangeAltitude);
         PrepareSetHeadingCommand = CreatePrepareCommand(OperatorCommandKind.SetHeading);
+        PrepareCapturePhotoCommand = CreatePrepareCommand(OperatorCommandKind.CapturePhoto);
+        PrepareStartVideoCommand = CreatePrepareCommand(OperatorCommandKind.StartVideo);
+        PrepareStopVideoCommand = CreatePrepareCommand(OperatorCommandKind.StopVideo);
+        PrepareCenterGimbalCommand = CreatePrepareCommand(OperatorCommandKind.CenterGimbal);
+        PrepareNadirGimbalCommand = CreatePrepareCommand(OperatorCommandKind.NadirGimbal);
+        PrepareSetGimbalCommand = CreatePrepareCommand(OperatorCommandKind.SetGimbal);
+        ToggleVideoCommand = new AsyncRelayCommand(ToggleVideoAsync, () => CanPrepareCommand(IsVideoRecording ? OperatorCommandKind.StopVideo : OperatorCommandKind.StartVideo));
         PrepareMapGoToCommand = new RelayCommand(
             parameter => _ = PrepareMapCommandAsync(OperatorCommandKind.GoTo, parameter),
             parameter => HasVehicleSelection && parameter is MapCommandTarget);
@@ -105,6 +117,9 @@ public sealed class OperatorControlsViewModel : ObservableObject
         PrepareMapAssembleCommand = new RelayCommand(
             parameter => _ = PrepareMapAssemblyCommandAsync(parameter),
             parameter => HasMultiUnitSelection && parameter is MapAssemblyRequest);
+        PrepareMapPointGimbalCommand = new RelayCommand(
+            parameter => _ = PrepareMapPointGimbalAsync(parameter),
+            parameter => HasGimbalCameraSelection && parameter is MapCommandTarget);
         _executePendingCommand = new AsyncRelayCommand(ExecutePendingAsync, CanExecutePending);
         ExecutePendingCommand = _executePendingCommand;
         ConfirmAirborneDisarmCommand = new AsyncRelayCommand(
@@ -147,9 +162,17 @@ public sealed class OperatorControlsViewModel : ObservableObject
     public ICommand PrepareRecoverCommand { get; }
     public ICommand PrepareChangeAltitudeCommand { get; }
     public ICommand PrepareSetHeadingCommand { get; }
+    public ICommand PrepareCapturePhotoCommand { get; }
+    public ICommand PrepareStartVideoCommand { get; }
+    public ICommand PrepareStopVideoCommand { get; }
+    public ICommand PrepareCenterGimbalCommand { get; }
+    public ICommand PrepareNadirGimbalCommand { get; }
+    public ICommand PrepareSetGimbalCommand { get; }
+    public ICommand ToggleVideoCommand { get; }
     public ICommand PrepareMapGoToCommand { get; }
     public ICommand PrepareMapSetHeadingCommand { get; }
     public ICommand PrepareMapAssembleCommand { get; }
+    public ICommand PrepareMapPointGimbalCommand { get; }
     public ICommand ExecutePendingCommand { get; }
     public ICommand ConfirmAirborneDisarmCommand { get; }
     public ICommand CancelAirborneDisarmCommand { get; }
@@ -385,6 +408,65 @@ public sealed class OperatorControlsViewModel : ObservableObject
 
     public int SelectedUnitCount => TargetUnitIds.Count;
     public string SelectedUnitText => $"{SelectedUnitCount} units";
+
+    public int GimbalCameraSupportedCount => SelectedCommandVehicleIds.Count(IsGimbalCameraSupported);
+
+    public bool HasGimbalCameraSelection => GimbalCameraSupportedCount > 0;
+
+    public string GimbalCameraSupportedSummary
+        => HasMultiUnitSelection
+            ? string.Format(
+                CultureInfo.CurrentCulture,
+                LocalizationService.Current.Get("GimbalCameraAvailableCount"),
+                GimbalCameraSupportedCount,
+                SelectedUnitCount)
+            : string.Empty;
+
+    public string GimbalCameraSupportedTooltip
+        => string.Join(Environment.NewLine,
+            SelectedCommandVehicleIds
+                .Where(IsGimbalCameraSupported)
+                .Select(id => _vehicles.TryGet(id, out var vehicle) && vehicle is not null ? vehicle.Name : id));
+
+    public string GimbalPitchText { get; set; } = "0";
+    public string GimbalRollText { get; set; } = "0";
+    public string GimbalYawText { get; set; } = "0";
+    public string GimbalZoomText { get; set; } = "0";
+
+    public string GimbalTelemetrySummary
+    {
+        get
+        {
+            var telemetry = _selectedVehicleId is null ? null : LatestTelemetry(_selectedVehicleId);
+            if (telemetry is null)
+                return "Telemetry: not reported";
+            var pitch = FormatAngle(telemetry.GimbalPitchDegrees);
+            var yaw = FormatAngle(telemetry.GimbalYawDegrees);
+            var roll = FormatAngle(telemetry.GimbalRollDegrees);
+            var zoom = telemetry.CameraZoomPercent is { } value ? $"{value:0.#}%" : "—";
+            var recording = telemetry.CameraRecordingVideo == true ? " · Recording" :
+                telemetry.CameraRecordingVideo == false ? " · Not recording" : string.Empty;
+            return $"Pitch {pitch} · Yaw {yaw} · Roll {roll} · Zoom {zoom}{recording}";
+        }
+    }
+
+    public string VideoToggleText
+        => LatestTelemetry(_selectedVehicleId ?? string.Empty)?.CameraRecordingVideo == true
+            ? "Queue stop video"
+            : "Queue start video";
+
+    private bool IsVideoRecording
+        => LatestTelemetry(_selectedVehicleId ?? string.Empty)?.CameraRecordingVideo == true;
+
+    private static string FormatAngle(double? value)
+        => value is { } angle && double.IsFinite(angle) ? $"{angle:0.#}°" : "—";
+
+    private bool IsGimbalCameraSupported(string vehicleId)
+        => _vehicles.TryGet(vehicleId, out var vehicle) && vehicle is not null &&
+           (vehicle.CapabilityKeys ?? []).Any(key =>
+               key.Equals("gimbal", StringComparison.OrdinalIgnoreCase) ||
+               key.StartsWith("camera_", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("camera", StringComparison.OrdinalIgnoreCase));
 
     private double _takeoffAltitudeAglMetres = 5;
     public double TakeoffAltitudeAglMetres
@@ -766,6 +848,12 @@ public sealed class OperatorControlsViewModel : ObservableObject
         return QueueAsync(command, ParametersFor(command), cancellationToken);
     }
 
+    private Task ToggleVideoAsync(CancellationToken cancellationToken)
+        => QueueAsync(
+            IsVideoRecording ? OperatorCommandKind.StopVideo : OperatorCommandKind.StartVideo,
+            OperatorCommandParameters.None,
+            cancellationToken);
+
     private void ClearRejectedCommand()
     {
         IsRejectedCommandExpanded = false;
@@ -872,8 +960,19 @@ public sealed class OperatorControlsViewModel : ObservableObject
                 => "Enter a heading in degrees.",
             OperatorCommandKind.GoTo when string.IsNullOrWhiteSpace(GoToLatitudeText) || string.IsNullOrWhiteSpace(GoToLongitudeText)
                 => "Enter both latitude and longitude before selecting Go to.",
+            OperatorCommandKind.SetGimbal when ValidateGimbalForm(out var gimbalError) => gimbalError,
             _ => ""
         };
+        return error.Length > 0;
+    }
+
+    private bool ValidateGimbalForm(out string error)
+    {
+        error = ValidateNumber(GimbalPitchText, -90, 90, "Enter a valid gimbal pitch.", "Gimbal pitch must be between -90° and 90°.")
+            ?? ValidateNumber(GimbalRollText, -360, 360, "Enter a valid gimbal roll.", "Gimbal roll must be between -360° and 360°.")
+            ?? ValidateNumber(GimbalYawText, -360, 360, "Enter a valid gimbal yaw.", "Gimbal yaw must be between -360° and 360°.")
+            ?? ValidateNumber(GimbalZoomText, 0, 100, "Enter a valid camera zoom.", "Camera zoom must be between 0 and 100%.")
+            ?? "";
         return error.Length > 0;
     }
 
@@ -937,10 +1036,21 @@ public sealed class OperatorControlsViewModel : ObservableObject
             OperatorCommandKind.Land or
             OperatorCommandKind.Hold or
             OperatorCommandKind.ChangeAltitude or
-            OperatorCommandKind.SetHeading;
+            OperatorCommandKind.SetHeading or
+            OperatorCommandKind.CapturePhoto or
+            OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or
+            OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or
+            OperatorCommandKind.SetGimbal;
+
+    private static bool IsCameraCommand(OperatorCommandKind command)
+        => command is OperatorCommandKind.CapturePhoto or OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal;
 
     private bool CanPrepareCommand(OperatorCommandKind command)
-        => HasCommandSelection &&
+        => HasCommandSelection && (!IsCameraCommand(command) || HasGimbalCameraSelection) &&
            (SelectedCommandTargetCount == 1 || SupportsMultiUnitCommand(command));
 
     private OperatorCommandParameters ParametersFor(OperatorCommandKind command)
@@ -958,8 +1068,16 @@ public sealed class OperatorControlsViewModel : ObservableObject
             OperatorCommandKind.SetHeading => SelectedHeadingTargetKind == OperatorHeadingTargetKind.RelativeYaw
                 ? OperatorCommandParameters.RelativeYaw(HeadingTargetDegrees)
                 : OperatorCommandParameters.AbsoluteHeading(HeadingTargetDegrees),
+            OperatorCommandKind.SetGimbal => new OperatorCommandParameters(
+                GimbalPitchDegrees: ParseOptional(GimbalPitchText),
+                GimbalYawDegrees: ParseOptional(GimbalYawText),
+                GimbalRollDegrees: ParseOptional(GimbalRollText),
+                GimbalZoomPercent: ParseOptional(GimbalZoomText)),
             _ => OperatorCommandParameters.None
         };
+
+    private static double? ParseOptional(string? text)
+        => TryParseFinite(text, out var value) ? value : null;
 
     private async Task PrepareMapCommandAsync(OperatorCommandKind command, object? parameter)
     {
@@ -989,6 +1107,103 @@ public sealed class OperatorControlsViewModel : ObservableObject
         {
             IsPreparingMapCommand = false;
         }
+    }
+
+    private async Task PrepareMapPointGimbalAsync(object? parameter)
+    {
+        if (parameter is not MapCommandTarget target || !HasGimbalCameraSelection)
+            return;
+
+        IsPreparingMapCommand = true;
+        try
+        {
+            // A single selected vehicle can be represented by the legacy
+            // current-selection field while the selected-id list is still
+            // empty. Use the same target fallback as the other map commands;
+            // otherwise CanExecute succeeds but no gimbal command is queued,
+            // so the confirmation menu is immediately dismissed.
+            var selectedIds = TargetUnitIds.Count > 0
+                ? TargetUnitIds
+                : _selectedVehicleId is null ? [] : [_selectedVehicleId];
+            var targetIds = selectedIds.Where(IsGimbalCameraSupported).ToArray();
+            if (targetIds.Length == 0)
+            {
+                StatusMessage = "No selected unit reports a gimbal or camera.";
+                return;
+            }
+
+            double? targetElevation = null;
+            if (_terrain is not null)
+            {
+                try
+                {
+                    var result = await _terrain.GetElevationAsync(
+                        target.LatitudeDegrees,
+                        target.LongitudeDegrees,
+                        new TerrainQueryOptions(AllowStale: true),
+                        CancellationToken.None);
+                    if (result.IsSuccess && result.Sample?.ElevationMetres is { } elevation && double.IsFinite(elevation))
+                        targetElevation = elevation;
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Terrain unavailable; using flat-surface gimbal pointing. ({ex.Message})";
+                }
+            }
+
+            var parameters = new Dictionary<string, OperatorCommandParameters>(StringComparer.Ordinal);
+            foreach (var id in targetIds)
+            {
+                var telemetry = LatestTelemetry(id);
+                if (telemetry?.LatitudeDegrees is not { } latitude || telemetry.LongitudeDegrees is not { } longitude ||
+                    telemetry.AltitudeMslMetres is not { } altitude ||
+                    !double.IsFinite(latitude) || !double.IsFinite(longitude) || !double.IsFinite(altitude))
+                    continue;
+
+                var horizontalDistance = HorizontalDistanceMetres(latitude, longitude, target.LatitudeDegrees, target.LongitudeDegrees);
+                var surfaceAltitude = targetElevation ?? altitude;
+                var pitch = Math.Atan2(surfaceAltitude - altitude, Math.Max(horizontalDistance, 0.01)) * 180d / Math.PI;
+                var hasHeading = telemetry.HeadingDegrees is { } heading && double.IsFinite(heading);
+                parameters[id] = new OperatorCommandParameters(
+                    GimbalPitchDegrees: Math.Clamp(pitch, -90, 90),
+                    GimbalYawDegrees: hasHeading
+                        ? MapCommandMath.RelativeBearingDegrees(
+                            latitude,
+                            longitude,
+                            telemetry.HeadingDegrees,
+                            target.LatitudeDegrees,
+                            target.LongitudeDegrees)
+                        : MapCommandMath.BearingDegrees(
+                            latitude,
+                            longitude,
+                            target.LatitudeDegrees,
+                            target.LongitudeDegrees),
+                    GimbalEarthFrame: !hasHeading);
+            }
+
+            if (parameters.Count == 0)
+            {
+                StatusMessage = "Point gimbal here needs current position and altitude telemetry.";
+                return;
+            }
+
+            await QueueAsync(OperatorCommandKind.SetGimbal, parameters, "Point gimbal at map location", CancellationToken.None);
+            if (targetElevation is null)
+                StatusMessage = "Gimbal commands queued using a flat-surface elevation fallback.";
+        }
+        finally
+        {
+            IsPreparingMapCommand = false;
+        }
+    }
+
+    private static double HorizontalDistanceMetres(double originLatitude, double originLongitude, double targetLatitude, double targetLongitude)
+    {
+        const double earthRadiusMetres = 6_371_000;
+        var dLatitude = (targetLatitude - originLatitude) * Math.PI / 180d;
+        var dLongitude = (targetLongitude - originLongitude) * Math.PI / 180d;
+        var meanLatitude = (originLatitude + targetLatitude) * Math.PI / 360d;
+        return earthRadiusMetres * Math.Sqrt(Math.Pow(dLatitude, 2) + Math.Pow(dLongitude * Math.Cos(meanLatitude), 2));
     }
 
     private async Task PrepareMapAssemblyCommandAsync(object? parameter)
@@ -1044,12 +1259,18 @@ public sealed class OperatorControlsViewModel : ObservableObject
         CancellationToken cancellationToken)
         => await QueueAsync(
             command,
-            (TargetUnitIds.Count > 0
-                ? TargetUnitIds
-                : _selectedVehicleId is null ? [] : [_selectedVehicleId])
+            TargetIdsFor(command)
             .ToDictionary(id => id, _ => parameters, StringComparer.Ordinal),
              null,
              cancellationToken);
+
+    private IReadOnlyList<string> TargetIdsFor(OperatorCommandKind command)
+    {
+        var ids = TargetUnitIds.Count > 0
+            ? TargetUnitIds
+            : _selectedVehicleId is null ? [] : [_selectedVehicleId];
+        return IsCameraCommand(command) ? ids.Where(IsGimbalCameraSupported).ToArray() : ids;
+    }
 
     private async Task QueueAsync(
         OperatorCommandKind command,
@@ -1403,6 +1624,12 @@ public sealed class OperatorControlsViewModel : ObservableObject
         OnPropertyChanged(nameof(HasMultiUnitSelection));
         OnPropertyChanged(nameof(SelectedUnitCount));
         OnPropertyChanged(nameof(SelectedUnitText));
+        OnPropertyChanged(nameof(GimbalCameraSupportedCount));
+        OnPropertyChanged(nameof(HasGimbalCameraSelection));
+        OnPropertyChanged(nameof(GimbalCameraSupportedSummary));
+        OnPropertyChanged(nameof(GimbalCameraSupportedTooltip));
+        OnPropertyChanged(nameof(GimbalTelemetrySummary));
+        OnPropertyChanged(nameof(VideoToggleText));
         OnPropertyChanged(nameof(SelectedQueuedAction));
         OnPropertyChanged(nameof(SelectedQueuedAvailability));
         RefreshSelectedQueueProjection();
@@ -1502,7 +1729,9 @@ public sealed class OperatorControlsViewModel : ObservableObject
         parameters.AltitudeTargetKind is null ? null : (OperatorWorkflowAltitudeTargetKind)parameters.AltitudeTargetKind.Value,
         parameters.AltitudeAmslMetres, parameters.AltitudeAglMetres, parameters.AltitudeRelativeDeltaMetres,
         parameters.HeadingTargetKind is null ? null : (OperatorWorkflowHeadingTargetKind)parameters.HeadingTargetKind.Value,
-        parameters.HeadingDegrees, parameters.RelativeYawDegrees, parameters.AirborneDisarmConfirmed);
+        parameters.HeadingDegrees, parameters.RelativeYawDegrees, parameters.AirborneDisarmConfirmed,
+        parameters.GimbalPitchDegrees, parameters.GimbalYawDegrees, parameters.GimbalRollDegrees,
+        parameters.GimbalZoomPercent, parameters.GimbalEarthFrame);
 
     private static OperatorCommandParameters FromWorkflow(OperatorWorkflowParameters parameters) => new(
         parameters.TakeoffAltitudeAglMetres,
@@ -1513,7 +1742,9 @@ public sealed class OperatorControlsViewModel : ObservableObject
         parameters.AltitudeTargetKind is null ? null : (OperatorAltitudeTargetKind)parameters.AltitudeTargetKind.Value,
         parameters.AltitudeAmslMetres, parameters.AltitudeAglMetres, parameters.AltitudeRelativeDeltaMetres,
         parameters.HeadingTargetKind is null ? null : (OperatorHeadingTargetKind)parameters.HeadingTargetKind.Value,
-        parameters.HeadingDegrees, parameters.RelativeYawDegrees, parameters.AirborneDisarmConfirmed);
+        parameters.HeadingDegrees, parameters.RelativeYawDegrees, parameters.AirborneDisarmConfirmed,
+        parameters.GimbalPitchDegrees, parameters.GimbalYawDegrees, parameters.GimbalRollDegrees,
+        parameters.GimbalZoomPercent, parameters.GimbalEarthFrame);
 
     private void RaiseCommandStates()
     {
@@ -1533,6 +1764,13 @@ public sealed class OperatorControlsViewModel : ObservableObject
             PrepareRecoverCommand,
             PrepareChangeAltitudeCommand,
             PrepareSetHeadingCommand,
+            PrepareCapturePhotoCommand,
+            PrepareStartVideoCommand,
+            PrepareStopVideoCommand,
+            PrepareCenterGimbalCommand,
+            PrepareNadirGimbalCommand,
+            PrepareSetGimbalCommand,
+            ToggleVideoCommand,
             PrepareMapGoToCommand,
             PrepareMapSetHeadingCommand,
             PrepareMapAssembleCommand,
@@ -1546,5 +1784,6 @@ public sealed class OperatorControlsViewModel : ObservableObject
             command.RaiseCanExecuteChanged();
         }
         (PrepareMapAssembleCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (PrepareMapPointGimbalCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 }

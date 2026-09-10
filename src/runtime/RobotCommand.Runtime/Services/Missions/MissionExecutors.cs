@@ -26,6 +26,9 @@ public interface IFlightMissionExecutor
 
 public sealed class Px4MissionExecutor(IMavlinkConnectionRegistry connections) : IFlightMissionExecutor
 {
+    // MAV_MISSION_STATE_COMPLETE from common.xml.  Older firmware may omit
+    // mission_state, so the final-item/landed checks remain the fallback.
+    private const byte MissionStateComplete = 5;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<(string Connection, string Vehicle), UploadedMission> _uploadedMissions = new();
     public string ExecutorKind => "PX4 MAVLink";
     public bool Supports(UnitObservationSnapshot target) =>
@@ -37,7 +40,7 @@ public sealed class Px4MissionExecutor(IMavlinkConnectionRegistry connections) :
         if (wireItems is null) return new(false, "PX4 mission compilation produced no MAVLink items.", "PX4_ITEMS_MISSING");
         var client = Client(connectionId);
         var result = await client.UploadMissionAsync(vehicleId, wireItems, cancellationToken);
-        if (result.Succeeded) _uploadedMissions[(connectionId, vehicleId)] = new(wireItems);
+        if (result.Succeeded) _uploadedMissions[(connectionId, vehicleId)] = new(wireItems, DateTimeOffset.UtcNow);
         return new(result.Succeeded, result.Summary, result.Succeeded ? null : "PX4_UPLOAD_FAILED");
     }
     public async Task<FlightMissionExecutorResult> StartAsync(string connectionId, string vehicleId, CancellationToken cancellationToken = default)
@@ -82,11 +85,33 @@ public sealed class Px4MissionExecutor(IMavlinkConnectionRegistry connections) :
         var finalLandingObserved = !missionState.IsArmed && string.Equals(missionState.LandedState, "Landed", StringComparison.OrdinalIgnoreCase);
         var finalEndFinished = !uploaded.FinalItemIsLand && !uploaded.FinalItemIsRtl ||
             ((uploaded.FinalItemIsLand || uploaded.FinalItemIsRtl) && finalLandingObserved);
-        var state = finalItemReached && finalEndFinished
+        var missionFinished = missionState.MissionState == MissionStateComplete;
+        var mode = missionState.Mode ?? string.Empty;
+        var state = (finalItemReached || missionFinished) && finalEndFinished
             ? FlightMissionExecutionState.Completed
-            : FlightMissionExecutionState.Running;
+            : mode.Equals("Hold", StringComparison.OrdinalIgnoreCase)
+                ? FlightMissionExecutionState.Paused
+                : mode.Equals("Mission", StringComparison.OrdinalIgnoreCase) || mode.Equals("Auto", StringComparison.OrdinalIgnoreCase)
+                    ? FlightMissionExecutionState.Running
+                    : FlightMissionExecutionState.Interrupted;
+        var failsafe = missionState.RecentFailsafeMessage;
+        if (state != FlightMissionExecutionState.Completed &&
+            uploaded.UploadedAt is { } uploadedAt &&
+            failsafe is not null &&
+            failsafe.Timestamp >= uploadedAt)
+        {
+            state = FlightMissionExecutionState.Failsafe;
+        }
         var postLanding = state == FlightMissionExecutionState.Completed && uploaded.FinalItemIsLand && finalEndFinished;
-        progress = new(state, index, itemCount, state == FlightMissionExecutionState.Completed ? "PX4 mission completed; vehicle is being held safely." : "PX4 mission progress", UpdatedStep(index), PostLandingDecisionAvailable: postLanding, ResumeItemIndex: postLanding ? FindResumeIndex(uploaded.Items) : null);
+        var summary = state switch
+        {
+            FlightMissionExecutionState.Completed => "PX4 mission completed; vehicle is being held safely.",
+            FlightMissionExecutionState.Paused => "PX4 mission paused in Hold.",
+            FlightMissionExecutionState.Running => "PX4 mission progress",
+            FlightMissionExecutionState.Failsafe => $"PX4 mission entered failsafe: {failsafe?.Text ?? "The vehicle reported a failsafe."}",
+            _ => $"PX4 mission interrupted because the vehicle is in {(string.IsNullOrWhiteSpace(mode) ? "an unknown mode" : mode)}."
+        };
+        progress = new(state, index, itemCount, summary, UpdatedStep(index), PostLandingDecisionAvailable: postLanding, ResumeItemIndex: postLanding ? FindResumeIndex(uploaded.Items) : null);
         return true;
         string? UpdatedStep(int? _) => null;
     }
@@ -107,7 +132,7 @@ public sealed class Px4MissionExecutor(IMavlinkConnectionRegistry connections) :
             ? client
             : throw new InvalidOperationException("The selected PX4 MAVLink connection is unavailable.");
 
-    private sealed record UploadedMission(IReadOnlyList<MavlinkMissionItem> Items)
+    private sealed record UploadedMission(IReadOnlyList<MavlinkMissionItem> Items, DateTimeOffset? UploadedAt = null)
     {
         public bool FinalItemIsLand => Items.Count > 0 && Items[^1].Command == MavlinkCommandIds.NavLand;
         public bool FinalItemIsRtl => Items.Count > 0 && Items[^1].Command == MavlinkCommandIds.NavReturnToLaunch;
@@ -141,6 +166,7 @@ public sealed class GhostMissionExecutor(IGhostUnitService ghosts, IFormationLoc
 
 public sealed class ArduPilotMissionExecutor(IMavlinkConnectionRegistry connections) : IFlightMissionExecutor
 {
+    private const byte MissionStateComplete = 5;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<(string Connection, string Vehicle), UploadedMission> _uploadedMissions = new();
 
     public string ExecutorKind => "ArduPilot MAVLink";
@@ -155,7 +181,7 @@ public sealed class ArduPilotMissionExecutor(IMavlinkConnectionRegistry connecti
             return new(false, "ArduPilot mission compilation produced no MAVLink items.", "ARDUPILOT_ITEMS_MISSING");
         var result = await Client(connectionId).UploadMissionAsync(vehicleId, wireItems, cancellationToken);
         if (result.Succeeded)
-            _uploadedMissions[(connectionId, vehicleId)] = new(wireItems);
+            _uploadedMissions[(connectionId, vehicleId)] = new(wireItems, DateTimeOffset.UtcNow);
         return new(result.Succeeded, result.Summary, result.Succeeded ? null : "ARDUPILOT_UPLOAD_FAILED", result.Items.Count);
     }
 
@@ -212,7 +238,7 @@ public sealed class ArduPilotMissionExecutor(IMavlinkConnectionRegistry connecti
         var finalLandingObserved = !state.IsArmed && string.Equals(state.LandedState, "Landed", StringComparison.OrdinalIgnoreCase);
         var finalEndFinished = !uploaded.FinalItemIsLand && !uploaded.FinalItemIsRtl ||
             ((uploaded.FinalItemIsLand || uploaded.FinalItemIsRtl) && finalLandingObserved);
-        var completed = finalItemReached && finalEndFinished;
+        var completed = (finalItemReached || state.MissionState == MissionStateComplete) && finalEndFinished;
 
         if (completed)
         {
@@ -237,10 +263,19 @@ public sealed class ArduPilotMissionExecutor(IMavlinkConnectionRegistry connecti
         var executionState = !modeAllowed
             ? FlightMissionExecutionState.Interrupted
             : isPaused ? FlightMissionExecutionState.Paused : FlightMissionExecutionState.Running;
+        var failsafe = state.RecentFailsafeMessage;
+        if (executionState != FlightMissionExecutionState.Completed &&
+            uploaded.UploadedAt is { } uploadedAt &&
+            failsafe is not null &&
+            failsafe.Timestamp >= uploadedAt)
+        {
+            executionState = FlightMissionExecutionState.Failsafe;
+        }
         var summary = executionState switch
         {
             FlightMissionExecutionState.Paused => "ArduPilot mission paused in Brake.",
             FlightMissionExecutionState.Running => $"ArduPilot mission progress ({mode}).",
+            FlightMissionExecutionState.Failsafe => $"ArduPilot mission entered failsafe: {failsafe?.Text ?? "The vehicle reported a failsafe."}",
             _ => $"ArduPilot mission interrupted because the vehicle is in {(string.IsNullOrWhiteSpace(mode) ? "an unknown mode" : mode)}."
         };
         progress = new(executionState, index, itemCount, summary);
@@ -266,7 +301,7 @@ public sealed class ArduPilotMissionExecutor(IMavlinkConnectionRegistry connecti
             ? client
             : throw new InvalidOperationException("The selected ArduPilot MAVLink connection is unavailable.");
 
-    private sealed record UploadedMission(IReadOnlyList<MavlinkMissionItem> Items)
+    private sealed record UploadedMission(IReadOnlyList<MavlinkMissionItem> Items, DateTimeOffset? UploadedAt = null)
     {
         public bool FinalItemIsLand => Items.Count > 0 && Items[^1].Command == MavlinkCommandIds.NavLand;
         public bool FinalItemIsRtl => Items.Count > 0 && Items[^1].Command == MavlinkCommandIds.NavReturnToLaunch;

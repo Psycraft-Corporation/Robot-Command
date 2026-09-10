@@ -63,7 +63,65 @@ public sealed record CameraSourceRecord(
     string FrameId,
     string Code,
     string Message,
-    DateTimeOffset ObservedAt);
+    DateTimeOffset ObservedAt,
+    bool SupportsPhoto = false,
+    bool SupportsVideo = false,
+    bool SupportsGimbal = false,
+    byte? GimbalComponentId = null);
+
+/// <summary>
+/// Normalized camera-definition data discovered through the MAVLink Camera
+/// Protocol. The definition is runtime state only; camera settings are not
+/// copied into mission documents or vehicle parameters.
+/// </summary>
+public sealed record MavlinkCameraDefinitionRecord(
+    string Id,
+    string ConnectionId,
+    byte SystemId,
+    byte ComponentId,
+    uint CapabilityFlags,
+    string VendorName,
+    string ModelName,
+    string FirmwareVersion,
+    ushort DefinitionVersion,
+    string DefinitionUri,
+    IReadOnlyList<MavlinkCameraSettingRecord> Settings,
+    DateTimeOffset ObservedAt,
+    string Status = "Discovered")
+{
+    public string DisplayName => string.Join(" ", new[] { VendorName, ModelName }
+        .Where(item => !string.IsNullOrWhiteSpace(item))).Trim();
+
+    public string CapabilitySummary => string.Join(", ", new[]
+    {
+        (CapabilityFlags & 2) != 0 ? "Photo" : null,
+        (CapabilityFlags & 1) != 0 ? "Video" : null,
+        (CapabilityFlags & 4) != 0 ? "Modes" : null
+    }.Where(item => item is not null));
+}
+
+public sealed record MavlinkCameraSettingRecord(
+    string Name,
+    string Label,
+    string Type,
+    string Units,
+    string? CurrentValue = null,
+    string? DefaultValue = null,
+    double? Minimum = null,
+    double? Maximum = null,
+    double? Increment = null,
+    IReadOnlyList<MavlinkCameraSettingOption>? Options = null)
+{
+    public IReadOnlyList<MavlinkCameraSettingOption> Values => Options ?? [];
+    public string Summary => CurrentValue ?? DefaultValue ??
+        (Values.Count > 0
+            ? string.Join(" / ", Values.Select(item => item.Label))
+            : Minimum is { } minimum && Maximum is { } maximum
+                ? $"{minimum:0.###}–{maximum:0.###} {Units}"
+                : Type);
+}
+
+public sealed record MavlinkCameraSettingOption(string Value, string Label);
 
 public enum VideoProtocolPreference
 {
@@ -135,7 +193,21 @@ public sealed record MapVehicleVisual(
     AvailabilityState State,
     bool Selected,
     bool IsGhost = false,
-    bool TeamSelected = false);
+    bool TeamSelected = false)
+{
+    public MapCameraConeVisual? CameraCone { get; init; }
+
+    public double? GimbalPitchDegrees { get; init; }
+
+    public double? GimbalYawDegrees { get; init; }
+
+    public bool? GimbalYawInEarthFrame { get; init; }
+}
+
+/// <summary>Presentation-only footprint of a vehicle-mounted camera view.</summary>
+public sealed record MapCameraConeVisual(
+    double HorizontalFieldOfViewDegrees = 55,
+    double RangeMetres = 150);
 
 public sealed record MapGeometryVisual(
     string GeometryId,

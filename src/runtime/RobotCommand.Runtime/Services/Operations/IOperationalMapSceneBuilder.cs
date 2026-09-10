@@ -13,7 +13,8 @@ public interface IOperationalMapSceneBuilder
         bool geometryVisible,
         bool policyVisible = true,
         IReadOnlySet<string>? highlightedGeometryIds = null,
-        IReadOnlySet<string>? selectedVehicleIds = null);
+        IReadOnlySet<string>? selectedVehicleIds = null,
+        bool missionPreviewVisible = true);
 
     MapVehicleMotionSnapshot BuildMotion(
         IReadOnlyList<VehicleRecord> vehicles,

@@ -115,28 +115,35 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
             coordinates.Select(point => new FlightMissionCoordinate(point.LatitudeDegrees, point.LongitudeDegrees)).ToArray());
         return await AddStepAsync(missionId, step, cancellationToken);
     }
-    public async Task<FlightMissionSnapshot> AddSurveyAsync(string missionId, string zoneGeometryId, FlightMissionSurveyOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<FlightMissionSnapshot> AddSurveyAsync(string missionId, string? zoneGeometryId, FlightMissionSurveyOptions? options = null, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(zoneGeometryId))
+            return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.SurveyZone, Survey: options ?? new()), cancellationToken);
         if (!_geometry.TryGet(zoneGeometryId, out var geometry) || geometry is null || geometry.Kind != GeometryDocumentKind.Zone)
-            throw new InvalidOperationException("Select a saved zone before adding a survey.");
+            throw new InvalidOperationException("The selected geometry is not a saved zone.");
         var ring = geometry.Rings.Count > 0 ? geometry.Rings[0].Points : geometry.Points;
         var coordinates = ring.Select(point => new FlightMissionCoordinate(point.LatitudeDegrees, point.LongitudeDegrees)).ToArray();
         return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.SurveyZone, geometry.GeometryId, geometry.DisplayName, geometry.ContentSha256, coordinates, Survey: options ?? new()), cancellationToken);
     }
-    public async Task<FlightMissionSnapshot> AddCorridorAsync(string missionId, string waypointSequenceGeometryId, FlightMissionCorridorOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<FlightMissionSnapshot> AddCorridorAsync(string missionId, string? waypointSequenceGeometryId, FlightMissionCorridorOptions? options = null, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(waypointSequenceGeometryId))
+            return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.CorridorScan, Corridor: options ?? new()), cancellationToken);
         if (!_geometry.TryGet(waypointSequenceGeometryId, out var geometry) || geometry is null || geometry.Kind != GeometryDocumentKind.WaypointSequence)
-            throw new InvalidOperationException("Select a saved waypoint sequence before adding a corridor scan.");
+            throw new InvalidOperationException("The selected geometry is not a saved waypoint sequence.");
         var coordinates = geometry.Points.Select(point => new FlightMissionCoordinate(point.LatitudeDegrees, point.LongitudeDegrees)).ToArray();
         return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.CorridorScan, geometry.GeometryId, geometry.DisplayName, geometry.ContentSha256, coordinates, Corridor: options ?? new()), cancellationToken);
     }
-    public async Task<FlightMissionSnapshot> AddTimedLoiterAsync(string missionId, string pointGeometryId, double durationSeconds, CancellationToken cancellationToken = default)
+    public async Task<FlightMissionSnapshot> AddTimedLoiterAsync(string missionId, string? pointGeometryId, double durationSeconds, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(pointGeometryId))
+            return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.TimedLoiter, LoiterDurationSeconds: durationSeconds), cancellationToken);
         if (!_geometry.TryGet(pointGeometryId, out var geometry) || geometry is null || geometry.Kind != GeometryDocumentKind.PointOfInterest)
-            throw new InvalidOperationException("Select a saved point of interest before adding a loiter.");
+            throw new InvalidOperationException("The selected geometry is not a saved point of interest.");
         if (geometry.Points.Count == 0) throw new InvalidOperationException("The selected point of interest has no coordinates.");
-        var point = geometry.Points[0];
-        return await AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.TimedLoiter, geometry.GeometryId, geometry.DisplayName, geometry.ContentSha256, [new(point.LatitudeDegrees, point.LongitudeDegrees)], LoiterDurationSeconds: durationSeconds), cancellationToken);
+        return await AddStepAsync(missionId, FlightMissionGeometryBinding.Bind(
+            new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.TimedLoiter, LoiterDurationSeconds: durationSeconds),
+            geometry), cancellationToken);
     }
     public Task<FlightMissionSnapshot> AddCameraIntentAsync(string missionId, FlightMissionCameraIntent intent, CancellationToken cancellationToken = default)
         => AddStepAsync(missionId, new(Guid.NewGuid().ToString("N"), FlightMissionStepKind.CameraCaptureIntent, CameraIntent: intent), cancellationToken);
@@ -155,6 +162,23 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
         => UpdateAndPublishAsync(missionId, document => document with { EndAction = endAction, UpdatedAt = DateTimeOffset.UtcNow }, cancellationToken);
     public Task<FlightMissionSnapshot> SetStepOverridesAsync(string missionId, string stepId, double? relativeAltitudeMetres, double? cruiseSpeedMetresPerSecond, bool terrainFollowing, CancellationToken cancellationToken = default)
         => UpdateAndPublishAsync(missionId, document => document with { Steps = document.Steps.Select(step => step.Id == stepId ? step with { RelativeAltitudeMetres = relativeAltitudeMetres, CruiseSpeedMetresPerSecond = cruiseSpeedMetresPerSecond, TerrainFollowing = terrainFollowing } : step).ToArray(), UpdatedAt = DateTimeOffset.UtcNow }, cancellationToken);
+    public async Task<FlightMissionSnapshot> SetStepGeometryAsync(string missionId, string stepId, string geometryId, CancellationToken cancellationToken = default)
+    {
+        if (!_geometry.TryGet(geometryId, out var geometry) || geometry is null)
+            throw new KeyNotFoundException($"Geometry '{geometryId}' was not found.");
+
+        return await UpdateAndPublishAsync(missionId, document =>
+        {
+            var step = document.Steps.FirstOrDefault(item => item.Id.Equals(stepId, StringComparison.Ordinal))
+                       ?? throw new KeyNotFoundException("Mission step was not found.");
+            var updatedStep = FlightMissionGeometryBinding.Bind(step, geometry);
+            return document with
+            {
+                Steps = document.Steps.Select(item => item.Id.Equals(stepId, StringComparison.Ordinal) ? updatedStep : item).ToArray(),
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+        }, cancellationToken);
+    }
     public Task<FlightMissionSnapshot> SetStepOptionsAsync(string missionId, string stepId, FlightMissionSurveyOptions? survey, FlightMissionCorridorOptions? corridor, double? loiterDurationSeconds, FlightMissionCameraIntent? cameraIntent, CancellationToken cancellationToken = default)
         => UpdateAndPublishAsync(missionId, document => document with
         {
@@ -168,6 +192,25 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
                 }
                 : step).ToArray(),
             UpdatedAt = DateTimeOffset.UtcNow
+        }, cancellationToken);
+    public Task<FlightMissionSnapshot> SetMissionCameraActionsAsync(string missionId, IReadOnlyList<FlightMissionCameraAction> actions, CancellationToken cancellationToken = default)
+        => UpdateAndPublishAsync(missionId, document => document with
+        {
+            CameraIntent = WithCameraActions(document.CameraIntent, actions),
+            UpdatedAt = DateTimeOffset.UtcNow
+        }, cancellationToken);
+    public Task<FlightMissionSnapshot> SetStepCameraActionsAsync(string missionId, string stepId, IReadOnlyList<FlightMissionCameraAction> actions, CancellationToken cancellationToken = default)
+        => UpdateAndPublishAsync(missionId, document =>
+        {
+            var found = false;
+            var steps = document.Steps.Select(step =>
+            {
+                if (!step.Id.Equals(stepId, StringComparison.Ordinal)) return step;
+                found = true;
+                return SetStepCameraActions(step, actions);
+            }).ToArray();
+            if (!found) throw new KeyNotFoundException("Mission step was not found.");
+            return document with { Steps = steps, UpdatedAt = DateTimeOffset.UtcNow };
         }, cancellationToken);
     public Task<FlightMissionSnapshot> SetTargetAssignmentAsync(string missionId, FlightMissionTargetAssignment? assignment, CancellationToken cancellationToken = default)
         => UpdateAndPublishAsync(missionId, document => document with { TargetAssignment = assignment, UpdatedAt = DateTimeOffset.UtcNow }, cancellationToken);
@@ -292,6 +335,8 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
         => PlanAsync(kind, title, missionId, connectionId, vehicleId, allowTerrainFallback, async token =>
         {
             var execution = _executions.TryGetValue(missionId, out var state) ? state : null;
+            if (kind == ReviewedOperationKind.FlightMissionStart && execution?.State is FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused)
+                return new("", ReviewedOperationState.Failed, false, "Start is available only when this mission is not active.", ["MISSION_ALREADY_ACTIVE: Pause or complete the active mission before starting it again."]);
             if (kind == ReviewedOperationKind.FlightMissionStart && execution?.State != FlightMissionExecutionState.Uploaded)
             {
                 var targetName = Target(vehicleId)?.Name ?? vehicleId;
@@ -299,6 +344,8 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
                     $"Mission '{Require(missionId).DisplayName}' has not been uploaded to {targetName} in this session. Upload the mission and execute that operation before starting it.",
                     [$"No uploaded mission artifact is available for {targetName}."]);
             }
+            if (paused && execution?.State != FlightMissionExecutionState.Running)
+                return new("", ReviewedOperationState.Failed, false, "Pause is available only for a running mission.", ["MISSION_NOT_RUNNING: Start the mission before pausing it."]);
             var executor = Executor(vehicleId);
             if (!paused && kind == ReviewedOperationKind.FlightMissionStart && Target(vehicleId)?.IsGhost == true && Target(vehicleId)?.ArmState != "Armed")
                 return new("", ReviewedOperationState.Failed, false, "Arm the Ghost before starting the mission.", []);
@@ -581,7 +628,25 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
         var findings = _defaultCompiler.Validate(document, null);
         return new(document.MissionId, document.DisplayName, document.RelativeAltitudeMetres, document.Steps,
             Blocked(findings) ? "Invalid" : "Ready", findings, document.UpdatedAt, document.ContentSha256,
-            document.CruiseSpeedMetresPerSecond, document.TargetAssignment, document.EndAction);
+            document.CruiseSpeedMetresPerSecond, document.TargetAssignment, document.EndAction, document.CameraIntent);
+    }
+
+    private static FlightMissionCameraIntent WithCameraActions(FlightMissionCameraIntent? current, IReadOnlyList<FlightMissionCameraAction> actions)
+        => (current ?? new FlightMissionCameraIntent()) with { Actions = actions.ToArray() };
+
+    private static FlightMissionStep SetStepCameraActions(FlightMissionStep step, IReadOnlyList<FlightMissionCameraAction> actions)
+    {
+        if (step.Kind == FlightMissionStepKind.SurveyZone)
+        {
+            var survey = step.Survey ?? new FlightMissionSurveyOptions();
+            return step with { Survey = survey with { CameraIntent = WithCameraActions(survey.CameraIntent, actions) } };
+        }
+        if (step.Kind == FlightMissionStepKind.CorridorScan)
+        {
+            var corridor = step.Corridor ?? new FlightMissionCorridorOptions();
+            return step with { Corridor = corridor with { CameraIntent = WithCameraActions(corridor.CameraIntent, actions) } };
+        }
+        return step with { CameraIntent = WithCameraActions(step.CameraIntent, actions) };
     }
 
     private IFlightMissionCompiler CompilerFor(UnitObservationSnapshot? target)
@@ -593,13 +658,17 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
     private void SetExecution(string missionId, string connectionId, string vehicleId, FlightMissionExecutionState state, int? index, int count, string summary, string executorKind = "PX4", bool terrainFallback = false, string? terrainWarning = null, string? activeStepId = null, string? activeStepName = null, string? lastEvent = null, IReadOnlyList<FlightMissionCaptureEvent>? captures = null, FlightMissionPostLandingState postLandingState = FlightMissionPostLandingState.None, int? resumeItemIndex = null)
     {
         var now = DateTimeOffset.UtcNow;
-        _executions[missionId] = new(missionId, connectionId, vehicleId, state, index, count, terrainWarning is null ? summary : $"{summary} {terrainWarning}", now, executorKind, activeStepId, activeStepName, lastEvent, terrainFallback, captures, postLandingState, resumeItemIndex);
+        var next = new FlightMissionExecutionSnapshot(missionId, connectionId, vehicleId, state, index, count, terrainWarning is null ? summary : $"{summary} {terrainWarning}", now, executorKind, activeStepId, activeStepName, lastEvent, terrainFallback, captures, postLandingState, resumeItemIndex);
+        if (_executions.TryGetValue(missionId, out var current) && ExecutionEquivalent(current, next))
+            return;
+        _executions[missionId] = next;
         var commandState = state switch
         {
             FlightMissionExecutionState.Uploaded => OperationalCommandState.Accepted,
             FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused => OperationalCommandState.InProgress,
             FlightMissionExecutionState.Completed => OperationalCommandState.Succeeded,
             FlightMissionExecutionState.Interrupted => OperationalCommandState.Cancelled,
+            FlightMissionExecutionState.Failsafe => OperationalCommandState.Failed,
             FlightMissionExecutionState.Failed => OperationalCommandState.Failed,
             _ => OperationalCommandState.Draft
         };
@@ -610,6 +679,23 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
             Reason: state.ToString())));
         Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    private static bool ExecutionEquivalent(FlightMissionExecutionSnapshot left, FlightMissionExecutionSnapshot right)
+        => left.MissionId == right.MissionId &&
+           left.ConnectionId == right.ConnectionId &&
+           left.VehicleId == right.VehicleId &&
+           left.State == right.State &&
+           left.CurrentItemIndex == right.CurrentItemIndex &&
+           left.ItemCount == right.ItemCount &&
+           left.Summary == right.Summary &&
+           left.ExecutorKind == right.ExecutorKind &&
+           left.ActiveStepId == right.ActiveStepId &&
+           left.ActiveStepName == right.ActiveStepName &&
+           left.LastEvent == right.LastEvent &&
+           left.TerrainFallbackUsed == right.TerrainFallbackUsed &&
+           left.PostLandingState == right.PostLandingState &&
+           left.ResumeItemIndex == right.ResumeItemIndex &&
+           (left.CaptureEvents ?? []).SequenceEqual(right.CaptureEvents ?? []);
     private void RefreshProgress()
     {
         // Unit observation is also updated by SetExecution (the mission command
@@ -620,6 +706,32 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
         try
         {
             foreach (var execution in _executions.Values.Where(item => item.State is FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused).ToArray())
+            {
+                var target = Target(execution.VehicleId);
+                var telemetryUnavailable = target is null ||
+                    target.State is ManagedConnectionState.Stale or ManagedConnectionState.Offline or ManagedConnectionState.Faulted ||
+                    target.Telemetry is { IsStale: true } or { State: ManagedConnectionState.Stale or ManagedConnectionState.Offline or ManagedConnectionState.Faulted } ||
+                    !_connections.TryGet(execution.ConnectionId, out _);
+                if (telemetryUnavailable)
+                {
+                    SetExecution(
+                        execution.MissionId,
+                        execution.ConnectionId,
+                        execution.VehicleId,
+                        FlightMissionExecutionState.Unknown,
+                        execution.CurrentItemIndex,
+                        execution.ItemCount,
+                        "Mission completion is unconfirmed because vehicle telemetry is unavailable.",
+                        execution.ExecutorKind,
+                        execution.TerrainFallbackUsed,
+                        null,
+                        execution.ActiveStepId,
+                        execution.ActiveStepName,
+                        "Vehicle disconnected before mission completion was confirmed.",
+                        execution.CaptureEvents);
+                    continue;
+                }
+
                 if (TryGetExecutor(execution.VehicleId, out var executor) && executor.TryGetProgress(execution.ConnectionId, ResolveCommandVehicleId(execution.VehicleId), out var progress))
                 {
                     var wasActive = execution.State is FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused;
@@ -628,6 +740,7 @@ public sealed class FlightMissionWorkflow : IFlightMissionWorkflow
                     if (wasActive && progress.State == FlightMissionExecutionState.Completed && _completionFinalizationStarted.Add(ExecutionKey(execution.MissionId, execution.VehicleId)))
                         _ = FinalizeCompletedMissionAsync(execution, executor);
                 }
+            }
             Changed?.Invoke(this, EventArgs.Empty);
         }
         finally

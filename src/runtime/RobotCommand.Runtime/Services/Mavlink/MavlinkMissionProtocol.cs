@@ -1,4 +1,5 @@
 using RobotCommand.Core;
+using RobotCommand.Models;
 
 namespace RobotCommand.Services.Mavlink;
 
@@ -14,7 +15,13 @@ public sealed record MavlinkMissionItem(
     float Param3 = 0,
     float Param4 = float.NaN,
     bool Current = false,
-    byte MissionType = 0);
+    byte MissionType = 0,
+    // MAVLink mission commands use x/y/z as command parameters 5/6/7 when
+    // they are not geographic commands. Keep the geographic fields above for
+    // existing callers and expose explicit raw values for camera/gimbal items.
+    int? RawX = null,
+    int? RawY = null,
+    float? RawZ = null);
 
 public sealed record MavlinkMissionTransferResult(bool Succeeded, string Summary, IReadOnlyList<MavlinkMissionItem> Items, int? CurrentItemIndex = null);
 
@@ -25,7 +32,9 @@ public sealed record MavlinkMissionState(
     DateTimeOffset UpdatedAt,
     bool IsArmed,
     string LandedState,
-    string Mode);
+    string Mode,
+    byte? MissionState = null,
+    VehicleDiagnosticMessage? RecentFailsafeMessage = null);
 
 public interface IMavlinkMissionClient
 {

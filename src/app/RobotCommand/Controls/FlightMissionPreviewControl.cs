@@ -43,7 +43,9 @@ public sealed class FlightMissionPreviewControl : Control
         var operatorPoint = OperatorLocation is { IsAvailable: true, LatitudeDegrees: { } operatorLatitude, LongitudeDegrees: { } operatorLongitude }
             ? new FlightMissionCoordinate(operatorLatitude, operatorLongitude)
             : null;
+        var captureMarkers = Preview?.CaptureStatistics?.Markers ?? [];
         var all = stepPoints.Select(item => item.Point).Concat(route)
+            .Concat(captureMarkers.Select(marker => marker.Coordinate))
             .Concat(unitPoint is null ? [] : [unitPoint])
             .Concat(operatorPoint is null ? [] : [operatorPoint])
             .ToArray();
@@ -93,12 +95,15 @@ public sealed class FlightMissionPreviewControl : Control
         if (route.Count >= 2)
         {
             var routePoints = route.Select(projection.Project).ToArray();
-            var routePen = new Pen(new SolidColorBrush(Color.Parse("#F6C453")), 3);
+            var routePen = new Pen(new SolidColorBrush(Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)), 3);
             MapDrawingPrimitives.DrawPath(context, routePoints, false, null, routePen);
-            MapDrawingPrimitives.DrawDirectionArrows(context, routePoints, routePen.Brush ?? Brushes.White, 48);
+            MapDrawingPrimitives.DrawDirectionArrows(context, routePoints, routePen.Brush ?? Brushes.White);
             foreach (var point in routePoints)
-                context.DrawEllipse(new SolidColorBrush(Color.Parse("#F6C453")), new Pen(Brushes.Black, 1), point, 3.5, 3.5);
+                context.DrawEllipse(new SolidColorBrush(Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)), new Pen(Brushes.Black, 1), point, 3.5, 3.5);
         }
+
+        foreach (var marker in captureMarkers)
+            DrawCaptureMarker(context, projection.Project(marker.Coordinate), marker.Action);
 
         if (unitPoint is not null)
         {
@@ -109,7 +114,7 @@ public sealed class FlightMissionPreviewControl : Control
                 var first = projection.Project(firstStep);
                 var approachPen = new Pen(new SolidColorBrush(Color.Parse("#5ED6D1")), 2, new DashStyle([8, 5], 0));
                 MapDrawingPrimitives.DrawPath(context, [unit, first], false, null, approachPen);
-                MapDrawingPrimitives.DrawDirectionArrows(context, [unit, first], approachPen.Brush ?? Brushes.White, 56);
+                MapDrawingPrimitives.DrawDirectionArrows(context, [unit, first], approachPen.Brush ?? Brushes.White);
             }
 
             if (Mission.Steps.Any(step => step.Kind == FlightMissionStepKind.ReturnToLaunch) && route.Count > 0)
@@ -120,7 +125,7 @@ public sealed class FlightMissionPreviewControl : Control
                     var last = projection.Project(lastStep);
                     var rtlPen = new Pen(new SolidColorBrush(Color.Parse("#FF9F5E")), 2, new DashStyle([8, 5], 0));
                     MapDrawingPrimitives.DrawPath(context, [last, unit], false, null, rtlPen);
-                    MapDrawingPrimitives.DrawDirectionArrows(context, [last, unit], rtlPen.Brush ?? Brushes.White, 56);
+                    MapDrawingPrimitives.DrawDirectionArrows(context, [last, unit], rtlPen.Brush ?? Brushes.White);
                     MapDrawingPrimitives.DrawLabel(context, "RTL", new Point(last.X + 8, last.Y - 18), rtlPen.Brush ?? Brushes.White);
                 }
             }
@@ -155,6 +160,35 @@ public sealed class FlightMissionPreviewControl : Control
             var y = bounds.Top + bounds.Height * index / 10;
             context.DrawLine(pen, new Point(x, bounds.Top), new Point(x, bounds.Bottom));
             context.DrawLine(pen, new Point(bounds.Left, y), new Point(bounds.Right, y));
+        }
+    }
+
+    private static void DrawCaptureMarker(
+        DrawingContext context,
+        Point point,
+        FlightMissionCameraActionKind action)
+    {
+        var isVideo = action is FlightMissionCameraActionKind.StartVideo or FlightMissionCameraActionKind.StopVideo;
+        var color = isVideo ? Color.Parse("#60A5FA") : Color.Parse("#F97316");
+        var brush = new SolidColorBrush(color);
+        var outline = new Pen(Brushes.Black, 1.5);
+        if (isVideo)
+        {
+            var triangle = new StreamGeometry();
+            using (var builder = triangle.Open())
+            {
+                builder.BeginFigure(new Point(point.X - 6, point.Y - 6), true);
+                builder.LineTo(new Point(point.X + 7, point.Y));
+                builder.LineTo(new Point(point.X - 6, point.Y + 6));
+                builder.EndFigure(true);
+            }
+            context.DrawGeometry(brush, outline, triangle);
+        }
+        else
+        {
+            context.DrawEllipse(brush, outline, point, 6, 6);
+            context.DrawLine(new Pen(Brushes.White, 1.5), new Point(point.X - 3, point.Y), new Point(point.X + 3, point.Y));
+            context.DrawLine(new Pen(Brushes.White, 1.5), new Point(point.X, point.Y - 3), new Point(point.X, point.Y + 3));
         }
     }
 

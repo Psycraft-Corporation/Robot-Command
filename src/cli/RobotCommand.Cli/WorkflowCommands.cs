@@ -27,7 +27,7 @@ internal static class WorkflowCommands
         }
     }
 
-    public static string Help => "fence list|show|create-from-zone|validate|import|export|delete|upload|download|clear|watch; flight-mission list|show|create|rename|duplicate|delete|import|export|validate|fence|step|survey|terrain|set-end-action|upload|download|start|pause|continue|resume|retain|remove|watch.";
+    public static string Help => "fence list|show|create-from-zone|validate|import|export|delete|upload|download|clear|watch; flight-mission list|show|create|rename|duplicate|delete|import|export|validate|fence|step (including add-camera-action)|survey|terrain|set-end-action|upload|download|start|pause|continue|resume|retain|remove|watch.";
 
     private static async Task<bool> FlightMissionAsync(CliArguments args, IFlightMissionWorkflow workflow, IReviewedOperationWorkflow plans, ConsoleReporter reporter, CancellationToken token)
     {
@@ -60,6 +60,11 @@ internal static class WorkflowCommands
                 break;
             case "step":
                 var action = Required(args, 1, "A step action is required.").ToLowerInvariant(); var id = Required(args, 2, "A mission ID is required.");
+                if (action == "add-camera-action")
+                {
+                    reporter.Event("flight-mission.camera-action", await AddCameraActionAsync(workflow, id, args, token));
+                    break;
+                }
                 var step = action switch
                 {
                     "add-takeoff" => await workflow.AddTakeoffAsync(id, token),
@@ -74,9 +79,9 @@ internal static class WorkflowCommands
                         double.TryParse(args.Get("front-lap"), out var frontLap) ? frontLap : 70,
                         double.TryParse(args.Get("side-lap"), out var sideLap) ? sideLap : 70,
                         args.Has("images-in-turnarounds"),
-                        new FlightMissionCameraIntent(args.Get("mode") ?? "Photo", double.TryParse(args.Get("distance"), out var corridorDistance) ? corridorDistance : null, double.TryParse(args.Get("interval"), out var corridorInterval) ? corridorInterval : null, args.Get("camera"), args.Get("notes"))), token),
+                        BuildCameraIntent(args)), token),
                     "add-loiter" => await workflow.AddTimedLoiterAsync(id, args.Required("geometry"), double.Parse(args.Required("seconds"), CultureInfo.InvariantCulture), token),
-                    "add-camera-intent" => await workflow.AddCameraIntentAsync(id, new(args.Get("mode") ?? "Photo", double.TryParse(args.Get("distance"), out var distance) ? distance : null, double.TryParse(args.Get("interval"), out var interval) ? interval : null, args.Get("camera"), args.Get("notes")), token),
+                    "add-camera-intent" => await workflow.AddCameraIntentAsync(id, BuildCameraIntent(args), token),
                     "add-rtl" => await workflow.AddReturnToLaunchAsync(id, token),
                     "add-land" => await workflow.AddLandAsync(id, token),
                     "remove" => await workflow.RemoveStepAsync(id, args.Required("step"), token),
@@ -119,6 +124,19 @@ internal static class WorkflowCommands
         return workflow.SetStepOverridesAsync(missionId, stepId, altitude, step.CruiseSpeedMetresPerSecond, step.TerrainFollowing, token);
     }
 
+    private static FlightMissionCameraIntent BuildCameraIntent(CliArguments args)
+    {
+        var distance = double.TryParse(args.Get("distance"), out var parsedDistance) ? parsedDistance : (double?)null;
+        var interval = double.TryParse(args.Get("interval"), out var parsedInterval) ? parsedInterval : (double?)null;
+        return new(
+            args.Get("mode") ?? "Photo",
+            distance,
+            interval,
+            args.Get("camera"),
+            args.Get("notes"),
+            AutomaticPhotoCaptureEnabled: args.Has("automatic-photo") || distance is not null || interval is not null);
+    }
+
     private static Task<FlightMissionSnapshot> SetTerrainAsync(IFlightMissionWorkflow workflow, string missionId, CliArguments args, CancellationToken token)
     {
         var stepId = args.Required("step");
@@ -130,6 +148,64 @@ internal static class WorkflowCommands
         => workflow.TryGet(missionId, out var mission) && mission?.Steps.FirstOrDefault(item => item.Id == stepId) is { } step
             ? step
             : throw new KeyNotFoundException("Mission step was not found.");
+
+    private static async Task<FlightMissionSnapshot> AddCameraActionAsync(
+        IFlightMissionWorkflow workflow,
+        string missionId,
+        CliArguments args,
+        CancellationToken token)
+    {
+        var action = ParseCameraAction(args);
+        if (args.Get("step") is { } stepId)
+        {
+            if (!workflow.TryGet(missionId, out var mission) || mission is null)
+                throw new KeyNotFoundException("Flight mission was not found.");
+            var step = mission.Steps.FirstOrDefault(item => item.Id == stepId)
+                ?? throw new KeyNotFoundException("Mission step was not found.");
+            var existing = step.CameraIntent?.Actions ?? [];
+            return await workflow.SetStepCameraActionsAsync(missionId, stepId, existing.Append(action).ToArray(), token);
+        }
+
+        if (!workflow.TryGet(missionId, out var selected) || selected is null)
+            throw new KeyNotFoundException("Flight mission was not found.");
+        var missionActions = selected.CameraIntent?.Actions ?? [];
+        return await workflow.SetMissionCameraActionsAsync(missionId, missionActions.Append(action).ToArray(), token);
+    }
+
+    private static FlightMissionCameraAction ParseCameraAction(CliArguments args)
+    {
+        var kind = args.Required("action").ToLowerInvariant();
+        var camera = args.Get("camera");
+        byte? cameraId = byte.TryParse(args.Get("camera-id"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedCameraId)
+            ? parsedCameraId
+            : null;
+        return kind switch
+        {
+            "photo" or "photo-once" => FlightMissionCameraAction.PhotoOnce(camera, cameraId),
+            "photo-by-time" => FlightMissionCameraAction.PhotoByTime(RequiredNumber(args, "interval"), camera, cameraId),
+            "photo-by-distance" => FlightMissionCameraAction.PhotoByDistance(RequiredNumber(args, "distance"), camera, cameraId),
+            "stop-photos" => FlightMissionCameraAction.StopPhotos(camera, cameraId),
+            "start-video" => FlightMissionCameraAction.StartVideo(camera, cameraId),
+            "stop-video" => FlightMissionCameraAction.StopVideo(camera, cameraId),
+            "mode-photo" => FlightMissionCameraAction.SetCameraMode(FlightMissionCameraMode.Photo, camera, cameraId),
+            "mode-video" => FlightMissionCameraAction.SetCameraMode(FlightMissionCameraMode.Video, camera, cameraId),
+            "roi" or "region-of-interest" => FlightMissionCameraAction.SetRegionOfInterest(
+                new FlightMissionCoordinate(RequiredNumber(args, "latitude"), RequiredNumber(args, "longitude")), camera, cameraId),
+            "gimbal" => FlightMissionCameraAction.SetGimbal(
+                Number(args, "pitch"), Number(args, "yaw"), Number(args, "roll"),
+                args.Get("frame")?.Equals("earth", StringComparison.OrdinalIgnoreCase) == true
+                    ? FlightMissionGimbalFrame.Earth
+                    : FlightMissionGimbalFrame.Vehicle,
+                camera, cameraId),
+            _ => throw new ArgumentException("Camera action must be photo, photo-by-time, photo-by-distance, stop-photos, start-video, stop-video, mode-photo, mode-video, roi, or gimbal.")
+        };
+    }
+
+    private static double RequiredNumber(CliArguments args, string name)
+        => double.Parse(args.Required(name), CultureInfo.InvariantCulture);
+
+    private static double? Number(CliArguments args, string name)
+        => double.TryParse(args.Get(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? value : null;
 
     private static async Task<bool> FenceAsync(CliArguments args, IFenceWorkflow workflow, IReviewedOperationWorkflow plans, ConsoleReporter reporter, CancellationToken token)
     {

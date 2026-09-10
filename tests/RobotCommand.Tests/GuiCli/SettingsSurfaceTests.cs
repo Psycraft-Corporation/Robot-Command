@@ -11,6 +11,7 @@ public sealed class SettingsSurfaceTests
         var shell = File.ReadAllText(Path.Combine(root, "src", "app", "RobotCommand", "ViewModels", "ShellViewModel.cs"));
         var app = File.ReadAllText(Path.Combine(root, "src", "app", "RobotCommand", "App.axaml"));
         var view = File.ReadAllText(Path.Combine(root, "src", "app", "RobotCommand", "Views", "Workspaces", "SettingsView.axaml"));
+        var mainWindow = File.ReadAllText(Path.Combine(root, "src", "app", "RobotCommand", "Views", "MainWindow.axaml.cs"));
 
         Assert.Contains("\"settings\"", shell, StringComparison.Ordinal);
         Assert.Contains("new WorkspaceNavigationItem(\"settings\", L(\"Settings\"), settings)", shell, StringComparison.Ordinal);
@@ -26,6 +27,7 @@ public sealed class SettingsSurfaceTests
         Assert.Contains("TemperatureTitle", view, StringComparison.Ordinal);
         Assert.Contains("OnUnitDropDownClosed", view, StringComparison.Ordinal);
         Assert.DoesNotContain("SelectedValueBinding", view, StringComparison.Ordinal);
+        Assert.Contains("RequestedThemeVariant = enabled ? ThemeVariant.Light : ThemeVariant.Dark", mainWindow, StringComparison.Ordinal);
     }
 
     [Fact]

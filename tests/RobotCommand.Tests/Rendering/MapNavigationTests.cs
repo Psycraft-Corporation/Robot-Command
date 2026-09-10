@@ -168,6 +168,19 @@ public sealed class MapNavigationTests
     }
 
     [Fact]
+    public void OperatorContextMenuWaitsForSourceCloseBeforeOpeningConfirmation()
+    {
+        var root = FindRepositoryRoot();
+        var mapControl = File.ReadAllText(Path.Combine(
+            root, "src", "app", "RobotCommand", "Controls", "NativeOperationalMapControl.cs"));
+
+        Assert.Contains("sourceMenu.Closed += reopenConfirmationMenu", mapControl, StringComparison.Ordinal);
+        Assert.Contains("sourceMenu.Closed -= reopenConfirmationMenu", mapControl, StringComparison.Ordinal);
+        Assert.Contains("DispatcherPriority.Background", mapControl, StringComparison.Ordinal);
+        Assert.Contains("OpenMapContextMenu(default, target, awaitingConfirmation: true)", mapControl, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RecreatedMapRestoresSharedViewportInsteadOfWorldPlaceholder()
     {
         var root = FindRepositoryRoot();
@@ -208,7 +221,7 @@ public sealed class MapNavigationTests
         Assert.Contains("open chevrons", mapControl, StringComparison.Ordinal);
         Assert.Contains("TryGetGeometryLabelAnchor", mapControl, StringComparison.Ordinal);
         Assert.Contains("Text = geometry.Name", mapControl, StringComparison.Ordinal);
-        Assert.Contains("SymbolScale = geometry.Highlighted ? 0.58 : 0.42", mapControl, StringComparison.Ordinal);
+        Assert.Contains("SymbolScale = captureMarker ? 0.82 : geometry.Highlighted || IsFlightMissionPreview(geometry) ? 0.58 : 0.42", mapControl, StringComparison.Ordinal);
         Assert.Contains("#6FAFC9", mapControl, StringComparison.Ordinal);
     }
 

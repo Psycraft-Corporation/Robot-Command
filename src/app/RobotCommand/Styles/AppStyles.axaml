@@ -340,6 +340,13 @@
     <Setter Property="BorderThickness" Value="0" />
   </Style>
 
+  <Style Selector="ListBox.compactList > ListBoxItem">
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Margin" Value="0,0,0,2" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+
   <!-- Unit rows own their Team border. Remove the theme container spacing so
        adjacent Team members form one continuous outline. Selection is painted
        inside the row border instead of behind it. -->

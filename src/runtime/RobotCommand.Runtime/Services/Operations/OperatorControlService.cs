@@ -135,7 +135,13 @@ public sealed class OperatorControlService : IOperatorControlService
             OperatorCommandKind.Takeoff or
             OperatorCommandKind.GoTo or
             OperatorCommandKind.ChangeAltitude or
-            OperatorCommandKind.SetHeading
+            OperatorCommandKind.SetHeading or
+            OperatorCommandKind.CapturePhoto or
+            OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or
+            OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or
+            OperatorCommandKind.SetGimbal
             ? parameters ?? OperatorCommandParameters.None
             : OperatorCommandParameters.None;
         var target = new OperatorCommandTarget(
@@ -520,6 +526,12 @@ public sealed class OperatorControlService : IOperatorControlService
             OperatorCommandKind.GoTo => "vehicle.operator.go_to",
             OperatorCommandKind.ChangeAltitude => "vehicle.operator.change_altitude",
             OperatorCommandKind.SetHeading => "vehicle.operator.set_heading",
+            OperatorCommandKind.CapturePhoto => "camera.capture_photo",
+            OperatorCommandKind.StartVideo => "camera.start_video",
+            OperatorCommandKind.StopVideo => "camera.stop_video",
+            OperatorCommandKind.CenterGimbal => "gimbal.center",
+            OperatorCommandKind.NadirGimbal => "gimbal.nadir",
+            OperatorCommandKind.SetGimbal => "gimbal.set_attitude",
             _ => $"vehicle.operator.{command.ToString().ToLowerInvariant()}"
         };
 
@@ -564,6 +576,16 @@ public sealed class OperatorControlService : IOperatorControlService
             heading_target_kind = parameters?.HeadingTargetKind?.ToString(),
             heading_deg = parameters?.HeadingDegrees,
             relative_yaw_deg = parameters?.RelativeYawDegrees
+            ,
+            gimbal_pitch_deg = parameters?.GimbalPitchDegrees
+            ,
+            gimbal_yaw_deg = parameters?.GimbalYawDegrees
+            ,
+            gimbal_roll_deg = parameters?.GimbalRollDegrees
+            ,
+            gimbal_zoom_percent = parameters?.GimbalZoomPercent
+            ,
+            gimbal_earth_frame = parameters?.GimbalEarthFrame
         });
 
     private static void AddPolicyFindings(

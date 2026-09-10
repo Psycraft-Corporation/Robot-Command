@@ -16,6 +16,7 @@ public sealed class MavlinkConnectionProvider : IConnectionProvider
     private readonly IReadOnlyList<IVehicleDiagnosticsProvider> _diagnosticsProviders;
     private readonly MavlinkConnectionRegistry _registry;
     private readonly IEntityStore<string, OperationalCommandRecord> _commands;
+    private readonly IEntityStore<string, MavlinkCameraDefinitionRecord> _cameraDefinitions;
     private readonly IUiDispatcher _dispatcher;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ISerialDeviceDiscovery _serialDevices;
@@ -27,6 +28,7 @@ public sealed class MavlinkConnectionProvider : IConnectionProvider
         IEnumerable<IVehicleDiagnosticsProvider> diagnosticsProviders,
         MavlinkConnectionRegistry registry,
         IEntityStore<string, OperationalCommandRecord> commands,
+        IEntityStore<string, MavlinkCameraDefinitionRecord> cameraDefinitions,
         IUiDispatcher dispatcher,
         ILoggerFactory loggerFactory,
         ISerialDeviceDiscovery serialDevices,
@@ -37,6 +39,7 @@ public sealed class MavlinkConnectionProvider : IConnectionProvider
         _diagnosticsProviders = diagnosticsProviders.ToArray();
         _registry = registry;
         _commands = commands;
+        _cameraDefinitions = cameraDefinitions;
         _dispatcher = dispatcher;
         _loggerFactory = loggerFactory;
         _serialDevices = serialDevices;
@@ -78,7 +81,8 @@ public sealed class MavlinkConnectionProvider : IConnectionProvider
             _dispatcher,
             _registry,
             _loggerFactory.CreateLogger<MavlinkConnection>(),
-            bootstrapRoute: bootstrapRoute);
+            bootstrapRoute: bootstrapRoute,
+            cameraDefinitions: _cameraDefinitions);
         _registry.Register(connection);
         return connection;
     }

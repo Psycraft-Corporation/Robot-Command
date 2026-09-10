@@ -1,8 +1,11 @@
+using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging.Abstractions;
+using RobotCommand.Core;
 using RobotCommand.Infrastructure;
 using RobotCommand.Models;
 using RobotCommand.Services.Mavlink;
+using RobotCommand.Services.Missions;
 using RobotCommand.State;
 using Xunit;
 
@@ -23,6 +26,58 @@ public sealed class MavlinkConnectionTests
 
         var link = Assert.Single(connection.LiveSnapshot.Links);
         Assert.Equal(0d, link.PacketLoss);
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task CameraProtocolMessageFromFlightControllerDoesNotCreatePacketLoss()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1) with { Sequence = 10 });
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(CameraInformation(1, MavlinkValues.MavCompIdAutopilot1) with { Sequence = 11 });
+        transport.Emit(GlobalPosition(1, 47.0, 8.0, 500, 10) with { Sequence = 12 });
+
+        var link = Assert.Single(connection.LiveSnapshot.Links);
+        Assert.Equal(0d, link.PacketLoss);
+        Assert.Equal(AvailabilityState.Online, connection.State);
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task CameraComponentSequenceDoesNotBlockFlightControllerLinkHealth()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1) with { Sequence = 10 });
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(CameraHeartbeat(1, MavlinkValues.MavCompIdCamera) with { Sequence = 200 });
+        transport.Emit(CameraInformation(1, MavlinkValues.MavCompIdCamera) with { Sequence = 250 });
+        transport.Emit(GlobalPosition(1, 47.0, 8.0, 500, 10) with { Sequence = 11 });
+
+        var link = Assert.Single(connection.LiveSnapshot.Links);
+        Assert.Equal(0d, link.PacketLoss);
+        Assert.DoesNotContain(connection.LiveSnapshot.VehicleDiagnostics.Single().Blockers,
+            item => item.Code == "MAVLINK_LINK");
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task CameraCaptureStatusTelemetryPublishesVideoRecordingState()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(CameraHeartbeat(1, MavlinkValues.MavCompIdCamera));
+        transport.Emit(CameraCaptureStatus(1, MavlinkValues.MavCompIdCamera, videoStatus: 1));
+
+        var telemetry = Assert.Single(connection.LiveSnapshot.Telemetry);
+        Assert.True(telemetry.CameraRecordingVideo);
         await connection.DisposeAsync();
     }
 
@@ -202,6 +257,103 @@ public sealed class MavlinkConnectionTests
     }
 
     [Fact]
+    public async Task CameraProtocolDiscoveryPublishesCameraSourceAndDefinition()
+    {
+        var transport = new FakeTransport();
+        var definitions = new EntityStore<string, MavlinkCameraDefinitionRecord>(item => item.Id, StringComparer.Ordinal);
+        var connection = CreateConnection(transport, cameraDefinitions: definitions);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(CameraHeartbeat(1, 100));
+        transport.Emit(CameraInformation(1, 100));
+
+        var source = Assert.Single(connection.LiveSnapshot.CameraSources);
+        Assert.Equal("mavlink:1:100", source.Id);
+        Assert.Contains("Acme", source.Name);
+        Assert.True(source.SupportsPhoto);
+        Assert.True(source.SupportsVideo);
+        Assert.Contains("camera_photo", connection.Observations[0].Runtime.CapabilityKeys);
+        Assert.Contains("camera_video", connection.Observations[0].Runtime.CapabilityKeys);
+        var definition = Assert.Single(definitions.Items);
+        Assert.Equal("Acme", definition.VendorName);
+        Assert.Equal("SurveyCam", definition.ModelName);
+        Assert.Equal("https://example.invalid/survey.xml", definition.DefinitionUri);
+
+        await connection.DisposeAsync();
+        Assert.Empty(definitions.Items);
+    }
+
+    [Fact]
+    public async Task StandaloneCameraActionsTargetDiscoveredCameraAndGimbalSetpointsAcquireManagerAndUseCommand()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(CameraHeartbeat(1, 100));
+        transport.Emit(CameraInformation(1, 100) with
+        {
+            Fields = new Dictionary<string, object>
+            {
+                ["vendor_name"] = "Acme",
+                ["model_name"] = "SurveyCam",
+                ["flags"] = (uint)3
+            }
+        });
+        transport.Emit(CameraHeartbeat(1, MavlinkValues.MavCompIdGimbal) with
+        {
+            Fields = new Dictionary<string, object>
+            {
+                ["type"] = MavlinkValues.MavTypeGimbal,
+                ["autopilot"] = MavlinkValues.MavAutopilotInvalid,
+                ["base_mode"] = (byte)0,
+                ["custom_mode"] = (uint)0,
+                ["system_status"] = MavlinkValues.MavStateActive
+            }
+        });
+        transport.Emit(GimbalManagerInformation(1, MavlinkValues.MavCompIdAutopilot1, MavlinkValues.MavCompIdGimbal));
+        transport.Emit(GimbalDeviceAttitudeStatus(1, MavlinkValues.MavCompIdGimbal, MavlinkValues.MavCompIdGimbal));
+
+        var capability = connection.GetCameraCapabilities("mavlink:mavlink:1");
+        Assert.True(capability.HasGimbal);
+        Assert.True(capability.SupportsRoll);
+        var telemetry = Assert.Single(connection.LiveSnapshot.Telemetry);
+        Assert.Equal(0d, telemetry.GimbalPitchDegrees);
+        Assert.Equal(0d, telemetry.GimbalYawDegrees);
+        Assert.Equal(0d, telemetry.GimbalRollDegrees);
+
+        var photoTask = connection.SendCameraActionAsync(
+            "mavlink:mavlink:1",
+            "mavlink:1:100",
+            FlightMissionCameraAction.PhotoOnce(),
+            TestContext.Current.CancellationToken);
+        await Task.Delay(10, TestContext.Current.CancellationToken);
+        transport.Emit(CommandAck(1, MavlinkCommandIds.ImageStartCapture, MavlinkValues.MavResultAccepted, 100));
+        var photo = await photoTask;
+
+        var gimbalTask = connection.SendCameraActionAsync(
+            "mavlink:mavlink:1",
+            null,
+            FlightMissionCameraAction.SetGimbal(0, 0),
+            TestContext.Current.CancellationToken);
+        await Task.Delay(10, TestContext.Current.CancellationToken);
+        transport.Emit(CommandAck(1, MavlinkCommandIds.DoGimbalManagerConfigure, MavlinkValues.MavResultAccepted));
+        await Task.Delay(10, TestContext.Current.CancellationToken);
+        transport.Emit(CommandAck(1, MavlinkCommandIds.DoGimbalManagerPitchYaw, MavlinkValues.MavResultAccepted));
+        var gimbal = await gimbalTask;
+
+        Assert.True(photo.Accepted, photo.Message);
+        Assert.Equal(MavlinkCommandIds.ImageStartCapture, photo.MavlinkCommandId);
+        Assert.True(gimbal.Accepted);
+        Assert.Equal(MavlinkCommandIds.DoGimbalManagerPitchYaw, gimbal.MavlinkCommandId);
+        Assert.Contains(transport.SentPayloads, payload => payload.SequenceEqual([(byte)2]));
+
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
     public async Task UdpBootstrapPeer_ReceivesInitialGcsHeartbeatBeforeVehicleDiscovery()
     {
         var transport = new FakeTransport();
@@ -323,6 +475,66 @@ public sealed class MavlinkConnectionTests
         Assert.True(result.Succeeded, result.Summary);
         Assert.Contains(transport.SentPayloads, payload => payload is [15]);
         Assert.Contains(transport.SentPayloads, payload => payload is [5]);
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Px4MissionProgress_ReportsRcManualModeAsInterrupted()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        transport.Emit(Heartbeat(1, customMode: 1u << 16));
+
+        var executor = new Px4MissionExecutor(new SingleConnectionRegistry(connection));
+        Assert.True(executor.TryGetProgress(
+            connection.Definition.Id,
+            "mavlink:mavlink:1",
+            out var progress));
+        Assert.Equal(FlightMissionExecutionState.Interrupted, progress.State);
+        Assert.Contains("Manual", progress.Summary, StringComparison.OrdinalIgnoreCase);
+
+        await connection.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Px4MissionProgress_ReportsTelemetryFailsafeAsDistinctState()
+    {
+        var transport = new FakeTransport();
+        var connection = CreateConnection(transport);
+        transport.OnOpen = () => transport.Emit(Heartbeat(1));
+        transport.OnSend = payload =>
+        {
+            if (payload.SequenceEqual(new byte[] { 10 })) transport.Emit(MissionRequest(1, 0));
+            if (payload.SequenceEqual(new byte[] { 11 })) transport.Emit(MissionAck(1, 0));
+        };
+
+        await connection.ConnectAsync(ConnectionCredentials.Empty, false, TestContext.Current.CancellationToken);
+        var executor = new Px4MissionExecutor(new SingleConnectionRegistry(connection));
+        var artifact = new FlightMissionExecutionArtifact(
+            "failsafe-mission",
+            "PX4",
+            [new FlightMissionCompiledItem(0, "takeoff", FlightMissionStepKind.Takeoff, null, 20, 5)],
+            "test-hash");
+        var upload = await executor.UploadAsync(
+            connection.Definition.Id,
+            "mavlink:mavlink:1",
+            artifact,
+            [new MavlinkMissionItem(0, MavlinkCommandIds.NavTakeoff, 6, 0, 0, 20)],
+            TestContext.Current.CancellationToken);
+
+        Assert.True(upload.Succeeded, upload.Summary);
+        transport.Emit(StatusText(1, "Failsafe activated: entering Hold for 5 seconds"));
+
+        Assert.True(executor.TryGetProgress(
+            connection.Definition.Id,
+            "mavlink:mavlink:1",
+            out var progress));
+        Assert.Equal(FlightMissionExecutionState.Failsafe, progress.State);
+        Assert.Contains("Failsafe activated", progress.Summary, StringComparison.Ordinal);
+
         await connection.DisposeAsync();
     }
 
@@ -1228,7 +1440,8 @@ public sealed class MavlinkConnectionTests
         TimeSpan? heartbeatTimeout = null,
         IReadOnlyList<IMavlinkAutopilotAdapter>? adapters = null,
         MavlinkAutopilotProfile autopilot = MavlinkAutopilotProfile.Px4,
-        IEntityStore<string, OperationalCommandRecord>? commands = null)
+        IEntityStore<string, OperationalCommandRecord>? commands = null,
+        IEntityStore<string, MavlinkCameraDefinitionRecord>? cameraDefinitions = null)
         => new(
             new ConnectionDefinition(
                 "mavlink",
@@ -1245,7 +1458,8 @@ public sealed class MavlinkConnectionTests
             new ImmediateDispatcher(),
             new MavlinkConnectionRegistry(),
             NullLogger<MavlinkConnection>.Instance,
-            heartbeatTimeout);
+            heartbeatTimeout,
+            cameraDefinitions: cameraDefinitions);
 
     private static MavlinkPacket Heartbeat(
         byte systemId,
@@ -1266,6 +1480,81 @@ public sealed class MavlinkConnectionTests
                 ["base_mode"] = baseMode,
                 ["custom_mode"] = customMode,
                 ["system_status"] = MavlinkValues.MavStateActive
+            },
+            DateTimeOffset.UtcNow);
+
+    private static MavlinkPacket CameraHeartbeat(byte systemId, byte componentId)
+        => new(
+            2,
+            1,
+            systemId,
+            componentId,
+            MavlinkMessageIds.Heartbeat,
+            new Dictionary<string, object>
+            {
+                ["type"] = MavlinkValues.MavTypeCamera,
+                ["autopilot"] = MavlinkValues.MavAutopilotInvalid,
+                ["base_mode"] = (byte)0,
+                ["custom_mode"] = (uint)0,
+                ["system_status"] = MavlinkValues.MavStateActive
+            },
+            DateTimeOffset.UtcNow);
+
+    private static MavlinkPacket CameraInformation(byte systemId, byte componentId)
+        => new(
+            2,
+            2,
+            systemId,
+            componentId,
+            MavlinkMessageIds.CameraInformation,
+            new Dictionary<string, object>
+            {
+                ["vendor_name"] = "Acme",
+                ["model_name"] = "SurveyCam",
+                ["firmware_version"] = (uint)0x01020300,
+                ["cam_definition_version"] = (byte)4,
+                ["cam_definition_uri"] = "https://example.invalid/survey.xml"
+            },
+            DateTimeOffset.UtcNow);
+
+    private static MavlinkPacket CameraCaptureStatus(byte systemId, byte componentId, byte videoStatus)
+        => new(
+            2,
+            2,
+            systemId,
+            componentId,
+            MavlinkMessageIds.CameraCaptureStatus,
+            new Dictionary<string, object>
+            {
+                ["video_status"] = videoStatus
+            },
+            DateTimeOffset.UtcNow);
+
+    private static MavlinkPacket GimbalManagerInformation(byte systemId, byte componentId, byte deviceId)
+        => new(
+            2,
+            2,
+            systemId,
+            componentId,
+            MavlinkMessageIds.GimbalManagerInformation,
+            new Dictionary<string, object>
+            {
+                ["cap_flags"] = (uint)4,
+                ["gimbal_device_id"] = deviceId
+            },
+            DateTimeOffset.UtcNow);
+
+    private static MavlinkPacket GimbalDeviceAttitudeStatus(byte systemId, byte componentId, byte deviceId)
+        => new(
+            2,
+            3,
+            systemId,
+            componentId,
+            MavlinkMessageIds.GimbalDeviceAttitudeStatus,
+            new Dictionary<string, object>
+            {
+                ["gimbal_device_id"] = deviceId,
+                ["q"] = new[] { 1f, 0f, 0f, 0f }
             },
             DateTimeOffset.UtcNow);
 
@@ -1330,12 +1619,12 @@ public sealed class MavlinkConnectionTests
             new Dictionary<string, object> { ["landed_state"] = landedState },
             DateTimeOffset.UtcNow);
 
-    private static MavlinkPacket CommandAck(byte systemId, ushort command, byte result)
+    private static MavlinkPacket CommandAck(byte systemId, ushort command, byte result, byte componentId = MavlinkValues.MavCompIdAutopilot1)
         => new(
             2,
             5,
             systemId,
-            MavlinkValues.MavCompIdAutopilot1,
+            componentId,
             MavlinkMessageIds.CommandAck,
             new Dictionary<string, object>
             {
@@ -1450,6 +1739,18 @@ public sealed class MavlinkConnectionTests
             short r,
             ushort buttons = 0) => [4];
 
+        public byte[] EncodeGimbalManagerSetPitchYaw(
+            byte sourceSystemId,
+            byte sourceComponentId,
+            byte targetSystemId,
+            byte targetComponentId,
+            uint flags,
+            byte gimbalDeviceId,
+            float pitch,
+            float yaw,
+            float pitchRate,
+            float yawRate) => [19];
+
         public byte[] EncodeParameterRequestList(byte sourceSystemId, byte sourceComponentId, byte targetSystemId, byte targetComponentId) => [6];
 
         public byte[] EncodeParameterRequestRead(byte sourceSystemId, byte sourceComponentId, byte targetSystemId, byte targetComponentId, string parameterName, short parameterIndex) => [7];
@@ -1536,6 +1837,15 @@ public sealed class MavlinkConnectionTests
         {
             action();
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class SingleConnectionRegistry(MavlinkConnection connection) : IMavlinkConnectionRegistry
+    {
+        public bool TryGet(string connectionId, out MavlinkConnection? found)
+        {
+            found = connectionId == connection.Definition.Id ? connection : null;
+            return found is not null;
         }
     }
 }

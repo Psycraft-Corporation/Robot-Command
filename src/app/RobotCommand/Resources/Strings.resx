@@ -327,6 +327,11 @@
   <data name="MapOperatorUnavailable" xml:space="preserve"><value>Operator location unavailable</value></data>
   <data name="MapShowGeometries" xml:space="preserve"><value>Show geometries</value></data>
   <data name="MapHideGeometries" xml:space="preserve"><value>Hide geometries</value></data>
+  <data name="MapMissionPreviewLayers" xml:space="preserve"><value>Mission preview layers</value></data>
+  <data name="MapMissionPreviews" xml:space="preserve"><value>Mission previews</value></data>
+  <data name="FlightMissionMission" xml:space="preserve"><value>Mission</value></data>
+  <data name="FlightMissionCreate" xml:space="preserve"><value>Create</value></data>
+  <data name="FlightMissionSaveName" xml:space="preserve"><value>Save name</value></data>
   <data name="MapShowPolicy" xml:space="preserve"><value>Show policy</value></data>
   <data name="MapHidePolicy" xml:space="preserve"><value>Hide policy</value></data>
   <data name="MapShowTrails" xml:space="preserve"><value>Show trails</value></data>
@@ -394,6 +399,9 @@
   <data name="FlightMissionImport" xml:space="preserve"><value>Import</value></data>
   <data name="FlightMissionExport" xml:space="preserve"><value>Export</value></data>
   <data name="FlightMissionDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="FlightMissionConfirmDelete" xml:space="preserve"><value>Confirm delete</value></data>
+  <data name="FlightMissionDeleteAssociatedGeometry" xml:space="preserve"><value>Delete associated geometry</value></data>
+  <data name="FlightMissionDeleteMissionOnly" xml:space="preserve"><value>Delete mission only</value></data>
   <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
   <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
   <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
@@ -408,7 +416,34 @@
   <data name="FlightMissionRetain" xml:space="preserve"><value>Retain</value></data>
   <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>Remove</value></data>
   <data name="FlightMissionStatus" xml:space="preserve"><value>Mission status</value></data>
+  <data name="FlightMissionExecutionStatus" xml:space="preserve"><value>Status: {0}</value></data>
+  <data name="FlightMissionExecutionRouteItem" xml:space="preserve"><value>Route item: {0}/{1}</value></data>
+  <data name="FlightMissionExecutionReady" xml:space="preserve"><value>Ready</value></data>
+  <data name="FlightMissionExecutionRunning" xml:space="preserve"><value>Running</value></data>
+  <data name="FlightMissionExecutionPaused" xml:space="preserve"><value>Paused</value></data>
+  <data name="FlightMissionExecutionComplete" xml:space="preserve"><value>Complete</value></data>
+  <data name="FlightMissionExecutionInterrupted" xml:space="preserve"><value>Interrupted</value></data>
+  <data name="FlightMissionExecutionFailsafe" xml:space="preserve"><value>Failsafe</value></data>
+  <data name="FlightMissionExecutionError" xml:space="preserve"><value>Error</value></data>
+  <data name="FlightMissionExecutionUnknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="FlightMissionExecutionNotUploaded" xml:space="preserve"><value>Not uploaded</value></data>
+  <data name="FlightMissionExecutionUnconfirmed" xml:space="preserve"><value>Completion could not be confirmed because vehicle telemetry is unavailable.</value></data>
+  <data name="FlightMissionExecutionPostLandingDecision" xml:space="preserve"><value>Mission landed; choose Retain, Remove, or Resume.</value></data>
   <data name="FlightMissionPreview" xml:space="preserve"><value>Mission preview</value></data>
+  <data name="FlightMissionVehicleActions" xml:space="preserve"><value>Vehicle and actions</value></data>
+  <data name="FlightMissionAddStep" xml:space="preserve"><value>Add step</value></data>
+  <data name="FlightMissionNewStepGeometry" xml:space="preserve"><value>Geometry for new step</value></data>
+  <data name="FlightMissionSelectedStep" xml:space="preserve"><value>Selected step</value></data>
+  <data name="FlightMissionStepGeometry" xml:space="preserve"><value>Step geometry</value></data>
+  <data name="FlightMissionAuthoringPreview" xml:space="preserve"><value>Authoring preview</value></data>
+  <data name="FlightMissionPointOfInterest" xml:space="preserve"><value>Point of interest</value></data>
+  <data name="FlightMissionWaypointSequence" xml:space="preserve"><value>Waypoint sequence</value></data>
+  <data name="FlightMissionGeometryRequired" xml:space="preserve"><value>Geometry required</value></data>
+  <data name="FlightMissionLoiterSummary" xml:space="preserve"><value>{0:0.#} s loiter</value></data>
+  <data name="FlightMissionLoiterGeometryRequired" xml:space="preserve"><value>{0:0.#} s loiter · geometry required</value></data>
+  <data name="FlightMissionPointCount" xml:space="preserve"><value>{0} point</value></data>
+  <data name="FlightMissionRoutePointCount" xml:space="preserve"><value>{0} route points</value></data>
+  <data name="FlightMissionZonePointCount" xml:space="preserve"><value>{0} zone points</value></data>
   <data name="FlightMissionSurveySpacing" xml:space="preserve"><value>Survey line spacing (m)</value></data>
   <data name="FlightMissionSurveyBearing" xml:space="preserve"><value>Survey bearing (°)</value></data>
   <data name="FlightMissionSurveyTurnaround" xml:space="preserve"><value>Survey turnaround (m)</value></data>
@@ -417,6 +452,38 @@
   <data name="FlightMissionCameraMode" xml:space="preserve"><value>Camera capture mode</value></data>
   <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Camera trigger distance (m)</value></data>
   <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Camera trigger interval (s)</value></data>
+  <data name="FlightMissionAutomaticPhotoCapture" xml:space="preserve"><value>Automatic photo capture</value></data>
+  <data name="FlightMissionMissionStartCameraActions" xml:space="preserve"><value>Mission-start camera actions</value></data>
+  <data name="FlightMissionStepCameraActions" xml:space="preserve"><value>Step camera actions</value></data>
+  <data name="FlightMissionAddStepCameraAction" xml:space="preserve"><value>Add a camera action to this step</value></data>
+  <data name="FlightMissionNoCameraActions" xml:space="preserve"><value>No camera actions added.</value></data>
+  <data name="FlightMissionCameraActionsConfigured" xml:space="preserve"><value>{0} camera actions configured.</value></data>
+  <data name="FlightMissionAddCameraAction" xml:space="preserve"><value>Add camera action</value></data>
+  <data name="FlightMissionRemoveCameraAction" xml:space="preserve"><value>Remove</value></data>
+  <data name="FlightMissionCameraActionCameraName" xml:space="preserve"><value>Camera name (optional)</value></data>
+  <data name="FlightMissionCameraActionInterval" xml:space="preserve"><value>Photo interval (s)</value></data>
+  <data name="FlightMissionCameraActionDistance" xml:space="preserve"><value>Photo distance (m)</value></data>
+  <data name="FlightMissionCameraActionMode" xml:space="preserve"><value>Camera mode</value></data>
+  <data name="FlightMissionCameraActionRoiLatitude" xml:space="preserve"><value>ROI latitude</value></data>
+  <data name="FlightMissionCameraActionRoiLongitude" xml:space="preserve"><value>ROI longitude</value></data>
+  <data name="FlightMissionCameraActionGimbalPitch" xml:space="preserve"><value>Pitch (°)</value></data>
+  <data name="FlightMissionCameraActionGimbalYaw" xml:space="preserve"><value>Yaw (°)</value></data>
+  <data name="FlightMissionCameraActionGimbalRoll" xml:space="preserve"><value>Roll (°)</value></data>
+  <data name="FlightMissionCameraActionPhotoOnce" xml:space="preserve"><value>Photo once</value></data>
+  <data name="FlightMissionCameraActionPhotoByTime" xml:space="preserve"><value>Photo by time</value></data>
+  <data name="FlightMissionCameraActionPhotoByDistance" xml:space="preserve"><value>Photo by distance</value></data>
+  <data name="FlightMissionCameraActionStopPhotos" xml:space="preserve"><value>Stop photos</value></data>
+  <data name="FlightMissionCameraActionStartVideo" xml:space="preserve"><value>Start video</value></data>
+  <data name="FlightMissionCameraActionStopVideo" xml:space="preserve"><value>Stop video</value></data>
+  <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>Set camera mode</value></data>
+  <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>Set region of interest</value></data>
+  <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>Point gimbal</value></data>
+  <data name="GimbalCameraControls" xml:space="preserve"><value>Gimbal and camera controls</value></data>
+  <data name="GimbalCameraAvailableCount" xml:space="preserve"><value>Gimbal/camera available on {0} of {1} selected units</value></data>
+  <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>Photo</value></data>
+  <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>Video</value></data>
+  <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>Vehicle frame</value></data>
+  <data name="FlightMissionGimbalFrameEarth" xml:space="preserve"><value>Earth frame</value></data>
   <data name="FlightMissionSetStep" xml:space="preserve"><value>Apply step settings</value></data>
   <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>Relative altitude (m)</value></data>
   <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>Cruise speed (m/s)</value></data>
@@ -578,4 +645,11 @@
   <data name="ConnectionShowAdvancedRadioSettings" xml:space="preserve"><value>Show advanced S0-S14 settings</value></data>
   <data name="ConnectionReviewLocalChanges" xml:space="preserve"><value>Review local changes</value></data>
   <data name="ConnectionReviewPairedChanges" xml:space="preserve"><value>Review paired changes</value></data>
+  <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>{0} photos · {1:0.#} s video · {2} trigger commands</value></data>
+  <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>{0} photos · {1:0.#} s video · {2} trigger commands</value></data>
+  <data name="CameraCapturePhoto" xml:space="preserve"><value>Capture photo</value></data>
+  <data name="CameraStartVideo" xml:space="preserve"><value>Start camera video</value></data>
+  <data name="CameraStopVideo" xml:space="preserve"><value>Stop camera video</value></data>
+  <data name="CameraCenterGimbal" xml:space="preserve"><value>Center gimbal</value></data>
+  <data name="CameraDefinition" xml:space="preserve"><value>Camera definition</value></data>
 </root>

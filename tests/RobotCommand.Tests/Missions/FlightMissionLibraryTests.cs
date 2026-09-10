@@ -158,6 +158,34 @@ public sealed class FlightMissionLibraryTests
     }
 
     [Fact]
+    public async Task UnboundGeometryStepCanBeSavedButCompilerRequiresBinding()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"robot-command-flight-mission-{Guid.NewGuid():N}");
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            var mission = ValidMission(now) with
+            {
+                Steps =
+                [
+                    new FlightMissionStep("takeoff", FlightMissionStepKind.Takeoff),
+                    new FlightMissionStep("loiter", FlightMissionStepKind.TimedLoiter, LoiterDurationSeconds: 30)
+                ]
+            };
+            using var store = new FlightMissionLibraryStore(root);
+
+            await store.SaveAsync(mission, cancellationToken: TestContext.Current.CancellationToken);
+            var findings = new Px4FlightMissionCompiler().Validate(mission, null);
+
+            Assert.Contains(findings, finding => finding.Code == "MISSION_STEP_GEOMETRY_REQUIRED");
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
+        }
+    }
+
+    [Fact]
     public void Compiler_AppendsRtlForConfiguredMissionEndAction()
     {
         var mission = ValidMission(DateTimeOffset.UtcNow) with
@@ -319,7 +347,7 @@ public sealed class FlightMissionLibraryTests
             Steps =
             [
                 new FlightMissionStep("takeoff", FlightMissionStepKind.Takeoff),
-                new FlightMissionStep("camera", FlightMissionStepKind.CameraCaptureIntent, CameraIntent: new FlightMissionCameraIntent("Photo", TriggerDistanceMetres: 5)),
+                new FlightMissionStep("camera", FlightMissionStepKind.CameraCaptureIntent, CameraIntent: new FlightMissionCameraIntent("Photo", TriggerDistanceMetres: 5, AutomaticPhotoCaptureEnabled: true)),
                 new FlightMissionStep("poi", FlightMissionStepKind.PointOfInterest, Coordinates: [new FlightMissionCoordinate(43.7001, -79.4001)]),
                 new FlightMissionStep("rtl", FlightMissionStepKind.ReturnToLaunch)
             ]
@@ -412,7 +440,7 @@ public sealed class FlightMissionLibraryTests
         [
             new FlightMissionCoordinate(43.7000, -79.4010),
             new FlightMissionCoordinate(43.7010, -79.4010)
-        ], Corridor: new FlightMissionCorridorOptions(40, 20, 5, CameraIntent: new FlightMissionCameraIntent("Photo", TriggerDistanceMetres: 10)));
+        ], Corridor: new FlightMissionCorridorOptions(40, 20, 5, CameraIntent: new FlightMissionCameraIntent("Photo")));
         var mission = ValidMission(DateTimeOffset.UtcNow) with
         {
             Steps =

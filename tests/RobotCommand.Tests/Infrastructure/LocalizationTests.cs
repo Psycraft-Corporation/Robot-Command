@@ -202,6 +202,61 @@ public sealed class LocalizationTests
     }
 
     [Fact]
+    public async Task MissionAuthoringAndOperateMapLabelsAreLocalizedForEverySupportedLanguage()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "RobotCommand-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var settings = new ApplicationSettingsService(
+            AppConfiguration.Load(directory),
+            new ApplicationSettingsPersistence(directory));
+        var localization = new LocalizationService(settings);
+        var keys = new[]
+        {
+            "MapMissionPreviews",
+            "MapMissionPreviewLayers",
+            "GeometryNewPoi",
+            "GeometrySelect",
+            "GeometryName",
+            "GeometrySave",
+            "GeometryDeleteSelected",
+            "FlightMissionConfirmDelete",
+            "FlightMissionDeleteAssociatedGeometry",
+            "FlightMissionDeleteMissionOnly",
+            "FlightMissionVehicleActions",
+            "FlightMissionAddStep",
+            "FlightMissionSelectedStep",
+            "FlightMissionStepGeometry",
+            "FlightMissionAuthoringPreview",
+            "FlightMissionLoiterSeconds",
+            "FlightMissionPointOfInterest",
+            "FlightMissionWaypointSequence",
+            "FlightMissionGeometryRequired",
+            "FlightMissionLoiterSummary",
+            "FlightMissionLoiterGeometryRequired",
+            "FlightMissionRoutePointCount",
+            "FlightMissionZonePointCount"
+        };
+
+        await localization.SetLanguageAsync("en", TestContext.Current.CancellationToken);
+        var englishValues = keys.ToDictionary(key => key, localization.Get);
+
+        foreach (var language in new[] { "fr", "ja", "uk", "ko" })
+        {
+            await localization.SetLanguageAsync(language, TestContext.Current.CancellationToken);
+
+            foreach (var key in keys)
+            {
+                var value = localization.Get(key);
+                Assert.False(string.IsNullOrWhiteSpace(value), $"Missing value for {key} in {language}.");
+                Assert.DoesNotContain("[", value, StringComparison.Ordinal);
+                Assert.NotEqual(englishValues[key], value);
+            }
+        }
+
+        await localization.SetLanguageAsync("en", TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
     public async Task LanguageNamesRemainInTheirNativeLanguage()
     {
         var directory = Path.Combine(Path.GetTempPath(), "RobotCommand-tests", Guid.NewGuid().ToString("N"));

@@ -1,3 +1,4 @@
+using RobotCommand.Core;
 using RobotCommand.Models;
 using RobotCommand.Services.Mavlink;
 
@@ -41,6 +42,46 @@ public sealed class MavlinkOperatorCommandGateway(
                 OperatorPreflightSeverity.Warning,
                 $"{adapter.DisplayName} telemetry is delayed. The command may be accepted by the vehicle but its outcome cannot be confirmed until telemetry recovers.",
                 "Robot Command MAVLink"));
+        }
+        if (IsCameraCommand(request.Command))
+        {
+            var capability = connection.GetCameraCapabilities(request.Target.VehicleId);
+            var needsCamera = request.Command is OperatorCommandKind.CapturePhoto or
+                OperatorCommandKind.StartVideo or OperatorCommandKind.StopVideo ||
+                request.Command == OperatorCommandKind.SetGimbal && request.Parameters?.GimbalZoomPercent is not null;
+            var needsGimbal = request.Command is OperatorCommandKind.CenterGimbal or
+                OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal &&
+                (request.Parameters?.GimbalPitchDegrees is not null ||
+                 request.Parameters?.GimbalYawDegrees is not null ||
+                 request.Parameters?.GimbalRollDegrees is not null);
+            if (needsCamera && !capability.HasCamera)
+            {
+                return Task.FromResult(OperatorCommandPreparationResult.Rejected(
+                    "No MAVLink camera component has been discovered for this vehicle.",
+                    "MAVLINK_CAMERA_NOT_DISCOVERED"));
+            }
+            if (needsGimbal && !capability.HasGimbal)
+            {
+                return Task.FromResult(OperatorCommandPreparationResult.Rejected(
+                    "No MAVLink gimbal component has been discovered for this vehicle.",
+                    "MAVLINK_GIMBAL_NOT_DISCOVERED"));
+            }
+            if (request.Parameters?.GimbalRollDegrees is not null && capability.SupportsRoll == false)
+            {
+                findings.Add(new(
+                    "GIMBAL_ROLL_UNSUPPORTED",
+                    OperatorPreflightSeverity.Warning,
+                    "This gimbal does not report a roll axis; pitch and yaw will be sent and roll will be ignored.",
+                    "Robot Command MAVLink"));
+            }
+            if (request.Parameters?.GimbalZoomPercent is not null && capability.SupportsZoom == false)
+            {
+                findings.Add(new(
+                    "CAMERA_ZOOM_UNSUPPORTED",
+                    OperatorPreflightSeverity.Warning,
+                    "This camera does not report basic zoom support; MAVLink will confirm whether the zoom request is accepted.",
+                    "Robot Command MAVLink"));
+            }
         }
         var preparation = new PreparedVehicleOperation(
             new PreparedOperationReference(
@@ -90,7 +131,25 @@ public sealed class MavlinkOperatorCommandGateway(
                 "The MAVLink connection is no longer available.");
         }
 
-        var result = await connection.SendOperatorCommandAsync(request, cancellationToken);
+        MavlinkCommandDispatchResult result;
+        if (IsCameraCommand(request.Command))
+        {
+            result = new MavlinkCommandDispatchResult(true, OperationalCommandState.Succeeded, "Camera command completed.");
+            foreach (var action in CameraActionsFor(request))
+            {
+                result = await connection.SendCameraActionAsync(
+                    request.Target.VehicleId,
+                    null,
+                    action,
+                    cancellationToken);
+                if (!result.Accepted)
+                    break;
+            }
+        }
+        else
+        {
+            result = await connection.SendOperatorCommandAsync(request, cancellationToken);
+        }
         return new(
             result.Accepted,
             result.State,
@@ -176,6 +235,12 @@ public sealed class MavlinkOperatorCommandGateway(
             }
         }
 
+        if (IsCameraCommand(request.Command))
+        {
+            rejection = null;
+            return true;
+        }
+
         try
         {
             _ = adapter.BuildCommand(request, telemetry);
@@ -197,4 +262,40 @@ public sealed class MavlinkOperatorCommandGateway(
 
     private static bool IsValidLongitude(double? value)
         => value is { } longitude && double.IsFinite(longitude) && longitude is >= -180 and <= 180;
+
+    private static bool IsCameraCommand(OperatorCommandKind command)
+        => command is OperatorCommandKind.CapturePhoto or OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal;
+
+    private static IReadOnlyList<FlightMissionCameraAction> CameraActionsFor(OperatorCommandRequest request)
+    {
+        var parameters = request.Parameters ?? OperatorCommandParameters.None;
+        return request.Command switch
+        {
+            OperatorCommandKind.CapturePhoto => [FlightMissionCameraAction.PhotoOnce()],
+            OperatorCommandKind.StartVideo => [FlightMissionCameraAction.StartVideo()],
+            OperatorCommandKind.StopVideo => [FlightMissionCameraAction.StopVideo()],
+            OperatorCommandKind.CenterGimbal => [FlightMissionCameraAction.SetGimbal(0, 0, 0)],
+            OperatorCommandKind.NadirGimbal => [FlightMissionCameraAction.SetGimbal(-90, 0, 0)],
+            OperatorCommandKind.SetGimbal => BuildGimbalActions(parameters),
+            _ => []
+        };
+    }
+
+    private static IReadOnlyList<FlightMissionCameraAction> BuildGimbalActions(OperatorCommandParameters parameters)
+    {
+        var actions = new List<FlightMissionCameraAction>();
+        if (parameters.GimbalPitchDegrees is not null || parameters.GimbalYawDegrees is not null || parameters.GimbalRollDegrees is not null)
+        {
+            actions.Add(FlightMissionCameraAction.SetGimbal(
+                parameters.GimbalPitchDegrees,
+                parameters.GimbalYawDegrees,
+                parameters.GimbalRollDegrees,
+                parameters.GimbalEarthFrame ? FlightMissionGimbalFrame.Earth : FlightMissionGimbalFrame.Vehicle));
+        }
+        if (parameters.GimbalZoomPercent is { } zoom)
+            actions.Add(FlightMissionCameraAction.SetZoom(zoom));
+        return actions;
+    }
 }

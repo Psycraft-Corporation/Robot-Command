@@ -1,5 +1,7 @@
+using RobotCommand.Core;
 using RobotCommand.Models;
 using RobotCommand.Services.Operations;
+using RobotCommand.ViewModels;
 using Xunit;
 
 namespace RobotCommand.Tests;
@@ -125,6 +127,140 @@ public sealed class OperationalMapSceneBuilderTests
     }
 
     [Fact]
+    public void Build_CanShowMissionPreviewWhenNormalGeometryIsHidden()
+    {
+        var scene = _builder.Build(
+            [Vehicle("alpha", "conn-a")],
+            [Telemetry("alpha", "conn-a", latitude: 43.65, longitude: -79.38)],
+            [
+                Geometry("normal", "conn-a", MapFrameKind.GlobalWgs84, [new OperationalPoint(-79.38, 43.65)]),
+                Geometry("mission", "conn-a", MapFrameKind.GlobalWgs84, [new OperationalPoint(-79.37, 43.66)], kind: "FlightMissionPreviewPoint")
+            ],
+            "alpha",
+            MapViewportMode.FitAll,
+            geometryVisible: false,
+            missionPreviewVisible: true);
+
+        var preview = Assert.Single(scene.Geometries);
+        Assert.Equal("mission", preview.GeometryId);
+        Assert.False(scene.GeometryVisible);
+    }
+
+    [Fact]
+    public void Build_CanHideMissionPreviewWithoutHidingNormalGeometry()
+    {
+        var scene = _builder.Build(
+            [Vehicle("alpha", "conn-a")],
+            [Telemetry("alpha", "conn-a", latitude: 43.65, longitude: -79.38)],
+            [
+                Geometry("normal", "conn-a", MapFrameKind.GlobalWgs84, [new OperationalPoint(-79.38, 43.65)]),
+                Geometry("mission", "conn-a", MapFrameKind.GlobalWgs84, [new OperationalPoint(-79.37, 43.66)], kind: "FlightMissionPreviewPoint")
+            ],
+            "alpha",
+            MapViewportMode.FitAll,
+            geometryVisible: true,
+            missionPreviewVisible: false);
+
+        var normal = Assert.Single(scene.Geometries);
+        Assert.Equal("normal", normal.GeometryId);
+    }
+
+    [Fact]
+    public void Build_ShowsCameraConeOnlyForReportedPx4OrArduPilotCameras()
+    {
+        var px4 = Vehicle("px4-camera", "conn-camera") with
+        {
+            ProfileKey = "px4",
+            CapabilityKeys = ["camera_capture"]
+        };
+        var other = Vehicle("other-camera", "conn-other") with
+        {
+            ProfileKey = "test-backend",
+            CapabilityKeys = ["camera_capture"]
+        };
+
+        var scene = _builder.Build(
+            [px4, other],
+            [
+                Telemetry("px4-camera", "conn-camera", latitude: 43.65, longitude: -79.38, heading: 90),
+                Telemetry("other-camera", "conn-other", latitude: 43.66, longitude: -79.37, heading: 90)
+            ],
+            [],
+            "px4-camera",
+            MapViewportMode.FitAll,
+            geometryVisible: true);
+
+        Assert.NotNull(Assert.Single(scene.Vehicles, item => item.VehicleId == "px4-camera").CameraCone);
+
+        var otherScene = _builder.Build(
+            [other],
+            [Telemetry("other-camera", "conn-other", latitude: 43.66, longitude: -79.37, heading: 90)],
+            [],
+            "other-camera",
+            MapViewportMode.FitAll,
+            geometryVisible: true);
+        Assert.Null(Assert.Single(otherScene.Vehicles).CameraCone);
+    }
+
+    [Fact]
+    public void MissionPreview_UsesOneConnectedRouteAndUnlabelledStepMarkers()
+    {
+        var mission = new FlightMissionSnapshot(
+            "mission",
+            "Survey mission",
+            20,
+            [
+                new FlightMissionStep(
+                    "first",
+                    FlightMissionStepKind.TimedLoiter,
+                    SourceGeometryName: "PoI 1",
+                    Coordinates: [new FlightMissionCoordinate(43.65, -79.38)]),
+                new FlightMissionStep(
+                    "second",
+                    FlightMissionStepKind.TimedLoiter,
+                    SourceGeometryName: "PoI 2",
+                    Coordinates: [new FlightMissionCoordinate(43.66, -79.37)])
+            ],
+            "Valid",
+            [],
+            DateTimeOffset.UtcNow,
+            "hash");
+
+        var overlays = OperationalMapViewModel.BuildMissionPreviewOverlays(mission);
+        var route = Assert.Single(overlays.Where(item => item.Kind == "FlightMissionPreviewRoute"));
+
+        Assert.Equal(2, route.Points.Count);
+        Assert.All(overlays, item => Assert.True(string.IsNullOrWhiteSpace(item.Name)));
+        Assert.Equal(2, overlays.Count(item => item.Kind == "FlightMissionPreviewPoint"));
+    }
+
+    [Fact]
+    public void MissionPreview_ContainsCaptureMarkersWithoutGeometryLabels()
+    {
+        var mission = new FlightMissionSnapshot(
+            "mission-capture",
+            "Capture mission",
+            20,
+            [new FlightMissionStep(
+                "route",
+                FlightMissionStepKind.WaypointSequence,
+                Coordinates: [
+                    new FlightMissionCoordinate(43.6500, -79.3800),
+                    new FlightMissionCoordinate(43.6510, -79.3800)
+                ],
+                CameraIntent: new FlightMissionCameraIntent(Actions: [FlightMissionCameraAction.PhotoByDistance(50)]))],
+            "Valid",
+            [],
+            DateTimeOffset.UtcNow,
+            "hash");
+
+        var overlays = OperationalMapViewModel.BuildMissionPreviewOverlays(mission);
+
+        Assert.Contains(overlays, item => item.Kind.StartsWith("FlightMissionPreviewCaptureMarker:", StringComparison.Ordinal));
+        Assert.All(overlays, item => Assert.True(string.IsNullOrWhiteSpace(item.Name)));
+    }
+
+    [Fact]
     public void Build_CanHidePolicyWithoutHidingOperationalGeometry()
     {
         var scene = _builder.Build(
@@ -236,14 +372,15 @@ public sealed class OperationalMapSceneBuilderTests
         MapFrameKind frame,
         IReadOnlyList<OperationalPoint> points,
         string policyKind = "none",
-        string policyConstraint = "none")
+        string policyConstraint = "none",
+        string kind = "WaypointSequence")
         => new(
             $"{connectionId}:{id}",
             id,
             connectionId,
             null,
             id,
-            "WaypointSequence",
+            kind,
             frame,
             false,
             points,

@@ -104,7 +104,10 @@ public static class OperatorControlRules
 
         EvaluateConnectionAndTelemetry(vehicle, telemetry, connection, findings);
         EvaluateCapability(vehicle, command, findings);
-        EvaluateDiagnostics(command, diagnostics, findings);
+        if (!IsCameraCommand(command))
+        {
+            EvaluateDiagnostics(command, diagnostics, findings);
+        }
         EvaluateCommandState(vehicle, telemetry, command, parameters, findings);
 
         if (findings.Count == 0)
@@ -212,6 +215,9 @@ public static class OperatorControlRules
             OperatorCommandKind.GoTo => OperatorCommandSafety.Elevated,
             OperatorCommandKind.ChangeAltitude => OperatorCommandSafety.Elevated,
             OperatorCommandKind.SetHeading => OperatorCommandSafety.Elevated,
+            OperatorCommandKind.CapturePhoto or OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal => OperatorCommandSafety.Routine,
             OperatorCommandKind.Land => OperatorCommandSafety.Elevated,
             OperatorCommandKind.Recover => OperatorCommandSafety.Elevated,
             _ => OperatorCommandSafety.Elevated
@@ -247,6 +253,12 @@ public static class OperatorControlRules
             OperatorCommandKind.ChangeAltitude => "Change altitude",
             OperatorCommandKind.SetHeading => "Set heading",
             OperatorCommandKind.Recover => "Return home",
+            OperatorCommandKind.CapturePhoto => "Capture photo",
+            OperatorCommandKind.StartVideo => "Start video",
+            OperatorCommandKind.StopVideo => "Stop video",
+            OperatorCommandKind.CenterGimbal => "Centre gimbal",
+            OperatorCommandKind.NadirGimbal => "Nadir gimbal",
+            OperatorCommandKind.SetGimbal => "Set gimbal",
             _ => command.ToString()
         };
 
@@ -295,6 +307,14 @@ public static class OperatorControlRules
 
         switch (command)
         {
+            case OperatorCommandKind.CapturePhoto or
+                OperatorCommandKind.StartVideo or
+                OperatorCommandKind.StopVideo or
+                OperatorCommandKind.CenterGimbal or
+                OperatorCommandKind.NadirGimbal or
+                OperatorCommandKind.SetGimbal:
+                ValidateGimbalParameters(command, parameters, findings);
+                break;
             case OperatorCommandKind.Arm:
                 if (telemetry.Armed)
                 {
@@ -424,6 +444,28 @@ public static class OperatorControlRules
                 }
                 break;
         }
+    }
+
+    private static void ValidateGimbalParameters(
+        OperatorCommandKind command,
+        OperatorCommandParameters? parameters,
+        ICollection<OperatorPreflightFinding> findings)
+    {
+        if (command == OperatorCommandKind.SetGimbal &&
+            parameters?.GimbalPitchDegrees is null && parameters?.GimbalYawDegrees is null &&
+            parameters?.GimbalRollDegrees is null && parameters?.GimbalZoomPercent is null)
+        {
+            findings.Add(Block("GIMBAL_TARGET_REQUIRED", "Set gimbal requires at least one angle or zoom value."));
+        }
+
+        if (parameters?.GimbalPitchDegrees is { } pitch && (!double.IsFinite(pitch) || pitch is < -90 or > 90))
+            findings.Add(Block("GIMBAL_PITCH_INVALID", "Gimbal pitch must be between -90 and 90 degrees."));
+        if (parameters?.GimbalYawDegrees is { } yaw && (!double.IsFinite(yaw) || yaw is < -360 or > 360))
+            findings.Add(Block("GIMBAL_YAW_INVALID", "Gimbal yaw must be between -360 and 360 degrees."));
+        if (parameters?.GimbalRollDegrees is { } roll && (!double.IsFinite(roll) || roll is < -360 or > 360))
+            findings.Add(Block("GIMBAL_ROLL_INVALID", "Gimbal roll must be between -360 and 360 degrees."));
+        if (parameters?.GimbalZoomPercent is { } zoom && (!double.IsFinite(zoom) || zoom is < 0 or > 100))
+            findings.Add(Block("CAMERA_ZOOM_INVALID", "Camera zoom must be between 0 and 100 percent."));
     }
 
     private static void ValidateGoToParameters(
@@ -580,6 +622,9 @@ public static class OperatorControlRules
     private static IEnumerable<string> CommandAliases(OperatorCommandKind command)
         => command switch
         {
+            OperatorCommandKind.CapturePhoto => ["camera_photo", "camera_capture", "camera_capture_photo", "capture_photo", "camera"],
+            OperatorCommandKind.StartVideo or OperatorCommandKind.StopVideo => ["camera_video", "camera_start_video", "camera_stop_video", "camera_capture_video", "camera"],
+            OperatorCommandKind.CenterGimbal or OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal => ["gimbal", "camera_gimbal", "gimbal_control"],
             OperatorCommandKind.Arm => ["arm", "vehicle_arm", "operator_arm"],
             OperatorCommandKind.Disarm => ["disarm", "vehicle_disarm", "operator_disarm"],
             OperatorCommandKind.Hold => ["hold", "vehicle_hold", "operator_hold"],
@@ -591,6 +636,11 @@ public static class OperatorControlRules
             OperatorCommandKind.Recover => ["recover", "return", "return_home", "rtl", "vehicle_recover"],
             _ => []
         };
+
+    private static bool IsCameraCommand(OperatorCommandKind command)
+        => command is OperatorCommandKind.CapturePhoto or OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal;
 
     private static string Normalize(string value)
     {

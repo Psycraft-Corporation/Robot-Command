@@ -20,6 +20,7 @@ using Mapsui.Styles;
 using Mapsui.Tiling.Layers;
 using Mapsui.UI.Avalonia;
 using NetTopologySuite.Geometries;
+using RobotCommand.Core;
 using RobotCommand.Infrastructure;
 using RobotCommand.Models;
 using RobotCommand.Services;
@@ -92,6 +93,9 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     public static readonly StyledProperty<ICommand?> MapAssembleCommandProperty =
         AvaloniaProperty.Register<NativeOperationalMapControl, ICommand?>(nameof(MapAssembleCommand));
 
+    public static readonly StyledProperty<ICommand?> MapPointGimbalCommandProperty =
+        AvaloniaProperty.Register<NativeOperationalMapControl, ICommand?>(nameof(MapPointGimbalCommand));
+
     public static readonly StyledProperty<OperatorControlsViewModel?> MapOperatorControlsProperty =
         AvaloniaProperty.Register<NativeOperationalMapControl, OperatorControlsViewModel?>(nameof(MapOperatorControls));
 
@@ -115,8 +119,10 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     private readonly Canvas _vehicleLabelOverlay;
     private readonly Canvas _dynamicLabelOverlay;
     private readonly Canvas _staticLabelOverlay;
+    private readonly MissionPreviewArrowOverlayControl _missionPreviewArrowOverlay;
     private readonly AvaloniaRectangle _selectionBox;
     private readonly Canvas _unitMarkerOverlay;
+    private readonly Canvas _unitCameraConeOverlay;
     private readonly VehicleTrailOverlayControl _trailOverlay;
     private MemoryLayer? _policyLayer;
     private MemoryLayer? _geometryLayer;
@@ -129,6 +135,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     private MemoryLayer? _vehicleLayer;
     private readonly Dictionary<string, VehicleAnimationState> _vehicleAnimations = new(StringComparer.Ordinal);
     private readonly Dictionary<string, AvaloniaPolygon> _unitOverlayMarkers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, AvaloniaPolygon> _unitCameraConeOverlays = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Border> _vehicleLabelControls = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Border> _geometryLabelControls = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<AvaloniaPolyline>> _geometryArrowControls = new(StringComparer.Ordinal);
@@ -168,6 +175,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     private bool _mapAssemblyCapturingEnd;
     private bool _mapAssemblyChoosingFormation;
     private bool _mapAwaitingConfirmation;
+    private bool _mapConfirmationMenuPending;
     private OperatorControlsViewModel? _mapOperatorControls;
     private UnitsPanelViewModel? _mapUnitsPanel;
     private KeyModifiers _lastMapKeyModifiers;
@@ -278,7 +286,17 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             IsHitTestVisible = false,
             ClipToBounds = true
         };
+        _missionPreviewArrowOverlay = new MissionPreviewArrowOverlayControl
+        {
+            IsHitTestVisible = false,
+            ClipToBounds = true
+        };
         _unitMarkerOverlay = new Canvas
+        {
+            IsHitTestVisible = false,
+            ClipToBounds = true
+        };
+        _unitCameraConeOverlay = new Canvas
         {
             IsHitTestVisible = false,
             ClipToBounds = true
@@ -499,6 +517,8 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         Children.Add(_vehicleLabelOverlay);
         Children.Add(_dynamicLabelOverlay);
         Children.Add(_staticLabelOverlay);
+        Children.Add(_missionPreviewArrowOverlay);
+        Children.Add(_unitCameraConeOverlay);
         Children.Add(_unitMarkerOverlay);
         Children.Add(_packageMessage);
         Children.Add(_cursorBadge);
@@ -862,6 +882,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         {
             animation.UpdateRenderedVisual();
             UpdateUnitOverlayMarker(animation);
+            UpdateUnitCameraCone(animation);
         }
 
         if (Presentation is { } presentation)
@@ -1184,6 +1205,12 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         set => SetValue(MapAssembleCommandProperty, value);
     }
 
+    public ICommand? MapPointGimbalCommand
+    {
+        get => GetValue(MapPointGimbalCommandProperty);
+        set => SetValue(MapPointGimbalCommandProperty, value);
+    }
+
     public OperatorControlsViewModel? MapOperatorControls
     {
         get => GetValue(MapOperatorControlsProperty);
@@ -1222,6 +1249,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         foreach (var animation in _vehicleAnimations.Values)
         {
             UpdateUnitOverlayMarker(animation);
+            UpdateUnitCameraCone(animation);
         }
     }
 
@@ -1258,9 +1286,10 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             return;
         }
 
-        _geometryLayer.Enabled = scene.GeometryVisible;
-        _geometryLayer.Features = scene.GeometryVisible
-            ? CreateGeometryFeatures(scene.Geometries.Where(item => !item.IsPolicy), policy: false)
+        var missionPreviewVisible = scene.Geometries.Any(item => !item.IsPolicy && IsFlightMissionPreview(item));
+        _geometryLayer.Enabled = scene.GeometryVisible || missionPreviewVisible;
+        _geometryLayer.Features = scene.GeometryVisible || missionPreviewVisible
+            ? CreateGeometryFeatures(scene.Geometries.Where(item => !item.IsPolicy && (scene.GeometryVisible || IsFlightMissionPreview(item))), policy: false)
             : Array.Empty<IFeature>();
         _geometryLayer.FeaturesWereModified();
     }
@@ -1341,25 +1370,28 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         var fence = IsPx4Fence(geometry);
         var exclusionFence = IsPx4ExclusionFence(geometry);
         var lineColor = highlighted
-            ? MapsuiColor.FromString("#F5C451")
+            ? MapsuiColor.FromString("#F6C453")
             : missionPreview
-                ? MapsuiColor.FromString("#A78BFA")
+                ? MapsuiColor.FromString(MapDrawingPrimitives.MissionPreviewAccentHex)
             : fence
                 ? MapsuiColor.FromString(exclusionFence ? "#F97316" : "#22C55E")
-            : policy
+                : policy
                 ? MapsuiColor.FromString("#F87171")
                 : MapsuiColor.FromString("#6FAFC9");
         var fillColor = highlighted
-            ? new MapsuiColor(245, 196, 81, 44)
+            ? new MapsuiColor(246, 196, 83, 44)
             : missionPreview
-                ? new MapsuiColor(167, 139, 250, 20)
+                ? new MapsuiColor(239, 68, 68, 44)
             : fence
                 ? exclusionFence ? new MapsuiColor(249, 115, 22, 24) : new MapsuiColor(34, 197, 94, 24)
             : policy
                 ? new MapsuiColor(248, 113, 113, 50)
                 : new MapsuiColor(111, 175, 201, 30);
-        var pen = new MapsuiPen(lineColor, highlighted ? 2.5 : policy || fence ? 2 : 1.25);
-        if (!policy && (IsWaypointSequence(geometry) || missionPreview))
+        // Mapsui widths are map-renderer units rather than Avalonia pixels;
+        // the authoring preview's 3 px stroke is therefore represented by a
+        // much smaller native-map width at normal zoom levels.
+        var pen = new MapsuiPen(lineColor, highlighted ? 2.5 : missionPreview ? 1.25 : policy || fence ? 2 : 1.25);
+        if (!policy && IsWaypointSequence(geometry))
         {
             pen.PenStyle = PenStyle.Dash;
             pen.DashArray = [5, 4];
@@ -1375,17 +1407,24 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private static SymbolStyle CreateGeometryPointStyle(MapGeometryVisual geometry, bool policy)
     {
+        var captureMarker = IsMissionCaptureMarker(geometry);
+        var captureColor = geometry.Kind.EndsWith(nameof(FlightMissionCameraActionKind.StartVideo), StringComparison.OrdinalIgnoreCase) ||
+                           geometry.Kind.EndsWith(nameof(FlightMissionCameraActionKind.StopVideo), StringComparison.OrdinalIgnoreCase)
+            ? MapsuiColor.FromString("#60A5FA")
+            : MapsuiColor.FromString("#F97316");
         var color = geometry.Highlighted
-            ? MapsuiColor.FromString("#F5C451")
+            ? MapsuiColor.FromString("#F6C453")
+            : captureMarker
+                ? captureColor
             : IsFlightMissionPreview(geometry)
-                ? MapsuiColor.FromString("#A78BFA")
+                ? MapsuiColor.FromString(MapDrawingPrimitives.MissionPreviewAccentHex)
             : policy
                 ? MapsuiColor.FromString("#F87171")
                 : MapsuiColor.FromString("#6FAFC9");
         return new SymbolStyle
         {
             SymbolType = SymbolType.Ellipse,
-            SymbolScale = geometry.Highlighted ? 0.58 : 0.42,
+            SymbolScale = captureMarker ? 0.82 : geometry.Highlighted || IsFlightMissionPreview(geometry) ? 0.58 : 0.42,
             Fill = new MapsuiBrush(color),
             Outline = new MapsuiPen(MapsuiColor.FromString("#10161D"), 1)
         };
@@ -1399,6 +1438,9 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private static bool IsFlightMissionPreview(MapGeometryVisual geometry)
         => geometry.Kind.StartsWith("FlightMissionPreview", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsMissionCaptureMarker(MapGeometryVisual geometry)
+        => geometry.Kind.StartsWith("FlightMissionPreviewCaptureMarker:", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsPx4Fence(MapGeometryVisual geometry)
         => geometry.Kind.StartsWith("Px4Fence", StringComparison.OrdinalIgnoreCase)
@@ -1750,6 +1792,8 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             features.Add(animation.Feature);
             EnsureUnitOverlayMarker(vehicle.VehicleId);
             UpdateUnitOverlayMarker(animation);
+            EnsureUnitCameraCone(vehicle.VehicleId);
+            UpdateUnitCameraCone(animation);
         }
 
         foreach (var staleVehicleId in _vehicleAnimations.Keys.Where(id => !liveVehicleIds.Contains(id)).ToArray())
@@ -1758,6 +1802,10 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             if (_unitOverlayMarkers.Remove(staleVehicleId, out var marker))
             {
                 _unitMarkerOverlay.Children.Remove(marker);
+            }
+            if (_unitCameraConeOverlays.Remove(staleVehicleId, out var cone))
+            {
+                _unitCameraConeOverlay.Children.Remove(cone);
             }
         }
 
@@ -1789,6 +1837,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             {
                 animation.UpdateRenderedVisual();
                 UpdateUnitOverlayMarker(animation);
+                UpdateUnitCameraCone(animation);
             }
 
             UpdateFollowCamera();
@@ -1889,6 +1938,64 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         marker.RenderTransform = new RotateTransform(animation.Visual.HeadingDegrees ?? 0);
     }
 
+    private void EnsureUnitCameraCone(string vehicleId)
+    {
+        if (_unitCameraConeOverlays.ContainsKey(vehicleId)) return;
+        var cone = new AvaloniaPolygon
+        {
+            Fill = new SolidColorBrush(Avalonia.Media.Color.FromArgb(55, 96, 165, 250)),
+            Stroke = new SolidColorBrush(Avalonia.Media.Color.FromArgb(190, 96, 165, 250)),
+            StrokeThickness = 1.5,
+            IsHitTestVisible = false,
+            IsVisible = false
+        };
+        _unitCameraConeOverlays[vehicleId] = cone;
+        _unitCameraConeOverlay.Children.Add(cone);
+    }
+
+    private void UpdateUnitCameraCone(VehicleAnimationState animation)
+    {
+        if (!_unitCameraConeOverlays.TryGetValue(animation.VehicleId, out var cone) ||
+            animation.Visual.CameraCone is not { } camera ||
+            animation.Visual.HeadingDegrees is not { } heading ||
+            !_mapControl.IsVisible ||
+            _mapControl.Map is null ||
+            !HasUsableNativeViewport())
+        {
+            if (cone is not null) cone.IsVisible = false;
+            return;
+        }
+
+        var viewport = _mapControl.Map.Navigator.Viewport;
+        var screenCenter = viewport.WorldToScreen(animation.CurrentX, animation.CurrentY);
+        var center = new Avalonia.Point(screenCenter.X, screenCenter.Y);
+        var rangePixels = Math.Clamp(camera.RangeMetres / viewport.Resolution, 18, 2400);
+        var halfFov = Math.Clamp(camera.HorizontalFieldOfViewDegrees, 10, 120) * Math.PI / 360d;
+        var gimbalYaw = animation.Visual.GimbalYawDegrees ?? 0;
+        var cameraHeading = animation.Visual.GimbalYawInEarthFrame == true
+            ? gimbalYaw
+            : heading + gimbalYaw;
+        var headingRadians = (cameraHeading - viewport.Rotation) * Math.PI / 180d;
+        var points = new List<Avalonia.Point> { center };
+        const int arcPoints = 12;
+        for (var index = 0; index <= arcPoints; index++)
+        {
+            var angle = headingRadians - halfFov + (2 * halfFov * index / arcPoints);
+            points.Add(new Avalonia.Point(
+                center.X + Math.Sin(angle) * rangePixels,
+                center.Y - Math.Cos(angle) * rangePixels));
+        }
+
+        var minX = points.Min(point => point.X);
+        var minY = points.Min(point => point.Y);
+        var maxX = points.Max(point => point.X);
+        var maxY = points.Max(point => point.Y);
+        cone.Width = Math.Max(1, maxX - minX);
+        cone.Height = Math.Max(1, maxY - minY);
+        cone.Points = new AvaloniaPoints(points.Select(point => new Avalonia.Point(point.X - minX, point.Y - minY)));
+        cone.IsVisible = TryPositionOnCanvas(cone, minX, minY);
+    }
+
     private sealed class VehicleAnimationState
     {
         private const double RenderDelaySeconds = 0.1;
@@ -1937,7 +2044,14 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         {
             var now = DateTimeOffset.UtcNow;
             var timestamp = sample.SourceTimestamp == DateTimeOffset.MinValue ? now : sample.SourceTimestamp;
-            _visual = _visual with { HeadingDegrees = sample.HeadingDegrees, State = sample.State };
+            _visual = _visual with
+            {
+                HeadingDegrees = sample.HeadingDegrees,
+                State = sample.State,
+                GimbalPitchDegrees = sample.GimbalPitchDegrees,
+                GimbalYawDegrees = sample.GimbalYawDegrees,
+                GimbalYawInEarthFrame = sample.GimbalYawInEarthFrame
+            };
             var snap = _samples.Count == 0 ||
                        sample.IsStale ||
                        IsLandedState(sample.LandedState) ||
@@ -2162,7 +2276,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             _geometryLabelControls.Clear();
             _geometryArrowControls.Clear();
             _staticGeometryRenderKey = renderKey;
-            if (scene.GeometryVisible)
+            if (scene.GeometryVisible || scene.Geometries.Any(item => !item.IsPolicy && IsFlightMissionPreview(item)))
             {
                 BuildStaticGeometryControls(scene);
             }
@@ -2196,12 +2310,12 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private void BuildStaticGeometryControls(OperationalMapScene scene)
     {
-        if (!scene.GeometryVisible)
+        if (!scene.GeometryVisible && !scene.Geometries.Any(item => !item.IsPolicy && IsFlightMissionPreview(item)))
         {
             return;
         }
 
-        foreach (var geometry in scene.Geometries.Where(item => !item.IsPolicy))
+        foreach (var geometry in scene.Geometries.Where(item => !item.IsPolicy && (scene.GeometryVisible || IsFlightMissionPreview(item))))
         {
             if (IsWaypointSequence(geometry))
             {
@@ -2213,14 +2327,14 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
                 {
                     var chevron = new AvaloniaPolyline
                     {
-                        Width = 13,
-                        Height = 13,
+                        Width = MapDrawingPrimitives.DirectionArrowLength + 2,
+                        Height = (MapDrawingPrimitives.DirectionArrowHalfWidth * 2) + 2,
                         Points = new AvaloniaPoints([
                             new Avalonia.Point(1, 1),
-                            new Avalonia.Point(9, 6.5),
-                            new Avalonia.Point(1, 12)
+                            new Avalonia.Point(MapDrawingPrimitives.DirectionArrowLength + 1, MapDrawingPrimitives.DirectionArrowHalfWidth + 1),
+                            new Avalonia.Point(1, (MapDrawingPrimitives.DirectionArrowHalfWidth * 2) + 1)
                         ]),
-                        StrokeThickness = 1.5,
+                        StrokeThickness = MapDrawingPrimitives.DirectionArrowThickness,
                         IsHitTestVisible = false,
                         IsVisible = false,
                         RenderTransformOrigin = new RelativePoint(0.5, 0.5, RelativeUnit.Relative)
@@ -2256,6 +2370,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private void UpdateStaticGeometryControlPositions(OperationalMapScene scene, Viewport viewport)
     {
+        var missionArrows = new List<MissionPreviewArrow>();
         foreach (var label in _geometryLabelControls.Values)
         {
             label.IsVisible = false;
@@ -2269,12 +2384,13 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             }
         }
 
-        if (!scene.GeometryVisible)
+        if (!scene.GeometryVisible && !scene.Geometries.Any(item => !item.IsPolicy && IsFlightMissionPreview(item)))
         {
+            _missionPreviewArrowOverlay.Arrows = [];
             return;
         }
 
-        foreach (var geometry in scene.Geometries.Where(item => !item.IsPolicy))
+        foreach (var geometry in scene.Geometries.Where(item => !item.IsPolicy && (scene.GeometryVisible || IsFlightMissionPreview(item))))
         {
             if (_geometryLabelControls.TryGetValue(geometry.GeometryId, out var label) &&
                 !string.IsNullOrWhiteSpace(geometry.Name) &&
@@ -2282,9 +2398,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
                 TryProject(anchor, out var projected))
             {
                 var screen = viewport.WorldToScreen(projected.X, projected.Y);
-                var accent = geometry.Highlighted
-                    ? Avalonia.Media.Color.FromRgb(245, 196, 81)
-                    : Avalonia.Media.Color.FromRgb(111, 175, 201);
+                var accent = IsFlightMissionPreview(geometry)
+                    ? Avalonia.Media.Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)
+                    : geometry.Highlighted
+                        ? Avalonia.Media.Color.FromRgb(245, 196, 81)
+                        : Avalonia.Media.Color.FromRgb(111, 175, 201);
                 if (IsPx4Fence(geometry))
                 {
                     accent = IsPx4ExclusionFence(geometry)
@@ -2302,9 +2420,67 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
                 label.IsVisible = TryPositionOnCanvas(label, screen.X - 36, screen.Y + 12);
             }
 
-            if (_geometryArrowControls.TryGetValue(geometry.GeometryId, out var arrows))
+            if (IsFlightMissionPreview(geometry))
+            {
+                missionArrows.AddRange(BuildMissionPreviewArrows(geometry, viewport));
+            }
+            else if (_geometryArrowControls.TryGetValue(geometry.GeometryId, out var arrows))
             {
                 UpdateWaypointDirectionArrows(geometry, viewport, arrows);
+            }
+        }
+
+        _missionPreviewArrowOverlay.Arrows = missionArrows;
+    }
+
+    private static IEnumerable<MissionPreviewArrow> BuildMissionPreviewArrows(
+        MapGeometryVisual geometry,
+        Viewport viewport)
+    {
+        const double arrowSpacing = MapDrawingPrimitives.DirectionArrowSpacing;
+        for (var index = 0; index < geometry.Points.Count - 1; index++)
+        {
+            if (!TryProject(geometry.Points[index], out var startProjected) ||
+                !TryProject(geometry.Points[index + 1], out var endProjected))
+            {
+                continue;
+            }
+
+            var start = viewport.WorldToScreen(startProjected.X, startProjected.Y);
+            var end = viewport.WorldToScreen(endProjected.X, endProjected.Y);
+            if (!IsFinite(start.X) || !IsFinite(start.Y) || !IsFinite(end.X) || !IsFinite(end.Y))
+            {
+                continue;
+            }
+
+            var deltaX = end.X - start.X;
+            var deltaY = end.Y - start.Y;
+            var length = Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
+            if (length < 42)
+            {
+                continue;
+            }
+
+            var arrowCount = Math.Max(1, (int)(length / arrowSpacing));
+            var ux = deltaX / length;
+            var uy = deltaY / length;
+            var px = -uy;
+            var py = ux;
+            for (var arrowIndex = 1; arrowIndex <= arrowCount; arrowIndex++)
+            {
+                var distance = length * arrowIndex / (arrowCount + 1d);
+                var tip = new Avalonia.Point(start.X + ux * distance, start.Y + uy * distance);
+                var back = new Avalonia.Point(
+                    tip.X - ux * MapDrawingPrimitives.DirectionArrowLength,
+                    tip.Y - uy * MapDrawingPrimitives.DirectionArrowLength);
+                yield return new MissionPreviewArrow(
+                    tip,
+                    new Avalonia.Point(
+                        back.X + px * MapDrawingPrimitives.DirectionArrowHalfWidth,
+                        back.Y + py * MapDrawingPrimitives.DirectionArrowHalfWidth),
+                    new Avalonia.Point(
+                        back.X - px * MapDrawingPrimitives.DirectionArrowHalfWidth,
+                        back.Y - py * MapDrawingPrimitives.DirectionArrowHalfWidth));
             }
         }
     }
@@ -2346,7 +2522,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             // Route direction is shown as small, open chevrons along the dashed
             // stroke. They deliberately avoid the solid triangular silhouette
             // used by vehicle markers.
-            var arrowSpacing = 56d;
+            var arrowSpacing = MapDrawingPrimitives.DirectionArrowSpacing;
             if (arrowOffset >= arrows.Count)
             {
                 break;
@@ -2358,7 +2534,9 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             {
                 var progress = arrowIndex / (double)(arrowCount + 1);
                 var chevron = arrows[arrowOffset + arrowIndex - 1];
-                chevron.Stroke = new SolidColorBrush(geometry.Highlighted
+                chevron.Stroke = new SolidColorBrush(IsFlightMissionPreview(geometry)
+                    ? Avalonia.Media.Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)
+                    : geometry.Highlighted
                         ? Avalonia.Media.Color.FromRgb(245, 196, 81)
                         : Avalonia.Media.Color.FromRgb(111, 175, 201));
                 chevron.RenderTransform = new RotateTransform(rotation);
@@ -3460,6 +3638,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         var canPrepareTeamGoTo = teamGoToCommand?.CanExecute(target) == true;
         var canPrepareGoTo = MapGoToCommand?.CanExecute(target) == true;
         var canPrepareSetHeading = MapSetHeadingCommand?.CanExecute(target) == true;
+        var canPreparePointGimbal = MapPointGimbalCommand?.CanExecute(target) == true;
         var findingSignature = pending is null
             ? string.Empty
             : string.Join('|', _mapOperatorControls?.Findings.Select(item => $"{item.Severity}:{item.Message}") ?? []);
@@ -3476,6 +3655,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             canPrepareTeamGoTo,
             canPrepareGoTo,
             canPrepareSetHeading,
+            canPreparePointGimbal,
             _mapOperatorControls?.HasMultiUnitSelection == true,
             _mapAssemblyChoosingFormation,
             _mapAssemblyStart is not null,
@@ -3573,6 +3753,17 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
             };
             if (canPrepareSetHeading)
                 _mapContextMenu.Items.Add(setHeading);
+            if (canPreparePointGimbal)
+            {
+                _mapContextMenu.Items.Add(new MenuItem
+                {
+                    Header = "Queue point gimbal here",
+                    Command = new RelayCommand(
+                        parameter => ExecuteMapContextCommand(MapPointGimbalCommand, parameter),
+                        parameter => MapPointGimbalCommand?.CanExecute(parameter) == true),
+                    CommandParameter = target
+                });
+            }
             return;
         }
 
@@ -3628,6 +3819,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
     {
         if (!awaitingConfirmation)
         {
+            _mapConfirmationMenuPending = false;
             _mapAssemblyStart = null;
             _mapAssemblyEnd = null;
             _mapAssemblyFormationId = null;
@@ -3686,6 +3878,7 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         _mapContextMenuSignature = null;
         _mapContextTarget = null;
         _mapAwaitingConfirmation = false;
+        _mapConfirmationMenuPending = false;
         _mapAssemblyStart = null;
         _mapAssemblyEnd = null;
         _mapAssemblyFormationId = null;
@@ -3697,17 +3890,50 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
     private void ExecuteMapContextCommand(ICommand? command, object? parameter)
     {
+        if (_mapContextTarget is not { } target)
+        {
+            return;
+        }
+
         _mapAwaitingConfirmation = true;
+        _mapConfirmationMenuPending = true;
+
+        // Avalonia closes a ContextMenu after a MenuItem command has handled
+        // the pointer event. Wait for that close notification before opening
+        // the confirmation menu; opening it from inside the original click
+        // causes the new popup to be closed by the original menu's close pass.
+        var sourceMenu = _mapContextMenu;
+        EventHandler<RoutedEventArgs>? reopenConfirmationMenu = null;
+        reopenConfirmationMenu = (_, _) =>
+        {
+            if (sourceMenu is not null)
+                sourceMenu.Closed -= reopenConfirmationMenu;
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!_mapConfirmationMenuPending || !_mapAwaitingConfirmation)
+                {
+                    return;
+                }
+
+                _mapConfirmationMenuPending = false;
+                OpenMapContextMenu(default, target, awaitingConfirmation: true);
+            }, DispatcherPriority.Background);
+        };
+
+        if (sourceMenu is not null)
+            sourceMenu.Closed += reopenConfirmationMenu;
+
         command?.Execute(parameter);
         if (ReferenceEquals(command, MapAssembleCommand))
             MapOperatorControls?.ClearFormationPreview();
-        // Avalonia closes a ContextMenu after a MenuItem is clicked. Reopen it
-        // on the next UI turn so the confirmation remains at the map location.
-        Dispatcher.UIThread.Post(() =>
+
+        // A command can be invoked programmatically without a source popup.
+        // Preserve the same confirmation flow in that case.
+        if (sourceMenu is null)
         {
-            RefreshMapContextMenu();
-            _mapContextMenu?.Open(_mapControl);
-        });
+            reopenConfirmationMenu(null, new RoutedEventArgs());
+        }
     }
 
     private void OnMapOperatorControlsPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -3715,13 +3941,42 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
         if (e.PropertyName is not nameof(OperatorControlsViewModel.PendingPlan) and
             not nameof(OperatorControlsViewModel.Findings) and
             not nameof(OperatorControlsViewModel.StatusMessage) and
-            not nameof(OperatorControlsViewModel.IsPreparingMapCommand))
+            not nameof(OperatorControlsViewModel.IsPreparingMapCommand) and
+            not nameof(OperatorControlsViewModel.HasGimbalCameraSelection) and
+            not nameof(OperatorControlsViewModel.GimbalCameraSupportedCount))
         {
             return;
         }
 
         Dispatcher.UIThread.Post(() =>
         {
+            if (_mapConfirmationMenuPending)
+            {
+                return;
+            }
+
+            if (_mapAwaitingConfirmation &&
+                _mapOperatorControls?.PendingPlan is null &&
+                _mapOperatorControls?.IsPreparingMapCommand != true)
+            {
+                _ = VerifyMapContextPreparationAsync();
+                return;
+            }
+
+            RefreshMapContextMenu();
+        });
+    }
+
+    private async Task VerifyMapContextPreparationAsync()
+    {
+        await Task.Delay(75);
+        await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            if (_mapConfirmationMenuPending)
+            {
+                return;
+            }
+
             if (_mapAwaitingConfirmation &&
                 _mapOperatorControls?.PendingPlan is null &&
                 _mapOperatorControls?.IsPreparingMapCommand != true)
@@ -3746,6 +4001,11 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
         Dispatcher.UIThread.Post(() =>
         {
+            if (_mapConfirmationMenuPending)
+            {
+                return;
+            }
+
             if (_mapAwaitingConfirmation &&
                 _mapUnitsPanel?.PendingFormationOperation is null &&
                 _mapOperatorControls?.PendingPlan is null)
@@ -4116,6 +4376,41 @@ public sealed class NativeOperationalMapControl : Grid, IDisposable
 
         previous.Cancel();
         previous.Dispose();
+    }
+
+    private readonly record struct MissionPreviewArrow(Avalonia.Point Tip, Avalonia.Point Left, Avalonia.Point Right);
+
+    private sealed class MissionPreviewArrowOverlayControl : Control
+    {
+        private IReadOnlyList<MissionPreviewArrow> _arrows = [];
+
+        public IReadOnlyList<MissionPreviewArrow> Arrows
+        {
+            get => _arrows;
+            set
+            {
+                _arrows = value;
+                InvalidateVisual();
+            }
+        }
+
+        public override void Render(DrawingContext context)
+        {
+            base.Render(context);
+            if (_arrows.Count == 0)
+            {
+                return;
+            }
+
+            var pen = new Avalonia.Media.Pen(
+                new SolidColorBrush(Avalonia.Media.Color.Parse(MapDrawingPrimitives.MissionPreviewAccentHex)),
+                MapDrawingPrimitives.DirectionArrowThickness);
+            foreach (var arrow in _arrows)
+            {
+                context.DrawLine(pen, arrow.Tip, arrow.Left);
+                context.DrawLine(pen, arrow.Tip, arrow.Right);
+            }
+        }
     }
 
     public void Dispose()

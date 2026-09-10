@@ -151,7 +151,7 @@ public sealed class GeometryLibraryViewModel : ObservableObject, IDisposable
     {
         if (SelectedItem is null) return Task.CompletedTask;
         DeleteConfirmationPending = true;
-        StatusMessage = $"Confirm deletion of local geometry '{SelectedItem.Name}'.";
+        StatusMessage = string.Empty;
         return Task.CompletedTask;
     }
     private async Task ConfirmDeleteAsync(CancellationToken token)

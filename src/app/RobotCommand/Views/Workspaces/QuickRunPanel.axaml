@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:RobotCommand.ViewModels"
+             xmlns:loc="using:RobotCommand.Localization"
              x:Class="RobotCommand.Views.Workspaces.QuickRunPanel"
              x:DataType="vm:OperatorControlsViewModel">
   <ScrollViewer x:Name="OperationsScrollViewer"
@@ -122,6 +123,30 @@
             </StackPanel>
             </Grid>
           </Grid>
+          <Border Classes="surfaceInset" Padding="8" IsVisible="{Binding HasGimbalCameraSelection}">
+            <StackPanel Spacing="6">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=GimbalCameraControls}" />
+                <TextBlock Grid.Column="1" Classes="muted"
+                           Text="{Binding GimbalCameraSupportedSummary}"
+                           ToolTip.Tip="{Binding GimbalCameraSupportedTooltip}" />
+              </Grid>
+              <TextBlock Classes="muted" Text="{Binding GimbalTelemetrySummary}" />
+              <WrapPanel Orientation="Horizontal">
+                <Button Classes="toolbarButton" Margin="0,0,6,6" Content="Queue photo" Command="{Binding PrepareCapturePhotoCommand}" />
+                <Button Classes="toolbarButton" Margin="0,0,6,6" Content="{Binding VideoToggleText}" Command="{Binding ToggleVideoCommand}" />
+                <Button Classes="toolbarButton" Margin="0,0,6,6" Content="Centre gimbal" Command="{Binding PrepareCenterGimbalCommand}" />
+                <Button Classes="toolbarButton" Margin="0,0,6,6" Content="Nadir gimbal" Command="{Binding PrepareNadirGimbalCommand}" />
+              </WrapPanel>
+              <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                <TextBox Text="{Binding GimbalPitchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="Pitch (degrees)" />
+                <TextBox Grid.Column="1" Text="{Binding GimbalRollText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="Roll (degrees)" />
+                <TextBox Grid.Row="1" Text="{Binding GimbalYawText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="Yaw (degrees)" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding GimbalZoomText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="Zoom (0–100%)" />
+              </Grid>
+              <Button HorizontalAlignment="Left" Classes="toolbarButton" Content="Queue gimbal settings" Command="{Binding PrepareSetGimbalCommand}" />
+            </StackPanel>
+          </Border>
           <TextBlock Classes="errorText"
                      IsVisible="{Binding HasParameterValidationMessage}"
                      Text="{Binding ParameterValidationMessage}"

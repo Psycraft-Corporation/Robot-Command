@@ -41,6 +41,9 @@ internal static class Program
         if (args.Length >= 1 && string.Equals(args[0], "formation", StringComparison.OrdinalIgnoreCase))
             return await FormationCommands.RunAsync(args);
 
+        if (args.Length >= 1 && string.Equals(args[0], "camera", StringComparison.OrdinalIgnoreCase))
+            return await CameraCommands.RunAsync(args);
+
         if (args.Length >= 1 && (string.Equals(args[0], "fence", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(args[0], "px4-fence", StringComparison.OrdinalIgnoreCase)))
             return await FenceCommands.RunAsync(args);
@@ -115,7 +118,7 @@ internal static class Program
     }
 
     private static void PrintUsage() => Console.WriteLine(
-        "Usage: robotcommand session run [...], robotcommand server run [...], robotcommand operator run [...], robotcommand simulation worker [...], robotcommand 3d status [...], robotcommand ghost [...], robotcommand formation [...], robotcommand fence [...], robotcommand connection <command> [...], or robotcommand unit <command> [...].");
+        "Usage: robotcommand session run [...], robotcommand server run [...], robotcommand operator run [...], robotcommand simulation worker [...], robotcommand 3d status [...], robotcommand ghost [...], robotcommand formation [...], robotcommand fence [...], robotcommand connection <command> [...], robotcommand unit <command> [...], or robotcommand camera <action> --connection <id> --unit <vehicleId> [...].");
 
     private static async Task<bool> ExecuteAdminCommandAsync(string input, ITeamServerWorkflow workflow, ConsoleReporter reporter, CancellationToken cancellationToken)
     {

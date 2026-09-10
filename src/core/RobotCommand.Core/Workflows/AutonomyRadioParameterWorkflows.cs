@@ -245,7 +245,7 @@ public enum FlightMissionStepKind
     Land = 7,
     CorridorScan = 8
 }
-public enum FlightMissionExecutionState { NotUploaded, Uploaded, Running, Paused, Completed, Interrupted, Failed, Unknown }
+public enum FlightMissionExecutionState { NotUploaded, Uploaded, Running, Paused, Completed, Interrupted, Failed, Unknown, Failsafe }
 
 /// <summary>Action PX4 should take after the final authored mission item.</summary>
 public enum FlightMissionEndAction
@@ -266,13 +266,154 @@ public enum FlightMissionPostLandingState
 
 public sealed record FlightMissionCoordinate(double LatitudeDegrees, double LongitudeDegrees);
 
-/// <summary>Metadata-only capture intent. PX4 trigger commands are deliberately not emitted yet.</summary>
+/// <summary>
+/// Backend-neutral camera action kinds. These describe operator intent without
+/// binding the mission model to MAVLink, PX4, ArduPilot, or another backend.
+/// </summary>
+public enum FlightMissionCameraActionKind
+{
+    PhotoOnce,
+    PhotoByTime,
+    PhotoByDistance,
+    StopPhotos,
+    StartVideo,
+    StopVideo,
+    CameraMode,
+    RegionOfInterest,
+    Gimbal,
+    CameraZoom
+}
+
+/// <summary>Semantic camera mode requested by a camera-mode action.</summary>
+public enum FlightMissionCameraMode { Photo, Video }
+
+/// <summary>Reference frame for gimbal angles.</summary>
+public enum FlightMissionGimbalFrame { Vehicle, Earth }
+
+/// <summary>
+/// One portable camera or gimbal action. Action-specific values are optional
+/// on the wire model so older mission documents remain readable; use
+/// <see cref="ValidationErrors"/> before saving or compiling a mission.
+/// </summary>
+public sealed record FlightMissionCameraAction(
+    FlightMissionCameraActionKind Kind,
+    double? IntervalSeconds = null,
+    double? DistanceMetres = null,
+    FlightMissionCameraMode? CameraMode = null,
+    FlightMissionCoordinate? RegionOfInterest = null,
+    double? GimbalPitchDegrees = null,
+    double? GimbalYawDegrees = null,
+    double? GimbalRollDegrees = null,
+    double? GimbalZoomPercent = null,
+    FlightMissionGimbalFrame GimbalFrame = FlightMissionGimbalFrame.Vehicle,
+    string? CameraName = null,
+    byte? CameraId = null)
+{
+    public static FlightMissionCameraAction PhotoOnce(string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.PhotoOnce, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction PhotoByTime(double intervalSeconds, string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.PhotoByTime, IntervalSeconds: intervalSeconds, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction PhotoByDistance(double distanceMetres, string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.PhotoByDistance, DistanceMetres: distanceMetres, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction StopPhotos(string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.StopPhotos, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction StartVideo(string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.StartVideo, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction StopVideo(string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.StopVideo, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction SetCameraMode(FlightMissionCameraMode cameraMode, string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.CameraMode, CameraMode: cameraMode, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction SetRegionOfInterest(FlightMissionCoordinate regionOfInterest, string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.RegionOfInterest, RegionOfInterest: regionOfInterest, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction SetGimbal(
+        double? pitchDegrees = null,
+        double? yawDegrees = null,
+        double? rollDegrees = null,
+        FlightMissionGimbalFrame frame = FlightMissionGimbalFrame.Vehicle,
+        string? cameraName = null,
+        byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.Gimbal, GimbalPitchDegrees: pitchDegrees, GimbalYawDegrees: yawDegrees,
+            GimbalRollDegrees: rollDegrees, GimbalFrame: frame, CameraName: cameraName, CameraId: cameraId);
+
+    public static FlightMissionCameraAction SetZoom(double zoomPercent, string? cameraName = null, byte? cameraId = null)
+        => new(FlightMissionCameraActionKind.CameraZoom, GimbalZoomPercent: zoomPercent,
+            CameraName: cameraName, CameraId: cameraId);
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<string> ValidationErrors
+    {
+        get
+        {
+            var errors = new List<string>();
+            if (!Enum.IsDefined(Kind))
+            {
+                errors.Add("The camera action kind is invalid.");
+                return errors;
+            }
+
+            switch (Kind)
+            {
+                case FlightMissionCameraActionKind.PhotoByTime when IntervalSeconds is not > 0 || !double.IsFinite(IntervalSeconds.Value):
+                    errors.Add("Photo-by-time requires a finite interval greater than zero seconds.");
+                    break;
+                case FlightMissionCameraActionKind.PhotoByDistance when DistanceMetres is not > 0 || !double.IsFinite(DistanceMetres.Value):
+                    errors.Add("Photo-by-distance requires a finite distance greater than zero metres.");
+                    break;
+                case FlightMissionCameraActionKind.CameraMode when CameraMode is null || !Enum.IsDefined(CameraMode.Value):
+                    errors.Add("Camera mode requires a valid mode.");
+                    break;
+                case FlightMissionCameraActionKind.RegionOfInterest when RegionOfInterest is null:
+                    errors.Add("Region-of-interest requires a coordinate.");
+                    break;
+                case FlightMissionCameraActionKind.Gimbal when GimbalPitchDegrees is null && GimbalYawDegrees is null && GimbalRollDegrees is null:
+                    errors.Add("Gimbal action requires at least one angle.");
+                    break;
+                case FlightMissionCameraActionKind.CameraZoom when GimbalZoomPercent is null:
+                    errors.Add("Camera zoom requires a percentage.");
+                    break;
+            }
+
+            if (RegionOfInterest is { } roi &&
+                (!double.IsFinite(roi.LatitudeDegrees) || !double.IsFinite(roi.LongitudeDegrees) ||
+                 roi.LatitudeDegrees is < -90 or > 90 || roi.LongitudeDegrees is < -180 or > 180))
+                errors.Add("Region-of-interest coordinates must be valid WGS84 coordinates.");
+
+            if (GimbalPitchDegrees is { } pitch && (!double.IsFinite(pitch) || pitch is < -90 or > 90))
+                errors.Add("Gimbal pitch must be between -90 and 90 degrees.");
+            if (GimbalYawDegrees is { } yaw && !double.IsFinite(yaw))
+                errors.Add("Gimbal yaw must be finite.");
+            if (GimbalRollDegrees is { } roll && !double.IsFinite(roll))
+                errors.Add("Gimbal roll must be finite.");
+            if (GimbalZoomPercent is { } zoom && (!double.IsFinite(zoom) || zoom is < 0 or > 100))
+                errors.Add("Camera zoom must be between 0 and 100 percent.");
+            if (!Enum.IsDefined(GimbalFrame))
+                errors.Add("The gimbal reference frame is invalid.");
+
+            return errors;
+        }
+    }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsValid => ValidationErrors.Count == 0;
+}
+
+/// <summary>Camera metadata, opt-in automatic photo triggering, and portable actions.</summary>
 public sealed record FlightMissionCameraIntent(
     string Mode = "None",
     double? TriggerDistanceMetres = null,
     double? TriggerIntervalSeconds = null,
     string? CameraName = null,
-    string? Notes = null);
+    string? Notes = null,
+    IReadOnlyList<FlightMissionCameraAction>? Actions = null,
+    bool AutomaticPhotoCaptureEnabled = false);
 
 public sealed record FlightMissionSurveyOptions(
     double LineSpacingMetres = 25,
@@ -325,12 +466,29 @@ public sealed record FlightMissionStep(
     FlightMissionCorridorOptions? Corridor = null)
 {
     public IReadOnlyList<FlightMissionCoordinate> FrozenCoordinates => Coordinates ?? [];
+    public bool HasSourceGeometry => !string.IsNullOrWhiteSpace(SourceGeometryName);
     public string DisplayName => Kind switch
     {
         FlightMissionStepKind.ReturnToLaunch => "RTL",
         FlightMissionStepKind.CorridorScan => "Corridor scan",
         _ => Kind.ToString()
     };
+    public bool NeedsGeometryBinding => Kind is FlightMissionStepKind.PointOfInterest or FlightMissionStepKind.WaypointSequence or FlightMissionStepKind.SurveyZone or FlightMissionStepKind.CorridorScan or FlightMissionStepKind.TimedLoiter
+        && FrozenCoordinates.Count == 0;
+    public string ContextSummary => Kind switch
+    {
+        _ when NeedsGeometryBinding && Kind == FlightMissionStepKind.TimedLoiter && LoiterDurationSeconds is { } duration
+            => $"{duration:0.#} s loiter · geometry required",
+        _ when NeedsGeometryBinding => "Geometry required",
+        FlightMissionStepKind.TimedLoiter when LoiterDurationSeconds is { } duration
+            => $"{duration:0.#} s loiter",
+        FlightMissionStepKind.PointOfInterest => "1 point",
+        FlightMissionStepKind.WaypointSequence => $"{FrozenCoordinates.Count} route points",
+        FlightMissionStepKind.CorridorScan => $"{FrozenCoordinates.Count} route points",
+        FlightMissionStepKind.SurveyZone => $"{FrozenCoordinates.Count} zone points",
+        _ => string.Empty
+    };
+    public bool HasContextSummary => !string.IsNullOrWhiteSpace(ContextSummary);
 }
 
 public sealed record FlightMissionDocument(
@@ -363,7 +521,8 @@ public sealed record FlightMissionSnapshot(
     string Hash,
     double CruiseSpeedMetresPerSecond = 5,
     FlightMissionTargetAssignment? TargetAssignment = null,
-    FlightMissionEndAction EndAction = FlightMissionEndAction.Hold);
+    FlightMissionEndAction EndAction = FlightMissionEndAction.Hold,
+    FlightMissionCameraIntent? CameraIntent = null);
 
 public sealed record FlightMissionExecutionSnapshot(
     string MissionId,
@@ -447,9 +606,9 @@ public interface IFlightMissionWorkflow
     Task<FlightMissionSnapshot> SetAltitudeAsync(string missionId, double relativeAltitudeMetres, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddTakeoffAsync(string missionId, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddGeometryAsync(string missionId, string geometryId, CancellationToken cancellationToken = default);
-    Task<FlightMissionSnapshot> AddSurveyAsync(string missionId, string zoneGeometryId, FlightMissionSurveyOptions? options = null, CancellationToken cancellationToken = default);
-    Task<FlightMissionSnapshot> AddCorridorAsync(string missionId, string waypointSequenceGeometryId, FlightMissionCorridorOptions? options = null, CancellationToken cancellationToken = default);
-    Task<FlightMissionSnapshot> AddTimedLoiterAsync(string missionId, string pointGeometryId, double durationSeconds, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> AddSurveyAsync(string missionId, string? zoneGeometryId, FlightMissionSurveyOptions? options = null, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> AddCorridorAsync(string missionId, string? waypointSequenceGeometryId, FlightMissionCorridorOptions? options = null, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> AddTimedLoiterAsync(string missionId, string? pointGeometryId, double durationSeconds, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddCameraIntentAsync(string missionId, FlightMissionCameraIntent intent, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddReturnToLaunchAsync(string missionId, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> AddLandAsync(string missionId, CancellationToken cancellationToken = default);
@@ -458,7 +617,10 @@ public interface IFlightMissionWorkflow
     Task<FlightMissionSnapshot> SetCruiseSpeedAsync(string missionId, double cruiseSpeedMetresPerSecond, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> SetEndActionAsync(string missionId, FlightMissionEndAction endAction, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> SetStepOverridesAsync(string missionId, string stepId, double? relativeAltitudeMetres, double? cruiseSpeedMetresPerSecond, bool terrainFollowing, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> SetStepGeometryAsync(string missionId, string stepId, string geometryId, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> SetStepOptionsAsync(string missionId, string stepId, FlightMissionSurveyOptions? survey, FlightMissionCorridorOptions? corridor, double? loiterDurationSeconds, FlightMissionCameraIntent? cameraIntent, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> SetMissionCameraActionsAsync(string missionId, IReadOnlyList<FlightMissionCameraAction> actions, CancellationToken cancellationToken = default);
+    Task<FlightMissionSnapshot> SetStepCameraActionsAsync(string missionId, string stepId, IReadOnlyList<FlightMissionCameraAction> actions, CancellationToken cancellationToken = default);
     Task<FlightMissionSnapshot> SetTargetAssignmentAsync(string missionId, FlightMissionTargetAssignment? assignment, CancellationToken cancellationToken = default);
     Task<FlightMissionCompilationPreview> PreviewAsync(string missionId, string? vehicleId = null, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<WorkflowFinding>> ValidateAsync(string missionId, string? vehicleId = null, CancellationToken cancellationToken = default);
@@ -484,7 +646,8 @@ public sealed record FlightMissionCompilationPreview(
     string Summary,
     FlightMissionTerrainProfile? TerrainProfile = null,
     int SurveyLineCount = 0,
-    double SurveyAreaSquareMetres = 0);
+    double SurveyAreaSquareMetres = 0,
+    FlightMissionCaptureStatistics? CaptureStatistics = null);
 
 /// <summary>
 /// A reviewed, non-persistent terrain conversion used only for the upload that

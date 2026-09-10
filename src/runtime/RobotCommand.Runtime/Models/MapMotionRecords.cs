@@ -18,7 +18,10 @@ public sealed record MapVehicleMotionSample(
     string LandedState,
     bool IsStale,
     DateTimeOffset SourceTimestamp,
-    long PositionResetRevision = 0);
+    long PositionResetRevision = 0,
+    double? GimbalPitchDegrees = null,
+    double? GimbalYawDegrees = null,
+    bool? GimbalYawInEarthFrame = null);
 
 public sealed record MapVehicleMotionSnapshot(
     MapFrameKind Frame,

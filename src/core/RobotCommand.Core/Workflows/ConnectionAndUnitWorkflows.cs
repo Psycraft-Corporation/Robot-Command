@@ -95,7 +95,12 @@ public sealed record UnitTelemetryObservation(
     DateTimeOffset? ObservedAt,
     double? BatteryRemainingPercent = null,
     double? BatteryVoltageVolts = null,
-    DateTimeOffset? BatteryObservedAt = null);
+    DateTimeOffset? BatteryObservedAt = null,
+    double? GimbalPitchDegrees = null,
+    double? GimbalYawDegrees = null,
+    double? GimbalRollDegrees = null,
+    double? CameraZoomPercent = null,
+    bool? CameraRecordingVideo = null);
 
 public sealed record UnitDiagnosticsObservation(
     string OverallStatus,
@@ -108,7 +113,8 @@ public sealed record UnitDiagnosticsObservation(
     string TelemetryDetail,
     IReadOnlyList<string> Blockers,
     IReadOnlyList<string> Warnings,
-    DateTimeOffset? ObservedAt);
+    DateTimeOffset? ObservedAt,
+    string FirmwareVersion = "Not reported");
 
 public sealed record UnitLinkObservation(
     string ConnectionId,

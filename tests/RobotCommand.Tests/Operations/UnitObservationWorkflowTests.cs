@@ -29,7 +29,8 @@ public sealed class UnitObservationWorkflowTests
             vehicles.Upsert(new VehicleRecord("vehicle-1", "Dracula", ["px4"], null, null, "Multicopter", "Air", "px4", AvailabilityState.Online));
             telemetry.Upsert(new VehicleTelemetryRecord("telemetry-1", "vehicle-1", "px4", null, AvailabilityState.Online,
                 true, "Flying", "Multicopter", "Running", "Healthy", "Ready", 43.6510, -79.3790, 120, 20,
-                null, null, null, 3, 4, -1, 90, false, "OK", string.Empty, DateTimeOffset.UtcNow));
+                null, null, null, 3, 4, -1, 90, false, "OK", string.Empty, DateTimeOffset.UtcNow,
+                BatteryRemainingPercent: 42, BatteryVoltageVolts: 15.2, BatteryObservedAt: DateTimeOffset.UtcNow));
             diagnostics.Upsert(new VehicleDiagnosticsSnapshot("diagnostics-1", "vehicle-1", "px4", "PX4",
                 VehicleDiagnosticStatus.Ready, "Ready", VehicleDiagnosticStatus.Ready, "Ready", VehicleDiagnosticStatus.Ready, "Ready",
                 VehicleDiagnosticStatus.Ready, "Current", [], [], DateTimeOffset.UtcNow,
@@ -42,8 +43,8 @@ public sealed class UnitObservationWorkflowTests
 
             Assert.Equal(3, unit.Telemetry?.VelocityNorthMetresPerSecond);
             Assert.Equal(4, unit.Telemetry?.VelocityEastMetresPerSecond);
-            Assert.Equal(76, unit.Telemetry?.BatteryRemainingPercent);
-            Assert.Equal(15.8, unit.Telemetry?.BatteryVoltageVolts);
+            Assert.Equal(42, unit.Telemetry?.BatteryRemainingPercent);
+            Assert.Equal(15.2, unit.Telemetry?.BatteryVoltageVolts);
             Assert.InRange(unit.DistanceFromOperatorMetres!.Value, 100, 200);
             var association = Assert.Single(unit.AssociatedConnections!);
             Assert.Equal("Dracula radio", association.Name);

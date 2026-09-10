@@ -136,6 +136,20 @@ public interface IMavlinkCodec
         short r,
         ushort buttons = 0);
 
+    /// <summary>Encodes the live gimbal-manager setpoint used by QGC controls.</summary>
+    byte[] EncodeGimbalManagerSetPitchYaw(
+        byte sourceSystemId,
+        byte sourceComponentId,
+        byte targetSystemId,
+        byte targetComponentId,
+        uint flags,
+        byte gimbalDeviceId,
+        float pitch,
+        float yaw,
+        float pitchRate,
+        float yawRate)
+        => throw new NotSupportedException("This MAVLink codec does not include gimbal-manager setpoints.");
+
     /// <summary>
     /// Encodes a local-NED position/velocity setpoint for PX4 Offboard
     /// control. Callers explicitly select which dimensions are ignored using
@@ -272,6 +286,7 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
 
             var fields = new Dictionary<string, object>(frame.Fields, StringComparer.Ordinal);
             AddMissionTypeExtension(bytes, frame.MessageId, fields);
+            AddMissionCurrentExtension(bytes, frame.MessageId, fields);
             packet = new MavlinkPacket(
                 frame.StartMarker == Protocol.V2.StartMarker ? (byte)2 : (byte)1,
                 frame.PacketSequence,
@@ -336,7 +351,13 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
                 break;
             case MavlinkMessageIds.MissionCurrent when payload.Length >= 2:
                 fields["seq"] = BitConverter.ToUInt16(payload[..2]);
-                if (payload.Length >= 3) fields["total"] = payload[2];
+                if (payload.Length >= 4) fields["total"] = BitConverter.ToUInt16(payload.Slice(2, 2));
+                else if (payload.Length >= 3) fields["total"] = payload[2];
+                // MAVLink 2 MISSION_CURRENT adds mission_state after seq and
+                // total. Keep this in the extension fallback as well as the
+                // generated decoder so completion is not lost on older codec
+                // metadata.
+                if (payload.Length >= 5) fields["mission_state"] = payload[4];
                 break;
             case MavlinkMessageIds.MissionItemReached when payload.Length >= 2:
                 fields["seq"] = BitConverter.ToUInt16(payload[..2]);
@@ -553,6 +574,33 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
         }
     }
 
+    public byte[] EncodeGimbalManagerSetPitchYaw(
+        byte sourceSystemId,
+        byte sourceComponentId,
+        byte targetSystemId,
+        byte targetComponentId,
+        uint flags,
+        byte gimbalDeviceId,
+        float pitch,
+        float yaw,
+        float pitchRate,
+        float yawRate)
+        => EncodeSimpleMessage(
+            MavlinkMessageIds.GimbalManagerSetPitchYaw,
+            sourceSystemId,
+            sourceComponentId,
+            new Dictionary<string, object>
+            {
+                ["flags"] = flags,
+                ["gimbal_device_id"] = gimbalDeviceId,
+                ["pitch"] = pitch,
+                ["yaw"] = yaw,
+                ["pitch_rate"] = pitchRate,
+                ["yaw_rate"] = yawRate,
+                ["target_system"] = targetSystemId,
+                ["target_component"] = targetComponentId
+            });
+
     public byte[] EncodeSetPositionTargetLocalNed(
         byte sourceSystemId,
         byte sourceComponentId,
@@ -718,9 +766,9 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
             ["param2"] = item.Param2,
             ["param3"] = item.Param3,
             ["param4"] = item.Param4,
-            ["x"] = item.LatitudeE7,
-            ["y"] = item.LongitudeE7,
-            ["z"] = item.AltitudeMetres
+            ["x"] = item.RawX ?? item.LatitudeE7,
+            ["y"] = item.RawY ?? item.LongitudeE7,
+            ["z"] = item.RawZ ?? item.AltitudeMetres
         });
 
     public byte[] EncodeMissionItem(byte sourceSystemId, byte sourceComponentId, byte targetSystemId, byte targetComponentId, MavlinkMissionItem item)
@@ -737,9 +785,9 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
             ["param2"] = item.Param2,
             ["param3"] = item.Param3,
             ["param4"] = item.Param4,
-            ["x"] = item.LatitudeE7 / 10_000_000f,
-            ["y"] = item.LongitudeE7 / 10_000_000f,
-            ["z"] = item.AltitudeMetres
+            ["x"] = item.RawX is { } rawX ? rawX : item.LatitudeE7 / 10_000_000f,
+            ["y"] = item.RawY is { } rawY ? rawY : item.LongitudeE7 / 10_000_000f,
+            ["z"] = item.RawZ ?? item.AltitudeMetres
         });
 
     public byte[] EncodeMissionRequestList(byte sourceSystemId, byte sourceComponentId, byte targetSystemId, byte targetComponentId, byte missionType = 0)
@@ -795,6 +843,26 @@ public sealed class MavlinkSharpCodec : IMavlinkCodec
         // parser's default when the payload actually carries the extension.
         var extension = bytes[10 + bytes[1] - 1];
         fields["mission_type"] = extension;
+    }
+
+    private static void AddMissionCurrentExtension(
+        ReadOnlySpan<byte> bytes,
+        uint messageId,
+        IDictionary<string, object> fields)
+    {
+        if (messageId != MavlinkMessageIds.MissionCurrent ||
+            bytes.Length < 12 ||
+            bytes[0] != Protocol.V2.StartMarker ||
+            bytes[1] < 5)
+            return;
+
+        // MISSION_CURRENT is seq (uint16), total (uint16), mission_state
+        // (uint8), followed by mission_mode (uint8). The bundled dialect may
+        // decode only the older seq field, so read the stable extension bytes
+        // directly from the validated MAVLink 2 payload.
+        var payload = bytes.Slice(10, bytes[1]);
+        fields["total"] = BitConverter.ToUInt16(payload.Slice(2, 2));
+        fields["mission_state"] = payload[4];
     }
 
     private static byte[] AppendMavlinkV2Extension(byte[] frame, byte value, byte crcExtra)
@@ -921,10 +989,31 @@ public static class MavlinkMessageIds
     public const uint Vibration = 241;
     public const uint ExtendedSystemState = 245;
     public const uint StatusText = 253;
+    public const uint CameraInformation = 259;
+    public const uint CameraSettings = 260;
+    public const uint CameraCaptureStatus = 262;
+    public const uint GimbalManagerInformation = 280;
+    public const uint GimbalDeviceInformation = 283;
+    public const uint GimbalManagerSetPitchYaw = 284;
+    public const uint GimbalDeviceAttitudeStatus = 285;
+    public const uint VideoStreamInformation = 269;
+    public const uint VideoStreamStatus = 270;
 }
 
 public static class MavlinkCommandIds
 {
+    public const ushort DoSetRoi = 201;
+    public const ushort DoSetRoiLocation = 195;
+    public const ushort DoMountControl = 205;
+    public const ushort DoSetCameraTriggerDistance = 206;
+    public const ushort SetCameraMode = 530;
+    public const ushort SetCameraZoom = 531;
+    public const ushort DoGimbalManagerPitchYaw = 1000;
+    public const ushort DoGimbalManagerConfigure = 1001;
+    public const ushort ImageStartCapture = 2000;
+    public const ushort ImageStopCapture = 2001;
+    public const ushort VideoStartCapture = 2500;
+    public const ushort VideoStopCapture = 2501;
     public const ushort ConditionYaw = 115;
     public const ushort NavReturnToLaunch = 20;
     public const ushort NavLand = 21;
@@ -936,6 +1025,9 @@ public static class MavlinkCommandIds
     public const ushort MissionStart = 300;
     public const ushort ComponentArmDisarm = 400;
     public const ushort SetMessageInterval = 511;
+    public const ushort RequestMessage = 512;
+    public const ushort RequestCameraInformation = 521;
+    public const ushort RequestCameraSettings = 522;
 }
 
 public static class MavlinkValues
@@ -951,6 +1043,11 @@ public static class MavlinkValues
     public const byte MavModeFlagManualInputEnabled = 64;
     public const byte MavModeFlagSafetyArmed = 128;
     public const byte MavCompIdAutopilot1 = 1;
+    public const byte MavTypeCamera = 30;
+    public const byte MavTypeGimbal = 26;
+    public const byte MavCompIdCamera = 100;
+    public const byte MavCompIdGimbal = 154;
+    public const byte MavCompIdGimbal2 = 155;
     public const byte MavLandedStateOnGround = 1;
     public const byte MavLandedStateInAir = 2;
 

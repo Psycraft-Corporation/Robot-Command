@@ -100,6 +100,8 @@ internal static class AppHost
             _ => new EntityStore<string, PerceptionTrackRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, CameraSourceRecord>>(
             _ => new EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal));
+        services.AddSingleton<IEntityStore<string, MavlinkCameraDefinitionRecord>>(
+            _ => new EntityStore<string, MavlinkCameraDefinitionRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, CameraStreamRecord>>(
             _ => new EntityStore<string, CameraStreamRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, MissionRecord>>(
@@ -136,6 +138,7 @@ internal static class AppHost
         services.AddSingleton<MavlinkConnectionRegistry>();
         services.AddSingleton<IMavlinkConnectionRegistry>(
             serviceProvider => serviceProvider.GetRequiredService<MavlinkConnectionRegistry>());
+        services.AddSingleton<IMavlinkCameraControlService, MavlinkCameraControlService>();
         services.AddSingleton<IConnectionProvider, DirectLogosConnectionFactory>();
         services.AddSingleton<IConnectionProvider, LinkdConnectionProvider>();
         services.AddSingleton<IConnectionProvider, MavlinkConnectionProvider>();
@@ -316,7 +319,8 @@ internal static class AppHost
                 serviceProvider.GetServices<IFormationProvider>(),
                 serviceProvider.GetRequiredService<IUnitSettingsService>(),
                 serviceProvider.GetRequiredService<IUiDispatcher>(),
-                serviceProvider.GetRequiredService<IOperatorTargetScopeWorkflow>()));
+                serviceProvider.GetRequiredService<IOperatorTargetScopeWorkflow>(),
+                serviceProvider.GetRequiredService<ITerrainElevationService>()));
         services.AddSingleton<ManualControlViewModel>();
         services.AddSingleton<OperateViewModel>();
         services.AddSingleton<EventsViewModel>();

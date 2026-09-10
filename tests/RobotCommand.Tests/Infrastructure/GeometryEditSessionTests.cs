@@ -64,6 +64,36 @@ public sealed class GeometryEditSessionTests
         Assert.Equal("Original", session.Snapshot.Draft!.DisplayName);
     }
 
+    [Fact]
+    public void Complete_UsesTheInlineNameOnlyWhenExplicitlyFinished()
+    {
+        var session = new GeometryEditSession();
+        session.BeginCreate(GeometryDocument.Create(
+            "poi-alpha",
+            "Draft name",
+            GeometryDocumentKind.PointOfInterest));
+        session.Rename("Typed name");
+        session.AddVertex(GeometryDocumentPoint.GlobalWgs84(-79.38, 43.65));
+
+        Assert.Equal("Typed name", session.Snapshot.Draft!.DisplayName);
+        var completed = session.Complete();
+
+        Assert.Equal("Typed name", completed.DisplayName);
+        Assert.Equal(GeometryEditSessionStage.Completed, session.Snapshot.Stage);
+    }
+
+    [Fact]
+    public void Complete_RejectsAnEmptyInlineName()
+    {
+        var session = new GeometryEditSession();
+        session.BeginCreate(GeometryDocument.Create(
+            "poi-alpha",
+            "Draft name",
+            GeometryDocumentKind.PointOfInterest));
+        Assert.Throws<ArgumentException>(() => session.Rename("   "));
+        Assert.Equal(GeometryEditSessionStage.Editing, session.Snapshot.Stage);
+    }
+
 
     [Fact]
     public void ConsecutiveDragMoves_CoalesceIntoOneUndoStep()

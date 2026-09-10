@@ -6,19 +6,38 @@
              xmlns:loc="using:RobotCommand.Localization"
              x:Class="RobotCommand.Views.Workspaces.FlightMissionView"
              x:DataType="vm:FlightMissionViewModel">
+  <UserControl.Resources>
+    <vm:MissionStepDisplayConverter x:Key="MissionStepDisplayConverter" />
+    <vm:FlightMissionCameraActionDisplayConverter x:Key="CameraActionDisplayConverter" />
+    <vm:FlightMissionCameraActionSummaryConverter x:Key="CameraActionSummaryConverter" />
+  </UserControl.Resources>
   <Grid RowDefinitions="Auto,*" RowSpacing="10"
         Focusable="True">
-    <Grid ColumnDefinitions="*,110,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8">
-      <TextBox PlaceholderText="{loc:Loc Key=FlightMissionName}" Text="{Binding NewName}" />
-      <NumericUpDown Grid.Column="1" Value="{Binding Altitude, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="5000" />
-      <Button Grid.Column="2" Content="{loc:Loc Key=FlightMissionNew}" Command="{Binding CreateCommand}" />
-      <Button Grid.Column="3" IsVisible="{Binding HasMission}" Content="{loc:Loc Key=FlightMissionRename}" Command="{Binding RenameCommand}" />
+    <Border Classes="panel" Padding="8">
+      <StackPanel Spacing="6">
+      <Grid ColumnDefinitions="*,110,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+        <Grid>
+          <TextBox PlaceholderText="{loc:Loc Key=FlightMissionName}" IsVisible="{Binding IsNameEditorVisible}" Text="{Binding NewName}" />
+          <TextBlock Classes="sectionTitle" IsVisible="{Binding IsMissionNameDisplayVisible}" Text="{Binding SelectedMission.Name}" VerticalAlignment="Center" />
+        </Grid>
+      <NumericUpDown Grid.Column="1" VerticalAlignment="Center" ToolTip.Tip="{loc:Loc Key=FlightMissionAltitudeTooltip}" Value="{Binding Altitude, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="5000" />
+      <Button Grid.Column="2" Content="{Binding MissionNewButtonLabel}" Command="{Binding NewMissionCommand}" />
+      <Button Grid.Column="3" IsVisible="{Binding HasMission}" Content="{Binding MissionNameActionLabel}" Command="{Binding RenameCommand}" />
       <Button Grid.Column="4" IsVisible="{Binding HasMission}" Content="{loc:Loc Key=FlightMissionDuplicate}" Command="{Binding DuplicateCommand}" />
       <Button Grid.Column="5" IsVisible="{Binding HasMission}" Content="{loc:Loc Key=FlightMissionValidate}" Command="{Binding ValidateCommand}" />
       <Button Grid.Column="6" Content="{loc:Loc Key=FlightMissionImport}" Click="ImportMission_Click" />
       <Button Grid.Column="7" IsVisible="{Binding HasMission}" Content="{loc:Loc Key=FlightMissionExport}" Click="ExportMission_Click" />
-      <Button Grid.Column="8" IsVisible="{Binding HasMission}" Classes="danger" Content="{loc:Loc Key=FlightMissionDelete}" Command="{Binding DeleteCommand}" />
-    </Grid>
+      <Button Grid.Column="8" IsVisible="{Binding IsDeleteButtonVisible}" Classes="danger" Content="{loc:Loc Key=FlightMissionDelete}" Command="{Binding DeleteCommand}" />
+      </Grid>
+      <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding HasDeleteConfirmation}">
+        <CheckBox VerticalAlignment="Center" Content="{loc:Loc Key=FlightMissionDeleteAssociatedGeometry}" IsChecked="{Binding DeleteAssociatedGeometry}" />
+        <Button Classes="danger" Content="{loc:Loc Key=FlightMissionConfirmDelete}" Command="{Binding ConfirmDeleteCommand}" />
+        <Button Content="{loc:Loc Key=FlightMissionCancel}" Command="{Binding CancelDeleteCommand}" />
+        <Button Classes="danger" IsVisible="{Binding HasDeleteConflict}" Content="{loc:Loc Key=FlightMissionDeleteMissionOnly}" Command="{Binding DeleteMissionOnlyCommand}" />
+        <TextBlock Classes="muted" VerticalAlignment="Center" MaxWidth="500" TextWrapping="Wrap" IsVisible="{Binding HasDeleteConflict}" Text="{Binding DeleteConflictMessage}" />
+      </StackPanel>
+      </StackPanel>
+    </Border>
 
     <Grid Grid.Row="1" ColumnDefinitions="220,*" ColumnSpacing="12">
       <Border Classes="panel" Padding="8">
@@ -36,11 +55,13 @@
 
       <ScrollViewer Grid.Column="1"
                     HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto"
                     IsVisible="{Binding HasMission}">
         <StackPanel Spacing="10">
           <!-- One compact control/status surface replaces the former side rail. -->
           <Border Classes="panel" Padding="12">
             <StackPanel Spacing="8">
+              <TextBlock Classes="eyebrow" Text="{loc:Loc Key=FlightMissionVehicleActions}" />
               <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
                 <ComboBox ItemsSource="{Binding Targets}" SelectedItem="{Binding SelectedTarget}">
                   <ComboBox.ItemTemplate><DataTemplate x:DataType="core:UnitObservationSnapshot"><TextBlock Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
@@ -48,11 +69,63 @@
                 <Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionUpload}" Command="{Binding UploadCommand}" />
                 <Button Grid.Column="2" Content="{loc:Loc Key=FlightMissionDownload}" Command="{Binding DownloadCommand}" />
                 <Button Grid.Column="3" Classes="confirm" Content="{loc:Loc Key=FlightMissionStart}" Command="{Binding StartCommand}" ToolTip.Tip="{Binding StartMissionUnavailableReason}" />
-                <Button Grid.Column="4" Content="{loc:Loc Key=FlightMissionPause}" Command="{Binding PauseCommand}" />
+                <Button Grid.Column="4" IsVisible="{Binding CanPauseMission}" Content="{loc:Loc Key=FlightMissionPause}" Command="{Binding PauseCommand}" />
               </Grid>
+              <Border Classes="subtle" Padding="8">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionMissionStartCameraActions}" />
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionNoCameraActions}" IsVisible="{Binding HasNoMissionStartCameraActions}" />
+                  <ItemsControl IsVisible="{Binding HasMissionStartCameraActions}" ItemsSource="{Binding MissionStartCameraActions}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="core:FlightMissionCameraAction">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                          <TextBlock Text="{Binding Converter={StaticResource CameraActionSummaryConverter}}" VerticalAlignment="Center" />
+                          <Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionRemoveCameraAction}" Command="{Binding $parent[UserControl].DataContext.RemoveMissionStartCameraActionCommand}" CommandParameter="{Binding}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Grid ColumnDefinitions="2*,*,Auto" ColumnSpacing="6">
+                    <ComboBox ItemsSource="{Binding CameraActionKinds}" SelectedItem="{Binding CameraActionKind}">
+                      <ComboBox.ItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraActionKind"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
+                      <ComboBox.SelectionBoxItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraActionKind"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.SelectionBoxItemTemplate>
+                    </ComboBox>
+                    <TextBox Grid.Column="1" Text="{Binding CameraActionCameraName}" PlaceholderText="{loc:Loc Key=FlightMissionCameraActionCameraName}" />
+                    <Button Grid.Column="2" Content="{loc:Loc Key=FlightMissionAddCameraAction}" Command="{Binding AddMissionStartCameraActionCommand}" />
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionInterval}" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBlock Text="{loc:Loc Key=FlightMissionCameraActionInterval}" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Width="110" Value="{Binding CameraActionInterval}" Minimum="0.1" Maximum="3600" />
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionDistance}" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBlock Text="{loc:Loc Key=FlightMissionCameraActionDistance}" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Width="110" Value="{Binding CameraActionDistance}" Minimum="0.1" Maximum="10000" />
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionMode}" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBlock Text="{loc:Loc Key=FlightMissionCameraActionMode}" VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1" Width="140" ItemsSource="{Binding CameraActionModes}" SelectedItem="{Binding CameraActionMode}">
+                      <ComboBox.ItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraMode"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
+                      <ComboBox.SelectionBoxItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraMode"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.SelectionBoxItemTemplate>
+                    </ComboBox>
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionRoi}" ColumnDefinitions="*,*" ColumnSpacing="6">
+                    <NumericUpDown Value="{Binding CameraActionRoiLatitude}" Minimum="-90" Maximum="90" ToolTip.Tip="{loc:Loc Key=FlightMissionCameraActionRoiLatitude}" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding CameraActionRoiLongitude}" Minimum="-180" Maximum="180" ToolTip.Tip="{loc:Loc Key=FlightMissionCameraActionRoiLongitude}" />
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionGimbal}" ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+                    <NumericUpDown Value="{Binding CameraActionGimbalPitch}" PlaceholderText="{loc:Loc Key=FlightMissionCameraActionGimbalPitch}" Minimum="-90" Maximum="90" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding CameraActionGimbalYaw}" PlaceholderText="{loc:Loc Key=FlightMissionCameraActionGimbalYaw}" Minimum="-360" Maximum="360" />
+                    <NumericUpDown Grid.Column="2" Value="{Binding CameraActionGimbalRoll}" PlaceholderText="{loc:Loc Key=FlightMissionCameraActionGimbalRoll}" Minimum="-360" Maximum="360" />
+                    <ComboBox Grid.Column="3" ItemsSource="{Binding CameraActionGimbalFrames}" SelectedItem="{Binding CameraActionGimbalFrame}">
+                      <ComboBox.ItemTemplate><DataTemplate x:DataType="core:FlightMissionGimbalFrame"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
+                      <ComboBox.SelectionBoxItemTemplate><DataTemplate x:DataType="core:FlightMissionGimbalFrame"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.SelectionBoxItemTemplate>
+                    </ComboBox>
+                  </Grid>
+                </StackPanel>
+              </Border>
               <WrapPanel>
-                <Button Content="{loc:Loc Key=FlightMissionContinue}" Command="{Binding ContinueCommand}" />
-                <WrapPanel IsVisible="{Binding IsAwaitingPostLandingDecision}">
+                <Button Content="{loc:Loc Key=FlightMissionContinue}" IsVisible="{Binding CanContinueMission}" Command="{Binding ContinueCommand}" />
+                <WrapPanel IsVisible="{Binding CanPostLandingDecision}">
                   <Button Content="{loc:Loc Key=FlightMissionResume}" Command="{Binding ResumeCommand}" />
                   <Button Content="{loc:Loc Key=FlightMissionRetain}" Command="{Binding RetainCommand}" />
                   <Button Classes="danger" Content="{loc:Loc Key=FlightMissionRemoveOnboard}" Command="{Binding RemoveOnboardCommand}" />
@@ -68,7 +141,7 @@
                 </ComboBox>
                 <Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionSetFence}" Command="{Binding SetFenceCommand}" />
               </Grid>
-              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasPendingOperation}">
+              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasVisiblePendingOperation}">
                 <StackPanel Spacing="5">
                   <Grid ColumnDefinitions="*,Auto"><TextBlock FontWeight="SemiBold" Text="{Binding PendingOperation.Title}" /><TextBlock Grid.Column="1" FontWeight="SemiBold" Text="{Binding PendingOperationOutcome}" /></Grid>
                   <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding PendingOperation.Summary}" />
@@ -82,19 +155,19 @@
               <Border Classes="subtle" Padding="8" IsVisible="{Binding HasMissionStartStatus}">
                 <TextBlock TextWrapping="Wrap" Text="{Binding MissionStartStatus}" />
               </Border>
-              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasExecution}">
+              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasVisibleExecutionStatus}">
                 <StackPanel Spacing="3">
                   <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=FlightMissionStatus}" />
                   <TextBlock TextWrapping="Wrap" Text="{Binding ExecutionStatusText}" />
-                  <ItemsControl ItemsSource="{Binding Execution.CaptureEvents}"><ItemsControl.ItemTemplate><DataTemplate x:DataType="core:FlightMissionCaptureEvent"><TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Summary}" /></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
                 </StackPanel>
               </Border>
-              <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Status}" />
+              <TextBlock Classes="muted" IsVisible="{Binding HasStandaloneStatus}" TextWrapping="Wrap" Text="{Binding Status}" />
             </StackPanel>
           </Border>
 
           <Border Classes="panel" Padding="12">
             <StackPanel Spacing="8">
+              <TextBlock Classes="eyebrow" Text="{loc:Loc Key=FlightMissionAddStep}" />
               <WrapPanel>
                 <Button Content="{loc:Loc Key=FlightMissionTakeoff}" Command="{Binding AddTakeoffCommand}" />
                 <Button Content="{loc:Loc Key=FlightMissionRtl}" Command="{Binding AddRtlCommand}" />
@@ -102,59 +175,164 @@
                 <Button Content="{loc:Loc Key=FlightMissionSurvey}" Command="{Binding AddSurveyCommand}" />
                 <Button Content="{loc:Loc Key=FlightMissionCorridor}" Command="{Binding AddCorridorCommand}" />
                 <Button Content="{loc:Loc Key=FlightMissionLoiter}" Command="{Binding AddLoiterCommand}" />
-                <Button Content="{loc:Loc Key=FlightMissionCameraIntent}" Command="{Binding AddCameraIntentCommand}" />
               </WrapPanel>
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8"><ComboBox ItemsSource="{Binding Geometry}" SelectedItem="{Binding SelectedGeometry}"><ComboBox.ItemTemplate><DataTemplate x:DataType="core:GeometryWorkflowSnapshot"><TextBlock Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate></ComboBox><Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionAddGeometry}" Command="{Binding AddGeometryCommand}" /></Grid>
               <Grid IsVisible="{Binding ShowSurveyOptions}" ColumnDefinitions="*,*,*,Auto" ColumnSpacing="8">
                 <NumericUpDown Value="{Binding SurveySpacing, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="500" ToolTip.Tip="{loc:Loc Key=FlightMissionSurveySpacing}" />
                 <NumericUpDown Grid.Column="1" Value="{Binding SurveyBearing, UpdateSourceTrigger=LostFocus}" Minimum="0" Maximum="359.9" ToolTip.Tip="{loc:Loc Key=FlightMissionSurveyBearing}" />
                 <NumericUpDown Grid.Column="2" Value="{Binding SurveyTurnaround, UpdateSourceTrigger=LostFocus}" Minimum="0" Maximum="200" ToolTip.Tip="{loc:Loc Key=FlightMissionSurveyTurnaround}" />
                 <CheckBox Grid.Column="3" Content="{loc:Loc Key=FlightMissionSurveyReverse}" IsChecked="{Binding SurveyReverseEntry}" />
               </Grid>
-              <Grid IsVisible="{Binding ShowCorridorOptions}" ColumnDefinitions="*,*,*,*,*,Auto,Auto,Auto" ColumnSpacing="8">
-                <NumericUpDown Value="{Binding CorridorWidth, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="10000" ToolTip.Tip="{loc:Loc Key=FlightMissionCorridorWidth}" />
-                <NumericUpDown Grid.Column="1" Value="{Binding CorridorSpacing, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="10000" ToolTip.Tip="{loc:Loc Key=FlightMissionCorridorSpacing}" />
-                <NumericUpDown Grid.Column="2" Value="{Binding CorridorTurnaround, UpdateSourceTrigger=LostFocus}" Minimum="0" Maximum="10000" ToolTip.Tip="{loc:Loc Key=FlightMissionCorridorTurnaround}" />
-                <NumericUpDown Grid.Column="3" Value="{Binding CorridorFrontLap, UpdateSourceTrigger=LostFocus}" Minimum="0" Maximum="99" ToolTip.Tip="{loc:Loc Key=FlightMissionCorridorFrontLap}" />
-                <NumericUpDown Grid.Column="4" Value="{Binding CorridorSideLap, UpdateSourceTrigger=LostFocus}" Minimum="0" Maximum="99" ToolTip.Tip="{loc:Loc Key=FlightMissionCorridorSideLap}" />
-                <CheckBox Grid.Column="5" Content="{loc:Loc Key=FlightMissionCorridorReverse}" IsChecked="{Binding CorridorReverseDirection}" />
-                <CheckBox Grid.Column="6" Content="{loc:Loc Key=FlightMissionCorridorEntryRight}" IsChecked="{Binding CorridorEntryRight}" />
-                <CheckBox Grid.Column="7" Content="{loc:Loc Key=FlightMissionCorridorImagesInTurns}" IsChecked="{Binding CorridorImagesInTurnarounds}" />
+              <Grid IsVisible="{Binding ShowCorridorOptions}" ColumnDefinitions="125,125,145,110,110" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionCorridorWidth}" TextWrapping="Wrap" />
+                  <NumericUpDown Width="120" Value="{Binding CorridorWidth, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="10000" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="2">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionCorridorSpacing}" TextWrapping="Wrap" />
+                  <NumericUpDown Width="120" Value="{Binding CorridorSpacing, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="10000" />
+                </StackPanel>
+                <StackPanel Grid.Column="2" Spacing="2">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionCorridorTurnaround}" TextWrapping="Wrap" />
+                  <NumericUpDown Width="140" Value="{Binding CorridorTurnaround, UpdateSourceTrigger=LostFocus}" Minimum="0" Maximum="10000" />
+                </StackPanel>
+                <StackPanel Grid.Column="3" Spacing="2">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionCorridorFrontLap}" TextWrapping="Wrap" />
+                  <NumericUpDown Width="105" Value="{Binding CorridorFrontLap, UpdateSourceTrigger=LostFocus}" Minimum="0" Maximum="99" />
+                </StackPanel>
+                <StackPanel Grid.Column="4" Spacing="2">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionCorridorSideLap}" TextWrapping="Wrap" />
+                  <NumericUpDown Width="105" Value="{Binding CorridorSideLap, UpdateSourceTrigger=LostFocus}" Minimum="0" Maximum="99" />
+                </StackPanel>
+                <WrapPanel Grid.Row="1" Grid.ColumnSpan="5">
+                  <CheckBox Margin="0,0,12,0" Content="{loc:Loc Key=FlightMissionCorridorReverse}" IsChecked="{Binding CorridorReverseDirection}" />
+                  <CheckBox Margin="0,0,12,0" Content="{loc:Loc Key=FlightMissionCorridorEntryRight}" IsChecked="{Binding CorridorEntryRight}" />
+                  <CheckBox Content="{loc:Loc Key=FlightMissionCorridorImagesInTurns}" IsChecked="{Binding CorridorImagesInTurnarounds}" />
+                </WrapPanel>
               </Grid>
-              <Grid IsVisible="{Binding ShowLoiterOptions}" ColumnDefinitions="*" ColumnSpacing="8">
-                <NumericUpDown Value="{Binding LoiterSeconds, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="3600" ToolTip.Tip="{loc:Loc Key=FlightMissionLoiterSeconds}" />
-              </Grid>
-              <Grid IsVisible="{Binding ShowCameraOptions}" ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                <TextBox Text="{Binding CameraMode, UpdateSourceTrigger=LostFocus}" ToolTip.Tip="{loc:Loc Key=FlightMissionCameraMode}" />
-                <NumericUpDown Grid.Column="1" Value="{Binding CameraDistance, UpdateSourceTrigger=LostFocus}" Minimum="0.1" Maximum="10000" ToolTip.Tip="{loc:Loc Key=FlightMissionCameraDistance}" />
-                <NumericUpDown Grid.Column="2" Value="{Binding CameraInterval, UpdateSourceTrigger=LostFocus}" Minimum="0.1" Maximum="3600" ToolTip.Tip="{loc:Loc Key=FlightMissionCameraInterval}" />
-              </Grid>
+              <Border Classes="subtle" IsVisible="{Binding ShowCameraOptions}" Padding="8">
+                <StackPanel Spacing="6">
+                  <CheckBox Content="{loc:Loc Key=FlightMissionAutomaticPhotoCapture}" IsChecked="{Binding AutomaticPhotoCaptureEnabled, Mode=TwoWay}" />
+                  <Grid IsVisible="{Binding AutomaticPhotoCaptureEnabled}" ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <StackPanel Spacing="2">
+                      <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionCameraDistance}" />
+                      <NumericUpDown Value="{Binding CameraDistance, UpdateSourceTrigger=LostFocus}" Minimum="0.1" Maximum="10000" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="2">
+                      <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionCameraInterval}" />
+                      <NumericUpDown Value="{Binding CameraInterval, UpdateSourceTrigger=LostFocus}" Minimum="0.1" Maximum="3600" />
+                    </StackPanel>
+                  </Grid>
+                </StackPanel>
+              </Border>
               <Grid IsVisible="{Binding ShowTakeoffAltitude}" ColumnDefinitions="110,Auto" ColumnSpacing="8">
                 <NumericUpDown Value="{Binding Altitude, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="5000" ToolTip.Tip="{loc:Loc Key=FlightMissionAltitudeTooltip}" />
                 <Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionSetAltitude}" Command="{Binding SetTakeoffAltitudeCommand}" />
               </Grid>
-              <Grid IsVisible="{Binding ShowStepOverrides}" ColumnDefinitions="110,Auto,110,Auto" ColumnSpacing="8">
+              <Grid IsVisible="{Binding ShowStepOverrides}" ColumnDefinitions="110,Auto,110,Auto,Auto,110" ColumnSpacing="8">
                 <NumericUpDown Value="{Binding Altitude, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="5000" ToolTip.Tip="{loc:Loc Key=FlightMissionAltitudeTooltip}" />
                 <Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionSetAltitude}" Command="{Binding SetAltitudeCommand}" />
                 <NumericUpDown Grid.Column="2" Value="{Binding CruiseSpeed, UpdateSourceTrigger=LostFocus}" Minimum="0.1" Maximum="30" ToolTip.Tip="{loc:Loc Key=FlightMissionSpeedTooltip}" />
                 <Button Grid.Column="3" Content="{loc:Loc Key=FlightMissionSetSpeed}" Command="{Binding SetSpeedCommand}" />
+                <TextBlock Grid.Column="4" Classes="muted" VerticalAlignment="Center" IsVisible="{Binding ShowLoiterOptions}" Text="{loc:Loc Key=FlightMissionLoiterSeconds}" />
+                <NumericUpDown Grid.Column="5" Value="{Binding LoiterSeconds, UpdateSourceTrigger=LostFocus}" Minimum="1" Maximum="3600" IsVisible="{Binding ShowLoiterOptions}" ToolTip.Tip="{loc:Loc Key=FlightMissionLoiterSeconds}" />
               </Grid>
             </StackPanel>
           </Border>
 
           <Border Classes="panel" Padding="12">
             <StackPanel Spacing="6">
-              <ListBox ItemsSource="{Binding SelectedMission.Steps}" SelectedItem="{Binding SelectedStep}">
-                <ListBox.ItemTemplate><DataTemplate x:DataType="core:FlightMissionStep"><TextBlock Margin="4" Text="{Binding DisplayName}" /></DataTemplate></ListBox.ItemTemplate>
+              <TextBlock Classes="eyebrow" Text="{loc:Loc Key=FlightMissionSelectedStep}" />
+              <Border Classes="subtle" Padding="8" IsVisible="{Binding ShowStepGeometrySelector}">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionStepGeometry}" />
+                  <ComboBox HorizontalAlignment="Left" Width="240" PlaceholderText="{loc:Loc Key=GeometrySelect}" ItemsSource="{Binding SelectedStepGeometryOptions}" SelectedItem="{Binding SelectedStepGeometry, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate><DataTemplate x:DataType="core:GeometryWorkflowSnapshot"><TextBlock Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+                    <ComboBox.SelectionBoxItemTemplate>
+                      <DataTemplate x:DataType="core:GeometryWorkflowSnapshot"><TextBlock Text="{Binding Name}" /></DataTemplate>
+                    </ComboBox.SelectionBoxItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+              </Border>
+              <ListBox Classes="compactList" ItemsSource="{Binding SelectedMission.Steps}" SelectedItem="{Binding SelectedStep}">
+                <ListBox.ItemTemplate>
+                  <DataTemplate x:DataType="core:FlightMissionStep">
+                    <StackPanel Margin="8,4" Spacing="1">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Converter={StaticResource MissionStepDisplayConverter}}" />
+                      <TextBlock Classes="muted" IsVisible="{Binding HasSourceGeometry}" Text="{Binding SourceGeometryName}" />
+                      <TextBlock Classes="muted" IsVisible="{Binding HasContextSummary}" Text="{Binding Converter={StaticResource MissionStepDisplayConverter}, ConverterParameter=context}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
               </ListBox>
+              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasSelectedStepCameraActions}">
+                <StackPanel Spacing="4">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionStepCameraActions}" />
+                  <ItemsControl ItemsSource="{Binding SelectedStepCameraActions}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="core:FlightMissionCameraAction">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                          <TextBlock Text="{Binding Converter={StaticResource CameraActionSummaryConverter}}" VerticalAlignment="Center" />
+                          <Button Grid.Column="1" Content="{loc:Loc Key=FlightMissionRemoveCameraAction}" Command="{Binding $parent[UserControl].DataContext.RemoveSelectedStepCameraActionCommand}" CommandParameter="{Binding}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+              <Border Classes="subtle" Padding="8" IsVisible="{Binding HasMission}">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionAddStepCameraAction}" />
+                  <TextBlock Classes="muted" Text="{loc:Loc Key=FlightMissionNoCameraActions}" IsVisible="{Binding HasNoSelectedStepCameraActions}" />
+                  <Grid ColumnDefinitions="2*,*,Auto" ColumnSpacing="6">
+                    <ComboBox ItemsSource="{Binding CameraActionKinds}" SelectedItem="{Binding CameraActionKind}">
+                      <ComboBox.ItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraActionKind"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
+                      <ComboBox.SelectionBoxItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraActionKind"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.SelectionBoxItemTemplate>
+                    </ComboBox>
+                    <TextBox Grid.Column="1" Text="{Binding CameraActionCameraName}" PlaceholderText="{loc:Loc Key=FlightMissionCameraActionCameraName}" />
+                    <Button Grid.Column="2" Content="{loc:Loc Key=FlightMissionAddCameraAction}" Command="{Binding AddSelectedStepCameraActionCommand}" />
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionInterval}" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBlock Text="{loc:Loc Key=FlightMissionCameraActionInterval}" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Width="110" Value="{Binding CameraActionInterval}" Minimum="0.1" Maximum="3600" />
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionDistance}" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBlock Text="{loc:Loc Key=FlightMissionCameraActionDistance}" VerticalAlignment="Center" />
+                    <NumericUpDown Grid.Column="1" Width="110" Value="{Binding CameraActionDistance}" Minimum="0.1" Maximum="10000" />
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionMode}" ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                    <TextBlock Text="{loc:Loc Key=FlightMissionCameraActionMode}" VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1" Width="140" ItemsSource="{Binding CameraActionModes}" SelectedItem="{Binding CameraActionMode}">
+                      <ComboBox.ItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraMode"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
+                      <ComboBox.SelectionBoxItemTemplate><DataTemplate x:DataType="core:FlightMissionCameraMode"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.SelectionBoxItemTemplate>
+                    </ComboBox>
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionRoi}" ColumnDefinitions="*,*" ColumnSpacing="6">
+                    <NumericUpDown Value="{Binding CameraActionRoiLatitude}" Minimum="-90" Maximum="90" ToolTip.Tip="{loc:Loc Key=FlightMissionCameraActionRoiLatitude}" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding CameraActionRoiLongitude}" Minimum="-180" Maximum="180" ToolTip.Tip="{loc:Loc Key=FlightMissionCameraActionRoiLongitude}" />
+                  </Grid>
+                  <Grid IsVisible="{Binding ShowCameraActionGimbal}" ColumnDefinitions="*,*,*,*" ColumnSpacing="6">
+                    <NumericUpDown Value="{Binding CameraActionGimbalPitch}" PlaceholderText="{loc:Loc Key=FlightMissionCameraActionGimbalPitch}" Minimum="-90" Maximum="90" />
+                    <NumericUpDown Grid.Column="1" Value="{Binding CameraActionGimbalYaw}" PlaceholderText="{loc:Loc Key=FlightMissionCameraActionGimbalYaw}" Minimum="-360" Maximum="360" />
+                    <NumericUpDown Grid.Column="2" Value="{Binding CameraActionGimbalRoll}" PlaceholderText="{loc:Loc Key=FlightMissionCameraActionGimbalRoll}" Minimum="-360" Maximum="360" />
+                    <ComboBox Grid.Column="3" ItemsSource="{Binding CameraActionGimbalFrames}" SelectedItem="{Binding CameraActionGimbalFrame}">
+                      <ComboBox.ItemTemplate><DataTemplate x:DataType="core:FlightMissionGimbalFrame"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.ItemTemplate>
+                      <ComboBox.SelectionBoxItemTemplate><DataTemplate x:DataType="core:FlightMissionGimbalFrame"><TextBlock Text="{Binding Converter={StaticResource CameraActionDisplayConverter}}" /></DataTemplate></ComboBox.SelectionBoxItemTemplate>
+                    </ComboBox>
+                  </Grid>
+                </StackPanel>
+              </Border>
               <WrapPanel><Button Margin="0,0,8,0" Content="{loc:Loc Key=FlightMissionMoveUp}" Command="{Binding MoveStepUpCommand}" /><Button Margin="0,0,8,0" Content="{loc:Loc Key=FlightMissionMoveDown}" Command="{Binding MoveStepDownCommand}" /><Button Margin="0,0,8,0" Content="{loc:Loc Key=FlightMissionSetStep}" Command="{Binding SetStepOverridesCommand}" /><CheckBox Margin="0,0,8,0" Content="{loc:Loc Key=FlightMissionTerrain}" IsChecked="{Binding TerrainFollowing}" /><Button Content="{loc:Loc Key=FlightMissionRemoveStep}" Command="{Binding RemoveStepCommand}" /></WrapPanel>
             </StackPanel>
           </Border>
 
           <Border Classes="panel" Padding="12">
             <StackPanel Spacing="6">
-              <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=FlightMissionPreview}" />
-              <controls:FlightMissionPreviewControl Mission="{Binding SelectedMission}" Preview="{Binding Preview}" Unit="{Binding PreviewUnit}" OperatorLocation="{Binding PreviewOperatorLocation}" MinHeight="300" Height="360" />
+              <TextBlock Classes="eyebrow" Text="{loc:Loc Key=FlightMissionAuthoringPreview}" />
+              <TextBlock Classes="muted" Text="{Binding CameraPlanSummary}" />
+              <TextBlock Classes="muted" Text="{Binding CaptureStatisticsSummary}" IsVisible="{Binding HasCaptureStatistics}" />
+              <ScrollViewer MaxHeight="520" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <controls:FlightMissionPreviewControl Mission="{Binding SelectedMission}" Preview="{Binding Preview}" Unit="{Binding PreviewUnit}" OperatorLocation="{Binding PreviewOperatorLocation}" MinHeight="300" Height="360" />
+              </ScrollViewer>
             </StackPanel>
           </Border>
         </StackPanel>

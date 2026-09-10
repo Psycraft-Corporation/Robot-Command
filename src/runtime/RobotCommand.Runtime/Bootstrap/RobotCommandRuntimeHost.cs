@@ -118,6 +118,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IEntityStore<string, GeometryOverlayRecord>>(_ => new EntityStore<string, GeometryOverlayRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, PerceptionTrackRecord>>(_ => new EntityStore<string, PerceptionTrackRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, CameraSourceRecord>>(_ => new EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal));
+        services.AddSingleton<IEntityStore<string, MavlinkCameraDefinitionRecord>>(_ => new EntityStore<string, MavlinkCameraDefinitionRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, CameraStreamRecord>>(_ => new EntityStore<string, CameraStreamRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, MissionRecord>>(_ => new EntityStore<string, MissionRecord>(item => item.Id, StringComparer.Ordinal));
         services.AddSingleton<IEntityStore<string, OperationalTaskRecord>>(_ => new EntityStore<string, OperationalTaskRecord>(item => item.Id, StringComparer.Ordinal));
@@ -154,6 +155,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IVehicleDiagnosticsProvider, ArduPilotVehicleDiagnosticsProvider>();
         services.AddSingleton<MavlinkConnectionRegistry>();
         services.AddSingleton<IMavlinkConnectionRegistry>(provider => provider.GetRequiredService<MavlinkConnectionRegistry>());
+        services.AddSingleton<IMavlinkCameraControlService, MavlinkCameraControlService>();
         services.AddSingleton<IConnectionProvider, DirectLogosConnectionFactory>();
         services.AddSingleton<IConnectionProvider, LinkdConnectionProvider>();
         services.AddSingleton<IConnectionProvider, MavlinkConnectionProvider>();
@@ -194,6 +196,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IMapLibraryWorkflow, MapLibraryWorkflow>();
         services.AddSingleton<IMapSceneObservationWorkflow, MapSceneObservationWorkflow>();
         services.AddSingleton<ThreeDWorldSceneCoordinator>();
+        services.AddSingleton<IThreeDSceneWorkflow>(provider => provider.GetRequiredService<ThreeDWorldSceneCoordinator>());
         services.AddSingleton<IThreeDWorldSceneWorkflow>(provider => provider.GetRequiredService<ThreeDWorldSceneCoordinator>());
         services.AddSingleton<IVehicleTrackHistory, VehicleTrackHistoryService>();
         services.AddSingleton<IGStreamerRuntime, GStreamerRuntime>();

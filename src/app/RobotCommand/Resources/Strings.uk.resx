@@ -281,6 +281,9 @@
   <data name="FlightMissionImport" xml:space="preserve"><value>Імпортувати</value></data>
   <data name="FlightMissionExport" xml:space="preserve"><value>Експортувати</value></data>
   <data name="FlightMissionDelete" xml:space="preserve"><value>Видалити</value></data>
+  <data name="FlightMissionConfirmDelete" xml:space="preserve"><value>Підтвердити видалення</value></data>
+  <data name="FlightMissionDeleteAssociatedGeometry" xml:space="preserve"><value>Видалити пов’язану геометрію</value></data>
+  <data name="FlightMissionDeleteMissionOnly" xml:space="preserve"><value>Видалити лише місію</value></data>
   <data name="FlightMissionTakeoff" xml:space="preserve"><value>Takeoff</value></data>
   <data name="FlightMissionRtl" xml:space="preserve"><value>RTL</value></data>
   <data name="FlightMissionLand" xml:space="preserve"><value>Land</value></data>
@@ -296,6 +299,7 @@
   <data name="FlightMissionCameraMode" xml:space="preserve"><value>Режим зйомки камерою</value></data>
   <data name="FlightMissionCameraDistance" xml:space="preserve"><value>Відстань спрацювання камери (м)</value></data>
   <data name="FlightMissionCameraInterval" xml:space="preserve"><value>Інтервал спрацювання камери (с)</value></data>
+  <data name="FlightMissionAutomaticPhotoCapture" xml:space="preserve"><value>Автоматична фотозйомка</value></data>
   <data name="FlightMissionSetStep" xml:space="preserve"><value>Застосувати параметри кроку</value></data>
   <data name="FlightMissionAltitudeTooltip" xml:space="preserve"><value>Відносна висота (м)</value></data>
   <data name="FlightMissionSpeedTooltip" xml:space="preserve"><value>Крейсерська швидкість (м/с)</value></data>
@@ -455,6 +459,11 @@
   <data name="MapOperatorUnavailable" xml:space="preserve"><value>Місцезнаходження оператора недоступне</value></data>
   <data name="MapShowGeometries" xml:space="preserve"><value>Показати геометрію</value></data>
   <data name="MapHideGeometries" xml:space="preserve"><value>Сховати геометрію</value></data>
+  <data name="MapMissionPreviewLayers" xml:space="preserve"><value>Шари попереднього перегляду місій</value></data>
+  <data name="MapMissionPreviews" xml:space="preserve"><value>Попередній перегляд місій</value></data>
+  <data name="FlightMissionMission" xml:space="preserve"><value>Місія</value></data>
+  <data name="FlightMissionCreate" xml:space="preserve"><value>Створити</value></data>
+  <data name="FlightMissionSaveName" xml:space="preserve"><value>Зберегти назву</value></data>
   <data name="MapShowPolicy" xml:space="preserve"><value>Показати політику</value></data>
   <data name="MapHidePolicy" xml:space="preserve"><value>Сховати політику</value></data>
   <data name="MapShowTrails" xml:space="preserve"><value>Показати сліди</value></data>
@@ -477,6 +486,20 @@
   <data name="FlightMissionRemoveOnboard" xml:space="preserve"><value>Видалити</value></data>
   <data name="FlightMissionStatus" xml:space="preserve"><value>Стан місії</value></data>
   <data name="FlightMissionPreview" xml:space="preserve"><value>Попередній перегляд місії</value></data>
+  <data name="FlightMissionVehicleActions" xml:space="preserve"><value>Апарат і дії</value></data>
+  <data name="FlightMissionAddStep" xml:space="preserve"><value>Додати крок</value></data>
+  <data name="FlightMissionNewStepGeometry" xml:space="preserve"><value>Геометрія нового кроку</value></data>
+  <data name="FlightMissionSelectedStep" xml:space="preserve"><value>Вибраний крок</value></data>
+  <data name="FlightMissionStepGeometry" xml:space="preserve"><value>Геометрія кроку</value></data>
+  <data name="FlightMissionAuthoringPreview" xml:space="preserve"><value>Попередній перегляд авторингу</value></data>
+  <data name="FlightMissionPointOfInterest" xml:space="preserve"><value>Точка інтересу</value></data>
+  <data name="FlightMissionWaypointSequence" xml:space="preserve"><value>Послідовність маршрутних точок</value></data>
+  <data name="FlightMissionGeometryRequired" xml:space="preserve"><value>Потрібна геометрія</value></data>
+  <data name="FlightMissionLoiterSummary" xml:space="preserve"><value>Очікування {0:0.#} с</value></data>
+  <data name="FlightMissionLoiterGeometryRequired" xml:space="preserve"><value>Очікування {0:0.#} с · потрібна геометрія</value></data>
+  <data name="FlightMissionPointCount" xml:space="preserve"><value>{0} точка</value></data>
+  <data name="FlightMissionRoutePointCount" xml:space="preserve"><value>{0} маршрутних точок</value></data>
+  <data name="FlightMissionZonePointCount" xml:space="preserve"><value>{0} точок зони</value></data>
   <data name="FormationNamePlaceholder" xml:space="preserve"><value>Назва формації</value></data>
   <data name="FormationAddUnit" xml:space="preserve"><value>Додати юніт</value></data>
   <data name="FormationRemoveUnit" xml:space="preserve"><value>Видалити юніт</value></data>
@@ -585,4 +608,55 @@
   <data name="ConnectionShowAdvancedRadioSettings" xml:space="preserve"><value>Показати розширені параметри S0-S14</value></data>
   <data name="ConnectionReviewLocalChanges" xml:space="preserve"><value>Переглянути локальні зміни</value></data>
   <data name="ConnectionReviewPairedChanges" xml:space="preserve"><value>Переглянути зміни з’єднання</value></data>
+  <data name="FlightMissionMissionStartCameraActions" xml:space="preserve"><value>Дії камери на початку місії</value></data>
+  <data name="FlightMissionStepCameraActions" xml:space="preserve"><value>Дії камери кроку</value></data>
+  <data name="FlightMissionAddStepCameraAction" xml:space="preserve"><value>Додати дію камери до цього кроку</value></data>
+  <data name="FlightMissionAddCameraAction" xml:space="preserve"><value>Додати дію камери</value></data>
+  <data name="FlightMissionRemoveCameraAction" xml:space="preserve"><value>Видалити</value></data>
+  <data name="FlightMissionCameraActionCameraName" xml:space="preserve"><value>Назва камери (необов’язково)</value></data>
+  <data name="FlightMissionCameraActionInterval" xml:space="preserve"><value>Інтервал фото (с)</value></data>
+  <data name="FlightMissionCameraActionDistance" xml:space="preserve"><value>Відстань фото (м)</value></data>
+  <data name="FlightMissionCameraActionMode" xml:space="preserve"><value>Режим камери</value></data>
+  <data name="FlightMissionCameraActionRoiLatitude" xml:space="preserve"><value>Широта ROI</value></data>
+  <data name="FlightMissionCameraActionRoiLongitude" xml:space="preserve"><value>Довгота ROI</value></data>
+  <data name="FlightMissionCameraActionGimbalPitch" xml:space="preserve"><value>Тангаж (°)</value></data>
+  <data name="FlightMissionCameraActionGimbalYaw" xml:space="preserve"><value>Рискання (°)</value></data>
+  <data name="FlightMissionCameraActionGimbalRoll" xml:space="preserve"><value>Крен (°)</value></data>
+  <data name="FlightMissionCameraActionPhotoOnce" xml:space="preserve"><value>Одне фото</value></data>
+  <data name="FlightMissionCameraActionPhotoByTime" xml:space="preserve"><value>Фото за часом</value></data>
+  <data name="FlightMissionCameraActionPhotoByDistance" xml:space="preserve"><value>Фото за відстанню</value></data>
+  <data name="FlightMissionCameraActionStopPhotos" xml:space="preserve"><value>Зупинити фото</value></data>
+  <data name="FlightMissionCameraActionStartVideo" xml:space="preserve"><value>Почати відео</value></data>
+  <data name="FlightMissionCameraActionStopVideo" xml:space="preserve"><value>Зупинити відео</value></data>
+  <data name="FlightMissionCameraActionCameraMode" xml:space="preserve"><value>Встановити режим камери</value></data>
+  <data name="FlightMissionCameraActionRegionOfInterest" xml:space="preserve"><value>Встановити область інтересу</value></data>
+  <data name="FlightMissionCameraActionGimbal" xml:space="preserve"><value>Навести підвіс</value></data>
+  <data name="GimbalCameraControls" xml:space="preserve"><value>Керування підвісом і камерою</value></data>
+  <data name="GimbalCameraAvailableCount" xml:space="preserve"><value>Підвіс/камера доступні у {0} з {1} вибраних юнітів</value></data>
+  <data name="FlightMissionCameraModePhoto" xml:space="preserve"><value>Фото</value></data>
+  <data name="FlightMissionCameraModeVideo" xml:space="preserve"><value>Відео</value></data>
+  <data name="FlightMissionGimbalFrameVehicle" xml:space="preserve"><value>Система відліку апарата</value></data>
+  <data name="FlightMissionGimbalFrameEarth" xml:space="preserve"><value>Земна система відліку</value></data>
+  <data name="MapMissionPreviewCaptureSummary" xml:space="preserve"><value>{0} фото · відео {1:0.#} с · команд запуску {2}</value></data>
+  <data name="FlightMissionCaptureStatistics" xml:space="preserve"><value>{0} фото · відео {1:0.#} с · команд запуску {2}</value></data>
+  <data name="CameraCapturePhoto" xml:space="preserve"><value>Зробити фото</value></data>
+  <data name="CameraStartVideo" xml:space="preserve"><value>Запустити відео камери</value></data>
+  <data name="CameraStopVideo" xml:space="preserve"><value>Зупинити відео камери</value></data>
+  <data name="CameraCenterGimbal" xml:space="preserve"><value>Центрувати підвіс</value></data>
+  <data name="CameraDefinition" xml:space="preserve"><value>Визначення камери</value></data>
+  <data name="FlightMissionExecutionStatus" xml:space="preserve"><value>Стан: {0}</value></data>
+  <data name="FlightMissionExecutionRouteItem" xml:space="preserve"><value>Елемент маршруту: {0}/{1}</value></data>
+  <data name="FlightMissionExecutionReady" xml:space="preserve"><value>Готово</value></data>
+  <data name="FlightMissionExecutionRunning" xml:space="preserve"><value>Виконується</value></data>
+  <data name="FlightMissionExecutionPaused" xml:space="preserve"><value>Призупинено</value></data>
+  <data name="FlightMissionExecutionComplete" xml:space="preserve"><value>Завершено</value></data>
+  <data name="FlightMissionExecutionInterrupted" xml:space="preserve"><value>Перервано</value></data>
+  <data name="FlightMissionExecutionFailsafe" xml:space="preserve"><value>Фейлсейф</value></data>
+  <data name="FlightMissionExecutionError" xml:space="preserve"><value>Помилка</value></data>
+  <data name="FlightMissionExecutionUnknown" xml:space="preserve"><value>Невідомо</value></data>
+  <data name="FlightMissionExecutionNotUploaded" xml:space="preserve"><value>Не завантажено</value></data>
+  <data name="FlightMissionExecutionUnconfirmed" xml:space="preserve"><value>Завершення не підтверджено: телеметрія апарата недоступна.</value></data>
+  <data name="FlightMissionExecutionPostLandingDecision" xml:space="preserve"><value>Місію завершено посадкою; виберіть «Зберегти», «Видалити» або «Продовжити».</value></data>
+  <data name="FlightMissionNoCameraActions" xml:space="preserve"><value>Дії камери не додано.</value></data>
+  <data name="FlightMissionCameraActionsConfigured" xml:space="preserve"><value>Налаштовано дій камери: {0}.</value></data>
 </root>
