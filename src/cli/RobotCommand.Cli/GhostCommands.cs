@@ -19,9 +19,9 @@ internal static class GhostCommands
             return 2;
         }
 
-        var dataDirectory = parsed.Get("data-dir") ?? AppContext.BaseDirectory;
+        var dataDirectory = parsed.Get("data-dir") ?? RobotCommandDataDirectory.GetDefaultPath();
         var reporter = new ConsoleReporter(parsed.Has("json"));
-        using var host = RobotCommandRuntimeHost.Build(dataDirectory, RobotCommandRuntimeMode.Cli);
+        using var host = RobotCommandRuntimeHost.Build(AppContext.BaseDirectory, RobotCommandRuntimeMode.Cli, dataDirectory: dataDirectory);
         var profiles = host.Services.GetRequiredService<IGhostProfileWorkflow>();
         var assets = host.Services.GetRequiredService<IGhostProfileAssetWorkflow>();
         var command = arguments[1].ToLowerInvariant();

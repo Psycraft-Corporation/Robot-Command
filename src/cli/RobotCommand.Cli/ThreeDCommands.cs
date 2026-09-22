@@ -17,9 +17,9 @@ internal static class ThreeDCommands
         }
 
         var reporter = new ConsoleReporter(options.Has("json"));
-        var dataDirectory = options.Get("data-dir") ?? AppContext.BaseDirectory;
+        var dataDirectory = options.Get("data-dir") ?? RobotCommandDataDirectory.GetDefaultPath();
         using var stopping = ConsoleCancellation.Create();
-        using var host = RobotCommandRuntimeHost.Build(dataDirectory, RobotCommandRuntimeMode.Cli);
+        using var host = RobotCommandRuntimeHost.Build(AppContext.BaseDirectory, RobotCommandRuntimeMode.Cli, dataDirectory: dataDirectory);
         try
         {
             await host.StartAsync(stopping.Token);

@@ -134,10 +134,14 @@ public sealed class AppConfiguration
     public TerrainOptions Terrain { get; init; } = new();
 
     public static AppConfiguration Load(string baseDirectory)
+        => Load(baseDirectory, baseDirectory);
+
+    public static AppConfiguration Load(string applicationDirectory, string dataDirectory)
     {
+        var baseDirectory = dataDirectory;
         var config = new MutableConfiguration();
-        Merge(config, Path.Combine(baseDirectory, "appsettings.json"));
-        Merge(config, Path.Combine(baseDirectory, "appsettings.local.json"));
+        Merge(config, Path.Combine(applicationDirectory, "appsettings.json"));
+        Merge(config, Path.Combine(dataDirectory, "appsettings.local.json"));
 
         var validProfiles = config.Connections
             .Where(profile => Uri.TryCreate(profile.Target, UriKind.Absolute, out _))

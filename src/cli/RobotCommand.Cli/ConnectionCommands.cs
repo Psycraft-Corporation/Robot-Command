@@ -17,11 +17,11 @@ internal static class ConnectionCommands
 
         var parsed = CliArguments.Parse(arguments[2..]);
         if (parsed.Error is not null) { Console.Error.WriteLine(parsed.Error); return 2; }
-        var dataDir = parsed.Get("data-dir") ?? AppContext.BaseDirectory;
+        var dataDir = parsed.Get("data-dir") ?? RobotCommandDataDirectory.GetDefaultPath();
         var json = parsed.Has("json");
         var reporter = new ConsoleReporter(json);
         using var stopping = ConsoleCancellation.Create();
-        using var host = RobotCommandRuntimeHost.Build(dataDir, RobotCommandRuntimeMode.Cli);
+        using var host = RobotCommandRuntimeHost.Build(AppContext.BaseDirectory, RobotCommandRuntimeMode.Cli, dataDirectory: dataDir);
         var connections = host.Services.GetRequiredService<IConnectionManagementWorkflow>();
         var units = host.Services.GetRequiredService<IUnitObservationWorkflow>();
         var associations = host.Services.GetRequiredService<IUnitAssociationWorkflow>();

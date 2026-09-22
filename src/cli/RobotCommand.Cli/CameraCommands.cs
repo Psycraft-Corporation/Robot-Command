@@ -25,8 +25,9 @@ internal static class CameraCommands
         var reporter = new ConsoleReporter(parsed.Has("json"));
         using var stopping = ConsoleCancellation.Create();
         using var host = RobotCommandRuntimeHost.Build(
-            parsed.Get("data-dir") ?? AppContext.BaseDirectory,
-            RobotCommandRuntimeMode.Cli);
+            AppContext.BaseDirectory,
+            RobotCommandRuntimeMode.Cli,
+            dataDirectory: parsed.Get("data-dir") ?? RobotCommandDataDirectory.GetDefaultPath());
         var connections = host.Services.GetRequiredService<IConnectionManagementWorkflow>();
         var lifecycle = host.Services.GetRequiredService<IConnectionRuntimeLifecycle>();
         var control = host.Services.GetRequiredService<IMavlinkCameraControlService>();

@@ -13,7 +13,7 @@ internal static class FormationCommands
         var parsed = CliArguments.Parse(arguments[1..]);
         if (parsed.Error is not null) { Console.Error.WriteLine(parsed.Error); return 2; }
         var reporter = new ConsoleReporter(parsed.Has("json"));
-        using var host = RobotCommandRuntimeHost.Build(parsed.Get("data-dir") ?? AppContext.BaseDirectory, RobotCommandRuntimeMode.Cli);
+        using var host = RobotCommandRuntimeHost.Build(AppContext.BaseDirectory, RobotCommandRuntimeMode.Cli, dataDirectory: parsed.Get("data-dir") ?? RobotCommandDataDirectory.GetDefaultPath());
         var workflow = host.Services.GetRequiredService<IFormationAuthoringWorkflow>();
         try
         {

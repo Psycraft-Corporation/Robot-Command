@@ -21,7 +21,7 @@ internal static class SimulationCommands
 
         using var stopping = new CancellationTokenSource();
         Console.CancelKeyPress += (_, eventArgs) => { eventArgs.Cancel = true; stopping.Cancel(); };
-        using var host = RobotCommandRuntimeHost.Build(AppContext.BaseDirectory, RobotCommandRuntimeMode.Headless);
+        using var host = RobotCommandRuntimeHost.Build(AppContext.BaseDirectory, RobotCommandRuntimeMode.Headless, dataDirectory: RobotCommandDataDirectory.GetDefaultPath());
         await host.StartAsync(stopping.Token);
         var worker = host.Services.GetRequiredService<IGhostSimulationWorkerSupervisor>();
         try

@@ -65,7 +65,7 @@ internal static class Program
             return 2;
         }
 
-        var dataDirectory = options.DataDirectory ?? AppContext.BaseDirectory;
+        var dataDirectory = options.DataDirectory ?? RobotCommandDataDirectory.GetDefaultPath();
         using var stopping = new CancellationTokenSource();
         Console.CancelKeyPress += (_, eventArgs) =>
         {
@@ -73,7 +73,7 @@ internal static class Program
             stopping.Cancel();
         };
 
-        using var host = RobotCommandRuntimeHost.Build(dataDirectory, RobotCommandRuntimeMode.Headless);
+        using var host = RobotCommandRuntimeHost.Build(AppContext.BaseDirectory, RobotCommandRuntimeMode.Headless, dataDirectory: dataDirectory);
         await host.StartAsync(stopping.Token);
         var workflow = host.Services.GetRequiredService<ITeamServerWorkflow>();
         var reporter = new ConsoleReporter(options.Json);

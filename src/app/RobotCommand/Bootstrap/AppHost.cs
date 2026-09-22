@@ -50,7 +50,7 @@ internal static class AppHost
                     DataContext = services.GetRequiredService<ShellViewModel>()
                 };
             });
-        });
+        }, RobotCommandDataDirectory.GetDefaultPath());
     }
 
     private static void RegisterTeamServer(IServiceCollection services, string baseDirectory)
