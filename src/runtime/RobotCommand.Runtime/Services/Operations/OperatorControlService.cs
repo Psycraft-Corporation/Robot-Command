@@ -5,6 +5,7 @@ using RobotCommand.Services.ManualControl;
 using RobotCommand.Services.Reconciliation;
 using RobotCommand.Services.Simulation;
 using RobotCommand.State;
+using RobotCommand.Core;
 
 namespace RobotCommand.Services.Operations;
 
@@ -21,6 +22,7 @@ public sealed class OperatorControlService : IOperatorControlService
     private readonly IGhostUnitService? _ghosts;
     private readonly IManualControlRegistry? _manualControl;
     private readonly IUnitDefinitionService? _reconciliation;
+    private readonly IUnitRoutingWorkflow? _routing;
 
     public OperatorControlService(
         AppConfiguration configuration,
@@ -33,7 +35,8 @@ public sealed class OperatorControlService : IOperatorControlService
         IGhostUnitService? ghosts = null,
         IManualControlRegistry? manualControl = null,
         IEntityStore<string, VehicleDiagnosticsSnapshot>? diagnostics = null,
-        IUnitDefinitionService? reconciliation = null)
+        IUnitDefinitionService? reconciliation = null,
+        IUnitRoutingWorkflow? routing = null)
     {
         _configuration = configuration;
         _gateway = gateway;
@@ -46,6 +49,7 @@ public sealed class OperatorControlService : IOperatorControlService
         _ghosts = ghosts;
         _manualControl = manualControl;
         _reconciliation = reconciliation;
+        _routing = routing;
     }
 
     public OperatorGatewayStatus GatewayStatus => _gateway.Status;
@@ -55,7 +59,19 @@ public sealed class OperatorControlService : IOperatorControlService
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        vehicleId = _reconciliation?.ResolveCommandSource(vehicleId) ?? vehicleId;
+        var unit = _reconciliation?.FindBySource(vehicleId);
+        if (unit is not null && HasConfiguredButUnavailableCommandRoute(unit.Id))
+        {
+            return Task.FromResult(new ManualControlReadiness(false,
+                [new OperatorPreflightFinding(
+                    "COMMAND_ROUTE_UNAVAILABLE",
+                    OperatorPreflightSeverity.Blocking,
+                    "The unit command route is unavailable. Select a healthy route and confirm the switch before controlling this unit.")]));
+        }
+        var activeCommandVehicle = unit is null
+            ? null
+            : _routing?.ForUnit(unit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Command)?.Active?.VehicleId;
+        vehicleId = activeCommandVehicle ?? _reconciliation?.ResolveCommandSource(vehicleId) ?? vehicleId;
         if (!_vehicles.TryGet(vehicleId, out var vehicle) || vehicle is null)
         {
             return Task.FromResult(new ManualControlReadiness(false,
@@ -65,7 +81,7 @@ public sealed class OperatorControlService : IOperatorControlService
                     "The selected vehicle is no longer available.")]));
         }
 
-        var connection = ResolveConnection(vehicle);
+        var connection = ResolveConnection(vehicle, unit is null ? null : _routing?.ActiveConnectionFor(unit.Id, UnitRouteRole.Command) ?? unit.CommandAuthorityConnectionId);
         var diagnostics = LatestDiagnostics(vehicle.Id, connection?.Id);
         return Task.FromResult(OperatorControlRules.EvaluateManualControl(
             vehicle,
@@ -112,14 +128,22 @@ public sealed class OperatorControlService : IOperatorControlService
         bool recordCommand,
         CancellationToken cancellationToken)
     {
-        vehicleId = _reconciliation?.ResolveCommandSource(vehicleId) ?? vehicleId;
+        var unit = _reconciliation?.FindBySource(vehicleId);
+        if (unit is not null && HasConfiguredButUnavailableCommandRoute(unit.Id))
+        {
+            throw new InvalidOperationException("The unit command route is unavailable. Select a healthy route and confirm the switch before controlling this unit.");
+        }
+        var activeCommandVehicle = unit is null
+            ? null
+            : _routing?.ForUnit(unit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Command)?.Active?.VehicleId;
+        vehicleId = activeCommandVehicle ?? _reconciliation?.ResolveCommandSource(vehicleId) ?? vehicleId;
         if (!_vehicles.TryGet(vehicleId, out var vehicle) || vehicle is null)
         {
             throw new KeyNotFoundException($"Vehicle '{vehicleId}' was not found.");
         }
 
         var telemetry = LatestTelemetry(vehicle.Id);
-        var connection = ResolveConnection(vehicle);
+        var connection = ResolveConnection(vehicle, unit is null ? null : _routing?.ActiveConnectionFor(unit.Id, UnitRouteRole.Command) ?? unit.CommandAuthorityConnectionId);
         if (connection?.Mode == ConnectionMode.TeamObserver)
         {
             throw new InvalidOperationException("This unit is mirrored from another Robot Command and is read-only.");
@@ -340,6 +364,18 @@ public sealed class OperatorControlService : IOperatorControlService
                 cancellationToken);
         }
 
+        var currentUnit = _reconciliation?.FindBySource(currentVehicle.Id);
+        var currentCommandRoute = currentUnit is null
+            ? null
+            : _routing?.ForUnit(currentUnit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Command);
+        if (currentCommandRoute is not null &&
+            (currentCommandRoute.Health is UnitRouteHealth.Unavailable or UnitRouteHealth.AwaitingConfirmation ||
+             currentCommandRoute.Active?.ConnectionId != plan.Target.ConnectionId ||
+             currentCommandRoute.Active?.VehicleId is { Length: > 0 } routedVehicle && routedVehicle != plan.Target.VehicleId))
+        {
+            return await RejectAsync(plan, "The unit command route changed after preparation. Prepare the command again; it will not be replayed on another route.", cancellationToken);
+        }
+
         var currentConnection = ResolveConnection(currentVehicle, plan.Target.ConnectionId);
         var backend = BackendName(currentConnection);
         var currentTelemetry = LatestTelemetry(currentVehicle.Id);
@@ -493,6 +529,10 @@ public sealed class OperatorControlService : IOperatorControlService
             .ThenByDescending(item => item.LastSeen)
             .FirstOrDefault();
     }
+
+    private bool HasConfiguredButUnavailableCommandRoute(string unitId)
+        => _routing?.ForUnit(unitId).Any(item => item.Role == UnitRouteRole.Command &&
+            item.Health is UnitRouteHealth.Unavailable or UnitRouteHealth.AwaitingConfirmation) == true;
 
     private static bool PreparedTargetMatches(OperatorCommandPlan plan, VehicleRecord currentVehicle)
     {

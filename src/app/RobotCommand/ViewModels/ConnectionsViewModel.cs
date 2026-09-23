@@ -31,6 +31,7 @@ public sealed class ConnectionsViewModel : ObservableObject
     private readonly IEntityStore<string, LinkRecord> _linkStore;
     private readonly IEntityStore<string, ConsoleEventRecord> _eventStore;
     private readonly IEntityStore<string, VehicleRecord> _vehicleStore;
+    private readonly IEntityStore<string, CameraSourceRecord>? _cameraStore;
     private readonly ISelectionService _selection;
     private readonly ILogger<ConnectionsViewModel> _logger;
     private readonly IGhostUnitService? _ghosts;
@@ -83,7 +84,8 @@ public sealed class ConnectionsViewModel : ObservableObject
         ISikRadioPairingService sikPairing,
         ISerialPortLeaseManager serialPortLeases,
         IGhostUnitService? ghosts = null,
-        IUiDispatcher? dispatcher = null)
+        IUiDispatcher? dispatcher = null,
+        IEntityStore<string, CameraSourceRecord>? cameraStore = null)
     {
         _configuration = configuration;
         _manager = manager;
@@ -99,6 +101,7 @@ public sealed class ConnectionsViewModel : ObservableObject
         _sikPairing = sikPairing;
         _serialPortLeases = serialPortLeases;
         _dispatcher = dispatcher;
+        _cameraStore = cameraStore;
         _ghosts = ghosts;
         LocalizationService.Current.PropertyChanged += OnLocalizationChanged;
 
@@ -110,17 +113,20 @@ public sealed class ConnectionsViewModel : ObservableObject
         LogLines = new ObservableCollection<string>();
         SdkCalls = new ObservableCollection<string>();
         Tiles = new ObservableCollection<ConnectionMetric>(EmptyTiles());
-        Modes = new ObservableCollection<ConnectionMode>(Enum.GetValues<ConnectionMode>().Where(item => item != ConnectionMode.Ghost));
+        Modes = new ObservableCollection<ConnectionMode>(Enum.GetValues<ConnectionMode>()
+            .Where(item => item is not ConnectionMode.Ghost and not ConnectionMode.TeamObserver));
         MavlinkAutopilotProfiles = new ObservableCollection<MavlinkAutopilotProfile>(
             Enum.GetValues<MavlinkAutopilotProfile>());
         MavlinkTransports = new ObservableCollection<MavlinkTransportKind>(Enum.GetValues<MavlinkTransportKind>());
         DetectedSerialDevices = new ObservableCollection<SerialDeviceDescriptor>();
         RadioSettings = new ObservableCollection<SikRadioSettingRow>();
+        CameraDevices = new ObservableCollection<CameraSourceRecord>();
 
         ((INotifyCollectionChanged)Connections).CollectionChanged += OnConnectionsChanged;
         ((INotifyCollectionChanged)linkStore.Items).CollectionChanged += OnLiveDataChanged;
         ((INotifyCollectionChanged)eventStore.Items).CollectionChanged += OnLiveDataChanged;
         ((INotifyCollectionChanged)vehicleStore.Items).CollectionChanged += OnLiveDataChanged;
+        if (_cameraStore is not null) ((INotifyCollectionChanged)_cameraStore.Items).CollectionChanged += OnCameraDevicesChanged;
 
         AddCommand = new AsyncRelayCommand(AddAsync, CanAdd);
         SaveCommand = new AsyncRelayCommand(SaveAsync, CanSave);
@@ -168,6 +174,7 @@ public sealed class ConnectionsViewModel : ObservableObject
     public ObservableCollection<MavlinkTransportKind> MavlinkTransports { get; }
     public ObservableCollection<SerialDeviceDescriptor> DetectedSerialDevices { get; }
     public ObservableCollection<SikRadioSettingRow> RadioSettings { get; }
+    public ObservableCollection<CameraSourceRecord> CameraDevices { get; }
 
     public ConnectionRecord? SelectedConnection
     {
@@ -191,6 +198,7 @@ public sealed class ConnectionsViewModel : ObservableObject
             OnPropertyChanged(nameof(IsEditableConnection));
             OnPropertyChanged(nameof(IsMavlinkConnection));
             OnPropertyChanged(nameof(IsLinkdConnection));
+            OnPropertyChanged(nameof(IsMediaConnection));
             OnPropertyChanged(nameof(UsesLogosCredentials));
             OnPropertyChanged(nameof(ShowConnectionControls));
             OnPropertyChanged(nameof(ConnectionKind));
@@ -241,6 +249,7 @@ public sealed class ConnectionsViewModel : ObservableObject
                     _selection.Select(SelectionFactory.From(value));
                 }
             }
+            RefreshCameraDevices();
             RefreshDetails();
             OnPropertyChanged(nameof(IsDisconnected));
             OnPropertyChanged(nameof(IsConnectionActive));
@@ -289,11 +298,13 @@ public sealed class ConnectionsViewModel : ObservableObject
                 {
                     ConnectionMode.Mavlink => "udp-listen://0.0.0.0:14550",
                     ConnectionMode.FieldLink => "http://127.0.0.1:9467",
+                    ConnectionMode.Media => "rtsp://192.168.144.12:8554/main.264",
                     _ => "http://localhost:19000"
                 };
             }
             OnPropertyChanged(nameof(IsMavlinkConnection));
             OnPropertyChanged(nameof(IsLinkdConnection));
+            OnPropertyChanged(nameof(IsMediaConnection));
             OnPropertyChanged(nameof(IsSerialMavlink));
             OnPropertyChanged(nameof(IsUdpMavlink));
             OnPropertyChanged(nameof(UsesLogosCredentials));
@@ -397,6 +408,7 @@ public sealed class ConnectionsViewModel : ObservableObject
     public bool IsEditableConnection => !IsGhostConnection;
     public bool IsMavlinkConnection => Mode == ConnectionMode.Mavlink;
     public bool IsLinkdConnection => Mode == ConnectionMode.FieldLink;
+    public bool IsMediaConnection => Mode == ConnectionMode.Media;
     public bool IsSerialMavlink => IsMavlinkConnection && MavlinkTransport == MavlinkTransportKind.Serial;
     public bool IsUdpMavlink => IsMavlinkConnection && MavlinkTransport == MavlinkTransportKind.UdpListener;
     public bool UsesLogosCredentials => Mode == ConnectionMode.Direct;
@@ -409,6 +421,7 @@ public sealed class ConnectionsViewModel : ObservableObject
         ConnectionMode.Direct => "gRPC",
         ConnectionMode.FieldLink => "LinkD gRPC",
         ConnectionMode.Mavlink => "MAVLink 2",
+        ConnectionMode.Media => "RTSP video",
         ConnectionMode.Ghost => "In-app simulation",
         _ => "Not reported"
     };
@@ -416,7 +429,7 @@ public sealed class ConnectionsViewModel : ObservableObject
         ? $"{MavlinkBaudRate:N0}"
         : IsLinkdConnection
         ? $"{LinkdBaudRate:N0}"
-        : Mode is ConnectionMode.Direct or ConnectionMode.Mavlink
+        : Mode is ConnectionMode.Direct or ConnectionMode.Mavlink or ConnectionMode.Media
         ? "Not applicable"
         : "Not reported";
     public string ConnectedAt => SelectedConnection?.ConnectedAt?.ToLocalTime().ToString("G", CultureInfo.CurrentCulture) ?? "Not connected";
@@ -431,6 +444,7 @@ public sealed class ConnectionsViewModel : ObservableObject
         CurrentConnection.State is AvailabilityState.Offline or AvailabilityState.Faulted or AvailabilityState.Unknown;
     public bool IsConnectionActive => !IsDisconnected;
     public string ActionButtonText => IsDisconnected ? "Connect" : "Disconnect";
+    public string RefreshButtonText => IsMediaConnection ? "Probe" : "Refresh";
     public string SignalSummary => Links.Count == 0 ? "Not reported" : $"{Links.Count} link(s) reported";
     public string SdkCallSummary => _sdkCallSummary;
 
@@ -597,10 +611,12 @@ public sealed class ConnectionsViewModel : ObservableObject
     private bool CanSave() => SelectedConnection is not null && !IsGhostConnection && ValidFields();
     private bool CanConnect() => !IsGhostConnection && SelectedConnection?.State is AvailabilityState.Unknown or AvailabilityState.Offline or AvailabilityState.Faulted;
     private bool CanDisconnect() => !IsGhostConnection && SelectedConnection is not null && SelectedConnection.State != AvailabilityState.Offline;
-    private bool CanRefresh() => !IsGhostConnection && SelectedConnection?.State is AvailabilityState.Online or AvailabilityState.Degraded or AvailabilityState.Stale;
+    private bool CanRefresh() => !IsGhostConnection && (IsMediaConnection || SelectedConnection?.State is AvailabilityState.Online or AvailabilityState.Degraded or AvailabilityState.Stale);
     private bool ValidFields()
         => !string.IsNullOrWhiteSpace(Name) &&
-           (Mode == ConnectionMode.Mavlink
+           (Mode == ConnectionMode.Media
+               ? Uri.TryCreate(Target, UriKind.Absolute, out var mediaUri) && mediaUri.Scheme.Equals("rtsp", StringComparison.OrdinalIgnoreCase) && string.IsNullOrEmpty(mediaUri.UserInfo)
+               : Mode == ConnectionMode.Mavlink
                ? TryParseMavlinkTarget(Target, MavlinkTransport) &&
                  (MavlinkTransport != MavlinkTransportKind.Serial || MavlinkBaudRate is >= 1200 and <= 921600) &&
                  TryParseAliases(_mavlinkSystemAliases, out _)
@@ -643,7 +659,7 @@ public sealed class ConnectionsViewModel : ObservableObject
         }
 
         return new ConnectionDefinition(
-            id,
+            Mode == ConnectionMode.Media && !id.StartsWith("media:", StringComparison.Ordinal) ? $"media:{id}" : id,
             Name.Trim(),
             Target.Trim(),
             Mode,
@@ -661,6 +677,7 @@ public sealed class ConnectionsViewModel : ObservableObject
             {
                 ConnectionMode.FieldLink => ManagedConnectionMode.FieldLink,
                 ConnectionMode.Mavlink => ManagedConnectionMode.Mavlink,
+                ConnectionMode.Media => ManagedConnectionMode.Media,
                 _ => ManagedConnectionMode.Direct
             },
             definition.AutoConnect,
@@ -1046,6 +1063,17 @@ public sealed class ConnectionsViewModel : ObservableObject
         }
 
         RefreshDetails();
+    }
+
+    private void OnCameraDevicesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        => RefreshCameraDevices();
+
+    private void RefreshCameraDevices()
+    {
+        CameraDevices.Clear();
+        if (_cameraStore is null || SelectedConnection is null || SelectedConnection.Mode != ConnectionMode.Mavlink) return;
+        foreach (var camera in _cameraStore.Items.Where(item => item.ConnectionId == SelectedConnection.Id && !item.ConnectionId.StartsWith("media:", StringComparison.Ordinal)))
+            CameraDevices.Add(camera);
     }
 
     private void RefreshDetails()

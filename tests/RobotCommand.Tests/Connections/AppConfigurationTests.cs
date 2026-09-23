@@ -48,6 +48,44 @@ public sealed class AppConfigurationTests
     }
 
     [Fact]
+    public void LoadMigratesLegacyRtspSourcesToMediaConnectionsAndRemovesMigratedFiles()
+    {
+        var applicationDirectory = CreateTempDirectory();
+        var dataDirectory = CreateTempDirectory();
+        var legacyAppPath = Path.Combine(applicationDirectory, "data", "media-sources.json");
+        var legacyDataPath = Path.Combine(dataDirectory, "data", "media-sources.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyAppPath)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(legacyDataPath)!);
+        File.WriteAllText(legacyAppPath, """
+            { "schema":"robotcommand.media-sources.v1", "sources":[{"id":"camera-one","name":"HM30","provider":"rtsp","endpoint":"rtsp://127.0.0.1:8554/main.264"}] }
+            """);
+        File.WriteAllText(legacyDataPath, """
+            { "schema":"robotcommand.media-sources.v1", "sources":[{"id":"camera-two","name":"Spare","provider":"rtsp","endpoint":"rtsp://127.0.0.1:8554/backup"}] }
+            """);
+        File.WriteAllText(Path.Combine(dataDirectory, "appsettings.local.json"), """
+            { "connections":[{"id":"sik-radio","name":"Dracula SiK","target":"serial://COM4","mode":"Mavlink","mavlink":{"transport":"Serial","baudRate":57600}}] }
+            """);
+
+        try
+        {
+            var migrated = AppConfiguration.Load(applicationDirectory, dataDirectory);
+            var media = migrated.Connections.Where(item => item.Mode == ConnectionMode.Media).OrderBy(item => item.Id).ToArray();
+
+            Assert.Equal(["media:camera-one", "media:camera-two"], media.Select(item => item.Id).ToArray());
+            Assert.Equal("rtsp://127.0.0.1:8554/main.264", media[0].Target);
+            Assert.Contains(migrated.Connections, item => item.Id == "sik-radio" && item.Mode == ConnectionMode.Mavlink);
+            Assert.False(File.Exists(legacyAppPath));
+            Assert.False(File.Exists(legacyDataPath));
+            Assert.Equal(2, AppConfiguration.Load(applicationDirectory, dataDirectory).Connections.Count(item => item.Mode == ConnectionMode.Media));
+        }
+        finally
+        {
+            Directory.Delete(applicationDirectory, true);
+            Directory.Delete(dataDirectory, true);
+        }
+    }
+
+    [Fact]
     public void Load_ReadsNumericConnectionAndMavlinkEnumValuesWrittenByJsonSerializer()
     {
         var directory = CreateTempDirectory();

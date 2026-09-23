@@ -131,21 +131,32 @@ public sealed class ConnectionManagementWorkflow : IConnectionManagementWorkflow
             ManagedConnectionMode.Direct => ConnectionMode.Direct,
             ManagedConnectionMode.FieldLink => ConnectionMode.FieldLink,
             ManagedConnectionMode.Mavlink => ConnectionMode.Mavlink,
+            ManagedConnectionMode.Media => ConnectionMode.Media,
             _ => throw new ArgumentOutOfRangeException(nameof(request), "The connection mode is not supported.")
         };
         var target = request.Target.Trim();
         ValidateTarget(mode, target, request.Mavlink);
         var mavlink = mode == ConnectionMode.Mavlink ? ToMavlinkOptions(request.Mavlink) : null;
         var linkd = mode == ConnectionMode.FieldLink ? ToLinkdOptions(request.Linkd) : null;
-        var id = string.IsNullOrWhiteSpace(stableId)
-            ? ConnectionId.Create(request.Name, target)
-            : stableId.Trim();
+        var generatedId = ConnectionId.Create(request.Name, target);
+        var requestedId = string.IsNullOrWhiteSpace(stableId) ? generatedId : stableId.Trim();
+        var id = mode == ConnectionMode.Media && !requestedId.StartsWith("media:", StringComparison.Ordinal)
+            ? $"media:{requestedId}"
+            : requestedId;
         return new ConnectionDefinition(id, request.Name.Trim(), target, mode, request.AutoConnect,
             request.AutoReconnect, request.Description?.Trim(), Mavlink: mavlink, Linkd: linkd);
     }
 
     private static void ValidateTarget(ConnectionMode mode, string target, ManagedMavlinkOptions? mavlink)
     {
+        if (mode == ConnectionMode.Media)
+        {
+            if (!Uri.TryCreate(target, UriKind.Absolute, out var mediaUri) ||
+                !mediaUri.Scheme.Equals("rtsp", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrWhiteSpace(mediaUri.Host) || mediaUri.UserInfo.Length > 0)
+                throw new ArgumentException("Media targets must be unauthenticated rtsp:// URLs.", nameof(target));
+            return;
+        }
         if (mode == ConnectionMode.Mavlink)
         {
             var options = mavlink ?? new ManagedMavlinkOptions();
@@ -199,6 +210,7 @@ public sealed class ConnectionManagementWorkflow : IConnectionManagementWorkflow
     {
         ConnectionMode.FieldLink => ManagedConnectionMode.FieldLink,
         ConnectionMode.Mavlink => ManagedConnectionMode.Mavlink,
+        ConnectionMode.Media => ManagedConnectionMode.Media,
         _ => ManagedConnectionMode.Direct
     };
     internal static ManagedConnectionState ToCoreState(AvailabilityState state) => (ManagedConnectionState)(int)state;

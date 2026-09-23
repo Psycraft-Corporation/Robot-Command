@@ -339,7 +339,8 @@ internal static class AppHost
                 serviceProvider.GetRequiredService<ILocalizationService>(),
                 serviceProvider.GetRequiredService<IConnectionManagementWorkflow>(),
                 serviceProvider.GetRequiredService<IPx4ParameterService>(),
-                serviceProvider.GetRequiredService<IPx4ParameterProfileStore>()));
+                serviceProvider.GetRequiredService<IPx4ParameterProfileStore>(),
+                serviceProvider.GetRequiredService<IUnitRoutingWorkflow>()));
         services.AddSingleton<UnitsWorkspaceViewModel>();
         services.AddSingleton<EmbeddedTerminalViewModel>();
         services.AddSingleton<ShellViewModel>();

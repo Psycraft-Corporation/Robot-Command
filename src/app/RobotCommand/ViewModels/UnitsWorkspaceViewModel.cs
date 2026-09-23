@@ -9,6 +9,7 @@ using RobotCommand.Localization;
 using RobotCommand.Models;
 using RobotCommand.Rendering.Meshes;
 using RobotCommand.Services.Mavlink;
+using RobotCommand.Services.Reconciliation;
 using RobotCommand.State;
 
 namespace RobotCommand.ViewModels;
@@ -81,6 +82,7 @@ public sealed class UnitsLibraryViewModel : ObservableObject
     private readonly IConnectionManagementWorkflow? _connectionWorkflow;
     private readonly IPx4ParameterService? _parameterService;
     private readonly IPx4ParameterProfileStore? _parameterProfiles;
+    private readonly IUnitRoutingWorkflow? _routing;
     private UnitDefinitionSnapshot? _selectedUnit;
     private string _unitName = string.Empty;
     private string _status = string.Empty;
@@ -90,6 +92,12 @@ public sealed class UnitsLibraryViewModel : ObservableObject
     private Px4ParameterProfile? _selectedParameterProfile;
     private string _parameterStatus = "Select a MAVLink unit to manage parameters.";
     private bool _parameterBusy;
+    private string _logicalCameraName = string.Empty;
+    private CameraSourceRecord? _selectedControlCamera;
+    private UnitConnectionOption? _selectedMediaConnection;
+    private UnitRouteStatus? _selectedRoute;
+    private int _routeCandidateIndex;
+    private bool _confirmControlRouteSwitch;
 
     public UnitsLibraryViewModel(
         IUnitAssociationWorkflow workflow,
@@ -99,7 +107,8 @@ public sealed class UnitsLibraryViewModel : ObservableObject
         ILocalizationService localization,
         IConnectionManagementWorkflow? connectionWorkflow = null,
         IPx4ParameterService? parameterService = null,
-        IPx4ParameterProfileStore? parameterProfiles = null)
+        IPx4ParameterProfileStore? parameterProfiles = null,
+        IUnitRoutingWorkflow? routing = null)
     {
         _workflow = workflow;
         _connections = connections;
@@ -109,6 +118,7 @@ public sealed class UnitsLibraryViewModel : ObservableObject
         _connectionWorkflow = connectionWorkflow;
         _parameterService = parameterService;
         _parameterProfiles = parameterProfiles;
+        _routing = routing;
         Units = new ObservableCollection<UnitDefinitionSnapshot>(_workflow.Units);
         AvailableConnections = [];
         AvailableVehicles = [];
@@ -116,6 +126,10 @@ public sealed class UnitsLibraryViewModel : ObservableObject
         ParameterTargets = [];
         ParameterProfiles = [];
         ParameterDiffs = [];
+        MediaConnectionOptions = [];
+        LogicalCameras = [];
+        ControlCameraOptions = [];
+        RouteStatuses = [];
         NewUnitCommand = new RelayCommand(_ => BeginNew());
         EditUnitCommand = new RelayCommand(_ => BeginEdit(), _ => CanEdit);
         SaveUnitCommand = new AsyncRelayCommand(SaveAsync, () => IsEditing);
@@ -124,7 +138,11 @@ public sealed class UnitsLibraryViewModel : ObservableObject
         DownloadParametersCommand = new AsyncRelayCommand(DownloadParametersAsync, CanManageParameters);
         CompareParametersCommand = new AsyncRelayCommand(CompareParametersAsync, CanCompareParameters);
         ApplyParametersCommand = new AsyncRelayCommand(ApplyParametersAsync, CanApplyParameters);
+        AddLogicalCameraCommand = new RelayCommand(_ => AddLogicalCamera(), _ => SelectedControlCamera is not null || SelectedMediaConnection is not null);
+        RemoveLogicalCameraCommand = new RelayCommand(parameter => RemoveLogicalCamera(parameter as UnitCameraDeviceBinding));
+        SelectRouteCommand = new AsyncRelayCommand(SelectRouteAsync, () => SelectedRoute is not null);
         _workflow.Changed += OnChanged;
+        if (_routing is not null) _routing.Changed += OnRoutingChanged;
         _localization.PropertyChanged += OnLocalizationChanged;
         if (_connectionWorkflow is not null)
             _connectionWorkflow.Changed += OnConnectionWorkflowChanged;
@@ -142,6 +160,10 @@ public sealed class UnitsLibraryViewModel : ObservableObject
     public ObservableCollection<UnitParameterTarget> ParameterTargets { get; }
     public ObservableCollection<Px4ParameterProfile> ParameterProfiles { get; }
     public ObservableCollection<Px4ParameterDiff> ParameterDiffs { get; }
+    public ObservableCollection<UnitConnectionOption> MediaConnectionOptions { get; }
+    public ObservableCollection<UnitCameraDeviceBinding> LogicalCameras { get; }
+    public ObservableCollection<CameraSourceRecord> ControlCameraOptions { get; }
+    public ObservableCollection<UnitRouteStatus> RouteStatuses { get; }
     public UnitDefinitionSnapshot? SelectedUnit
     {
         get => _selectedUnit;
@@ -151,12 +173,31 @@ public sealed class UnitsLibraryViewModel : ObservableObject
             OnPropertyChanged(nameof(CanEdit));
             OnPropertyChanged(nameof(SelectedConnectionSummary));
             RefreshParameterTargets();
+            RefreshRoutes();
             (EditUnitCommand as RelayCommand)?.RaiseCanExecuteChanged();
             (DeleteUnitCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
             if (!IsEditing) LoadDraft(value);
         }
     }
     public string UnitName { get => _unitName; set => SetProperty(ref _unitName, value); }
+    public string LogicalCameraName { get => _logicalCameraName; set => SetProperty(ref _logicalCameraName, value); }
+    public CameraSourceRecord? SelectedControlCamera
+    {
+        get => _selectedControlCamera;
+        set { if (SetProperty(ref _selectedControlCamera, value)) (AddLogicalCameraCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+    }
+    public UnitConnectionOption? SelectedMediaConnection
+    {
+        get => _selectedMediaConnection;
+        set { if (SetProperty(ref _selectedMediaConnection, value)) (AddLogicalCameraCommand as RelayCommand)?.RaiseCanExecuteChanged(); }
+    }
+    public UnitRouteStatus? SelectedRoute
+    {
+        get => _selectedRoute;
+        set { if (SetProperty(ref _selectedRoute, value)) (SelectRouteCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged(); }
+    }
+    public int RouteCandidateIndex { get => _routeCandidateIndex; set => SetProperty(ref _routeCandidateIndex, value); }
+    public bool ConfirmControlRouteSwitch { get => _confirmControlRouteSwitch; set => SetProperty(ref _confirmControlRouteSwitch, value); }
     public string SelectedConnectionSummary
     {
         get
@@ -216,6 +257,9 @@ public sealed class UnitsLibraryViewModel : ObservableObject
     public ICommand DownloadParametersCommand { get; }
     public ICommand CompareParametersCommand { get; }
     public ICommand ApplyParametersCommand { get; }
+    public ICommand AddLogicalCameraCommand { get; }
+    public ICommand RemoveLogicalCameraCommand { get; }
+    public ICommand SelectRouteCommand { get; }
     public event EventHandler? OpenRequested;
 
     public void OpenExisting(string? unitId)
@@ -275,6 +319,16 @@ public sealed class UnitsLibraryViewModel : ObservableObject
         AvailableConnections.Clear();
         var selectedVehicles = unit?.VehicleSources.ToHashSet() ?? [];
         var selectedCameras = unit?.CameraSources.ToHashSet() ?? [];
+        LogicalCameras.Clear();
+        foreach (var binding in unit?.Cameras ?? []) LogicalCameras.Add(binding);
+        ControlCameraOptions.Clear();
+        foreach (var camera in _cameras.Items.Where(item => !item.ConnectionId.StartsWith("media:", StringComparison.Ordinal)).OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase))
+            ControlCameraOptions.Add(camera);
+        MediaConnectionOptions.Clear();
+        foreach (var connection in SavedConnections().Where(item => item.Mode == ConnectionMode.Media))
+            MediaConnectionOptions.Add(connection);
+        SelectedMediaConnection = MediaConnectionOptions.FirstOrDefault(item =>
+            LogicalCameras.Any(camera => camera.MediaSourceId is not null && $"media:{camera.MediaSourceId}" == item.ConnectionId));
         var selectedConnections = (unit?.ConnectionIds ?? selectedVehicles.Select(item => item.ConnectionId).Distinct(StringComparer.Ordinal).ToArray())
             .ToHashSet(StringComparer.Ordinal);
         foreach (var connection in SavedConnections())
@@ -297,6 +351,50 @@ public sealed class UnitsLibraryViewModel : ObservableObject
         foreach (var binding in selectedCameras.Where(item => AvailableCameras.All(option => option.SourceId != item.CameraSourceId || option.ConnectionId != item.ConnectionId)))
             AddCameraOption(new UnitSourceOption(UnitSourceKind.Camera, binding.ConnectionId, binding.CameraSourceId, binding.CameraSourceId, false, true));
         RefreshParameterTargets();
+        RefreshRoutes();
+    }
+
+    private void AddLogicalCamera()
+    {
+        var control = SelectedControlCamera;
+        var media = SelectedMediaConnection;
+        if (control is null && media is null) return;
+        if (media is not null && AvailableConnections.FirstOrDefault(item => item.ConnectionId == media.ConnectionId) is { } connection)
+            connection.IsSelected = true;
+        var mediaSourceId = media?.ConnectionId.StartsWith("media:", StringComparison.Ordinal) == true
+            ? media.ConnectionId[6..]
+            : media?.ConnectionId;
+        var id = $"camera-{Guid.NewGuid():N}";
+        LogicalCameras.Add(new UnitCameraDeviceBinding(id,
+            string.IsNullOrWhiteSpace(LogicalCameraName) ? control?.Name ?? media!.Name : LogicalCameraName.Trim(),
+            control?.ConnectionId, control?.CameraSourceId, mediaSourceId));
+        LogicalCameraName = string.Empty;
+    }
+
+    private void RemoveLogicalCamera(UnitCameraDeviceBinding? binding)
+    {
+        if (binding is not null) LogicalCameras.Remove(binding);
+    }
+
+    private void RefreshRoutes()
+    {
+        RouteStatuses.Clear();
+        if (SelectedUnit is null) return;
+        foreach (var status in _routing?.ForUnit(SelectedUnit.Id) ?? []) RouteStatuses.Add(status);
+        SelectedRoute = RouteStatuses.FirstOrDefault(item => item.Role == UnitRouteRole.Video) ?? RouteStatuses.FirstOrDefault();
+    }
+
+    private async Task SelectRouteAsync(CancellationToken cancellationToken)
+    {
+        if (_routing is null || SelectedUnit is null || SelectedRoute is null) return;
+        try
+        {
+            await _routing.SelectAsync(SelectedUnit.Id, SelectedRoute.Role, RouteCandidateIndex, ConfirmControlRouteSwitch, cancellationToken);
+            ConfirmControlRouteSwitch = false;
+            RefreshRoutes();
+            Status = "Route selection updated.";
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException) { Status = exception.Message; }
     }
 
     private void AddConnectionOption(UnitConnectionOption option)
@@ -374,7 +472,7 @@ public sealed class UnitsLibraryViewModel : ObservableObject
                 retainedAuthorities?.CommandAuthorityConnectionId,
                 retainedAuthorities?.TelemetryAuthorityConnectionId,
                 retainedAuthorities?.DiagnosticsAuthorityConnectionId,
-                connectionIds), cancellationToken);
+                connectionIds, LogicalCameras.ToArray(), retainedAuthorities?.Routes), cancellationToken);
             Refresh(saved.Id);
             IsEditing = false;
             _editingId = null;
@@ -405,6 +503,7 @@ public sealed class UnitsLibraryViewModel : ObservableObject
     }
 
     private void OnChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(() => Refresh(SelectedUnit?.Id));
+    private void OnRoutingChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(RefreshRoutes);
     private void OnLocalizationChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) =>
         Dispatcher.UIThread.Post(() => OnPropertyChanged(nameof(ParameterTitle)));
     private void OnConnectionWorkflowChanged(object? sender, EventArgs e) => Dispatcher.UIThread.Post(() => { if (!IsEditing) RebuildOptions(SelectedUnit); else RefreshParameterTargets(); });

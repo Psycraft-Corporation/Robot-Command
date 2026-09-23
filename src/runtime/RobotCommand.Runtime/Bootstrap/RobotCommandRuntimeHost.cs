@@ -76,6 +76,8 @@ public static class RobotCommandRuntimeHost
             provider.GetRequiredService<IEntityStore<string, CameraSourceRecord>>()));
         services.AddSingleton<IUnitDefinitionService>(provider => provider.GetRequiredService<UnitDefinitionService>());
         services.AddSingleton<IUnitAssociationWorkflow>(provider => provider.GetRequiredService<UnitDefinitionService>());
+        services.AddSingleton<UnitRouteFailoverService>();
+        services.AddSingleton<IUnitRoutingWorkflow>(provider => provider.GetRequiredService<UnitRouteFailoverService>());
         services.TryAddSingleton<IUiDispatcher, InlineUiDispatcher>();
         services.AddSingleton<IStorePublicationGate, StorePublicationGate>();
 
@@ -163,6 +165,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IConnectionProvider, DirectLogosConnectionFactory>();
         services.AddSingleton<IConnectionProvider, LinkdConnectionProvider>();
         services.AddSingleton<IConnectionProvider, MavlinkConnectionProvider>();
+        services.AddSingleton<IConnectionProvider, RtspConnectionProvider>();
         services.AddSingleton<ILogosConnectionFactory, ManagedConnectionFactory>();
         services.AddSingleton<ILogosOperationalSessionFactory, LogosOperationalSessionFactory>();
         services.AddSingleton<ILogosOperationalSessionRegistry, LogosOperationalSessionRegistry>();
@@ -206,6 +209,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IGStreamerRuntime, GStreamerRuntime>();
         services.AddSingleton<IGStreamerVideoPipeline, GStreamerVideoPipeline>();
         services.AddSingleton<IGStreamerVideoPipelineFactory, GStreamerVideoPipelineFactory>();
+        services.AddSingleton<ICameraMediaSourceProvider, RtspCameraMediaSourceProvider>();
         services.AddSingleton<ILocalVideoRecordingCatalog, LocalVideoRecordingCatalog>();
         services.AddSingleton<ILocalVideoRecordingService, LocalVideoRecordingService>();
         services.AddSingleton<IRemoteVideoRecordingCatalog, MediaMtxRemoteVideoRecordingCatalog>();

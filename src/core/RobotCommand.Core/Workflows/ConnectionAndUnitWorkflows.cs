@@ -5,7 +5,8 @@ public enum ManagedConnectionMode
 {
     Direct,
     FieldLink,
-    Mavlink
+    Mavlink,
+    Media
 }
 
 public enum ManagedConnectionState

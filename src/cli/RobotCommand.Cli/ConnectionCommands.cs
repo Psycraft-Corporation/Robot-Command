@@ -2,6 +2,10 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using RobotCommand.Bootstrap;
 using RobotCommand.Core;
+using RobotCommand.Models;
+using RobotCommand.Services.Connections;
+using RobotCommand.Services.Media;
+using RobotCommand.Services.Operations;
 
 namespace RobotCommand.Cli;
 
@@ -25,12 +29,15 @@ internal static class ConnectionCommands
         var connections = host.Services.GetRequiredService<IConnectionManagementWorkflow>();
         var units = host.Services.GetRequiredService<IUnitObservationWorkflow>();
         var associations = host.Services.GetRequiredService<IUnitAssociationWorkflow>();
+        var routing = host.Services.GetRequiredService<IUnitRoutingWorkflow>();
         var lifecycle = host.Services.GetRequiredService<IConnectionRuntimeLifecycle>();
+        var manager = host.Services.GetRequiredService<ILogosConnectionManager>();
+        var playback = host.Services.GetRequiredService<IVideoPlaybackAdapter>();
         try
         {
             return group == "connection"
-                ? await RunConnectionAsync(arguments[1].ToLowerInvariant(), parsed, connections, units, lifecycle, reporter, stopping.Token)
-                : await RunUnitAsync(arguments[1].ToLowerInvariant(), parsed, units, associations, lifecycle, reporter, stopping.Token);
+                ? await RunConnectionAsync(arguments[1].ToLowerInvariant(), parsed, connections, units, lifecycle, manager, playback, reporter, stopping.Token)
+                : await RunUnitAsync(arguments[1].ToLowerInvariant(), parsed, units, associations, routing, connections, lifecycle, reporter, stopping.Token);
         }
         catch (OperationCanceledException) when (stopping.IsCancellationRequested) { return 0; }
         catch (Exception ex) { reporter.Error(ex.Message); return 1; }
@@ -38,30 +45,41 @@ internal static class ConnectionCommands
     }
 
     private static async Task<int> RunConnectionAsync(string command, CliArguments args, IConnectionManagementWorkflow workflow,
-        IUnitObservationWorkflow units, IConnectionRuntimeLifecycle lifecycle, ConsoleReporter reporter, CancellationToken cancellationToken)
+        IUnitObservationWorkflow units, IConnectionRuntimeLifecycle lifecycle, ILogosConnectionManager manager,
+        IVideoPlaybackAdapter playback, ConsoleReporter reporter, CancellationToken cancellationToken)
     {
         switch (command)
         {
-            case "list": reporter.Event("connection.list", workflow.Connections); return 0;
-            case "show": reporter.Event("connection.show", RequireConnection(workflow, args.RequiredPosition(0))); return 0;
+            case "list": reporter.Event("connection.list", workflow.Connections.Select(item => SafeConnectionSummary(item, args.Has("json") || args.Has("verbose"))).ToArray()); return 0;
+            case "show":
+            case "status": reporter.Event("connection.show", SafeConnectionSummary(RequireConnection(workflow, args.RequiredPosition(0)), args.Has("json") || args.Has("verbose"))); return 0;
             case "add":
-                reporter.Event("connection.created", await workflow.CreateAsync(BuildMutation(args), cancellationToken)); return 0;
+                reporter.Event("connection.created", SafeConnectionSummary(await workflow.CreateAsync(BuildMutation(args), cancellationToken), args.Has("json") || args.Has("verbose"))); return 0;
             case "update":
                 {
                     var id = args.RequiredPosition(0);
-                    reporter.Event("connection.updated", await workflow.UpdateAsync(id, BuildMutation(args, RequireConnection(workflow, id)), cancellationToken)); return 0;
+                    reporter.Event("connection.updated", SafeConnectionSummary(await workflow.UpdateAsync(id, BuildMutation(args, RequireConnection(workflow, id)), cancellationToken), args.Has("json") || args.Has("verbose"))); return 0;
                 }
             case "remove":
-                await workflow.RemoveAsync(args.RequiredPosition(0), cancellationToken); reporter.Event("connection.removed", new { id = args.RequiredPosition(0) }); return 0;
+                {
+                    var connection = RequireConnection(workflow, args.RequiredPosition(0));
+                    await workflow.RemoveAsync(connection.Id, cancellationToken);
+                    reporter.Event("connection.removed", new { connection.Name, connection.Mode });
+                    return 0;
+                }
             case "disconnect":
-                await workflow.DisconnectAsync(args.RequiredPosition(0), cancellationToken); reporter.Event("connection.disconnected", RequireConnection(workflow, args.RequiredPosition(0))); return 0;
+                await workflow.DisconnectAsync(args.RequiredPosition(0), cancellationToken); reporter.Event("connection.disconnected", SafeConnectionSummary(RequireConnection(workflow, args.RequiredPosition(0)), args.Has("json") || args.Has("verbose"))); return 0;
             case "refresh":
-                await workflow.RefreshAsync(args.RequiredPosition(0), cancellationToken); reporter.Event("connection.refreshed", RequireConnection(workflow, args.RequiredPosition(0))); return 0;
+                await workflow.RefreshAsync(args.RequiredPosition(0), cancellationToken); reporter.Event("connection.refreshed", SafeConnectionSummary(RequireConnection(workflow, args.RequiredPosition(0)), args.Has("json") || args.Has("verbose"))); return 0;
+            case "probe":
+                await workflow.RefreshAsync(args.RequiredPosition(0), cancellationToken); reporter.Event("connection.probed", SafeConnectionSummary(RequireConnection(workflow, args.RequiredPosition(0)), args.Has("json") || args.Has("verbose"))); return 0;
+            case "stream":
+                return await StreamAsync(args, workflow, manager, playback, reporter, cancellationToken);
             case "connect":
                 {
                     var id = args.RequiredPosition(0);
                     await workflow.ConnectAsync(id, await ReadCredentialsAsync(RequireConnection(workflow, id), args, cancellationToken), cancellationToken);
-                    reporter.Event("connection.connecting", RequireConnection(workflow, id));
+                    reporter.Event("connection.connecting", SafeConnectionSummary(RequireConnection(workflow, id), args.Has("json") || args.Has("verbose")));
                     if (!args.Has("watch")) return 0;
                     await lifecycle.StartAsync(false, id, cancellationToken);
                     await WatchAsync(workflow, units, id, reporter, cancellationToken);
@@ -83,8 +101,50 @@ internal static class ConnectionCommands
         }
     }
 
+    private static async Task<int> StreamAsync(CliArguments args, IConnectionManagementWorkflow workflow,
+        ILogosConnectionManager manager, IVideoPlaybackAdapter playback, ConsoleReporter reporter,
+        CancellationToken cancellationToken)
+    {
+        var connectionId = args.RequiredPosition(0);
+        var connection = RequireConnection(workflow, connectionId);
+        if (connection.Mode != ManagedConnectionMode.Media)
+            throw new ArgumentException("Streaming requires a media connection.");
+        var seconds = Math.Clamp(args.Int("seconds", 10) ?? 10, 1, 300);
+        await workflow.ConnectAsync(connectionId, null, cancellationToken);
+        var cameraSourceId = connectionId.StartsWith("media:", StringComparison.Ordinal) ? connectionId[6..] : connectionId;
+        var stream = await manager.OpenCameraStreamAsync(connectionId,
+            new CameraStreamOpenRequest(cameraSourceId, VideoProtocolPreference.Rtsp), cancellationToken);
+        try
+        {
+            await playback.AttachAsync(stream, cancellationToken);
+            reporter.Event("connection.stream.opened", new
+            {
+                connection.Name,
+                Playback = playback.Status.State,
+                Protocol = playback.Status.Protocol,
+                DurationSeconds = seconds
+            });
+            await Task.Delay(TimeSpan.FromSeconds(seconds), cancellationToken);
+            var status = playback.Status;
+            reporter.Event("connection.stream.status", new
+            {
+                connection.Name,
+                Playback = status.State,
+                status.Summary,
+                Detail = GStreamerPipelineArguments.RedactText(status.Detail)
+            });
+            return status.State is VideoPlaybackState.Live or VideoPlaybackState.Degraded ? 0 : 1;
+        }
+        finally
+        {
+            try { await playback.DetachAsync(CancellationToken.None); }
+            finally { await manager.CloseCameraStreamAsync(connectionId, stream.StreamId, CancellationToken.None); }
+        }
+    }
+
     private static async Task<int> RunUnitAsync(string command, CliArguments args, IUnitObservationWorkflow workflow,
         IUnitAssociationWorkflow associations,
+        IUnitRoutingWorkflow routing, IConnectionManagementWorkflow connections,
         IConnectionRuntimeLifecycle lifecycle, ConsoleReporter reporter, CancellationToken cancellationToken)
     {
         switch (command)
@@ -99,9 +159,14 @@ internal static class ConnectionCommands
             case "create":
                 {
                     var name = args.Required("name");
-                    var vehicle = OptionalVehicle(args);
-                    if (vehicle is null) throw new ArgumentException("unit create requires --connection and --vehicle so the saved unit has a vehicle source.");
-                    var saved = await associations.SaveAsync(null, new UnitDefinitionRequest(name, [vehicle]), cancellationToken);
+                    var connectionId = args.Get("connection");
+                    var vehicleId = args.Get("vehicle");
+                    if (vehicleId is not null && connectionId is null)
+                        throw new ArgumentException("--vehicle requires --connection.");
+                    var vehicle = vehicleId is null ? null : new UnitVehicleSourceBinding(connectionId!, vehicleId);
+                    var saved = vehicle is not null
+                        ? await associations.SaveAsync(null, new UnitDefinitionRequest(name, [vehicle]), cancellationToken)
+                        : await associations.SaveAsync(null, new UnitDefinitionRequest(name, [], ConnectionIds: [connectionId ?? args.Required("connection")]), cancellationToken);
                     reporter.Event("unit.created", saved);
                     return 0;
                 }
@@ -123,7 +188,8 @@ internal static class ConnectionCommands
             case "vehicle":
             case "camera":
             case "authority":
-                return await RunUnitMutationAsync(command, args, associations, reporter, cancellationToken);
+            case "route":
+                return await RunUnitMutationAsync(command, args, associations, routing, connections, lifecycle, reporter, cancellationToken);
             case "watch":
                 await lifecycle.StartAsync(true, null, cancellationToken);
                 await WatchUnitsAsync(workflow, associations, args.Positionals.FirstOrDefault(), reporter, cancellationToken);
@@ -133,13 +199,21 @@ internal static class ConnectionCommands
     }
 
     private static async Task<int> RunUnitMutationAsync(string group, CliArguments args, IUnitAssociationWorkflow associations,
+        IUnitRoutingWorkflow routing, IConnectionManagementWorkflow connections, IConnectionRuntimeLifecycle lifecycle,
         ConsoleReporter reporter, CancellationToken cancellationToken)
     {
         var operation = args.RequiredPosition(0).ToLowerInvariant();
         var id = args.RequiredPosition(1);
         var existing = RequireAssociation(associations, id);
+        if (group == "route" && operation == "status")
+        {
+            reporter.Event("unit.route.status", routing.ForUnit(id));
+            return 0;
+        }
         var vehicles = existing.VehicleSources.ToList();
         var cameras = existing.CameraSources.ToList();
+        var logicalCameras = (existing.Cameras ?? []).ToList();
+        var routes = (existing.Routes ?? []).ToList();
         string? commandAuthority = existing.CommandAuthorityConnectionId;
         string? telemetryAuthority = existing.TelemetryAuthorityConnectionId;
         string? diagnosticsAuthority = existing.DiagnosticsAuthorityConnectionId;
@@ -157,21 +231,107 @@ internal static class ConnectionCommands
             case ("camera", "remove"):
                 cameras.RemoveAll(item => item.ConnectionId == args.Required("connection") && item.CameraSourceId == args.Required("camera"));
                 break;
+            case ("camera", "bind"):
+                {
+                    var videoConnectionId = args.Get("video-connection");
+                    var mediaSourceId = videoConnectionId is null ? null : videoConnectionId.StartsWith("media:", StringComparison.Ordinal) ? videoConnectionId[6..] : videoConnectionId;
+                    var logicalCamera = new UnitCameraDeviceBinding(
+                            args.Get("camera-id") ?? $"camera-{Guid.NewGuid():N}", args.Required("name"),
+                        args.Get("control-connection"), args.Get("control-camera"), mediaSourceId,
+                        args.Get("standby-video-connections")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .Select(value => value.StartsWith("media:", StringComparison.Ordinal) ? value[6..] : value).ToArray());
+                    if (logicalCamera.ControlConnectionId is { Length: > 0 } controlConnectionId)
+                    {
+                        await connections.ConnectAsync(controlConnectionId, null, cancellationToken);
+                        await lifecycle.StartAsync(false, controlConnectionId, cancellationToken);
+                        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                    }
+                    logicalCameras.RemoveAll(item => item.Id == logicalCamera.Id);
+                    logicalCameras.Add(logicalCamera);
+                    if (logicalCamera.ControlConnectionId is { Length: > 0 } controlConnection && !(existing.ConnectionIds ?? []).Contains(controlConnection, StringComparer.Ordinal))
+                        existing = existing with { ConnectionIds = (existing.ConnectionIds ?? []).Append(controlConnection).Distinct(StringComparer.Ordinal).ToArray() };
+                    var videoIds = new[] { logicalCamera.MediaSourceId }.Concat(logicalCamera.StandbyMediaSourceIds ?? []).ToHashSet(StringComparer.Ordinal);
+                    routes.RemoveAll(item => (item.Role is UnitRouteRole.Gimbal or UnitRouteRole.Video) &&
+                        (item.CameraSourceId == logicalCamera.ControlCameraSourceId || item.MediaSourceId is not null && videoIds.Contains(item.MediaSourceId)));
+                    if (logicalCamera.ControlConnectionId is not null && logicalCamera.ControlCameraSourceId is not null)
+                        routes.Add(new UnitRouteCandidate(UnitRouteRole.Gimbal, logicalCamera.ControlConnectionId,
+                            vehicles.FirstOrDefault(item => item.ConnectionId == logicalCamera.ControlConnectionId)?.VehicleId,
+                            logicalCamera.ControlCameraSourceId));
+                    if (logicalCamera.MediaSourceId is not null)
+                        routes.Add(new UnitRouteCandidate(UnitRouteRole.Video, MediaSourceId: logicalCamera.MediaSourceId));
+                    foreach (var sourceId in logicalCamera.StandbyMediaSourceIds ?? [])
+                        routes.Add(new UnitRouteCandidate(UnitRouteRole.Video, MediaSourceId: sourceId));
+                    break;
+                }
+            case ("camera", "unbind"):
+                {
+                    var cameraId = args.Required("camera-id");
+                    var removed = logicalCameras.FirstOrDefault(item => item.Id == cameraId);
+                    logicalCameras.RemoveAll(item => item.Id == cameraId);
+                    if (removed is not null)
+                    {
+                        var mediaIds = new[] { removed.MediaSourceId }.Concat(removed.StandbyMediaSourceIds ?? []).ToHashSet(StringComparer.Ordinal);
+                        routes.RemoveAll(item => item.CameraSourceId == removed.ControlCameraSourceId || item.MediaSourceId is not null && mediaIds.Contains(item.MediaSourceId));
+                    }
+                    break;
+                }
             case ("authority", "set"):
                 var connection = args.Required("connection");
                 switch (args.Required("role").ToLowerInvariant())
                 {
-                    case "command": commandAuthority = connection; break;
-                    case "telemetry": telemetryAuthority = connection; break;
-                    case "diagnostics": diagnosticsAuthority = connection; break;
+                    case "command": commandAuthority = connection; SetPrimaryRoute(routes, UnitRouteRole.Command, connection, vehicles); break;
+                    case "telemetry": telemetryAuthority = connection; SetPrimaryRoute(routes, UnitRouteRole.Telemetry, connection, vehicles); break;
+                    case "diagnostics": diagnosticsAuthority = connection; SetPrimaryRoute(routes, UnitRouteRole.Diagnostics, connection, vehicles); break;
                     default: throw new ArgumentException("--role must be command, telemetry, or diagnostics.");
                 }
                 break;
+            case ("route", "add"):
+                {
+                    var role = ParseRouteRole(args.Required("role"));
+                    var candidate = RouteCandidate(role, args, vehicles, logicalCameras);
+                    if (routes.Contains(candidate)) throw new ArgumentException("That route candidate is already configured.");
+                    if (role == UnitRouteRole.Gimbal && candidate.ConnectionId is { Length: > 0 } gimbalConnectionId)
+                    {
+                        await connections.ConnectAsync(gimbalConnectionId, null, cancellationToken);
+                        await lifecycle.StartAsync(false, gimbalConnectionId, cancellationToken);
+                        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                    }
+                    routes.Add(candidate);
+                    break;
+                }
+            case ("route", "remove"):
+                {
+                    var role = ParseRouteRole(args.Required("role"));
+                    var index = (args.Int("candidate", 1) ?? 1) - 1;
+                    var choices = routes.Where(item => item.Role == role).ToArray();
+                    if (index < 0 || index >= choices.Length) throw new ArgumentException("--candidate is a 1-based index in the selected role's routes.");
+                    routes.Remove(choices[index]);
+                    break;
+                }
+            case ("route", "select"):
+                {
+                    var role = ParseRouteRole(args.Required("role"));
+                    var candidateIndex = (args.Int("candidate", 1) ?? 1) - 1;
+                    var choices = routes.Where(item => item.Role == role).ToArray();
+                    if (candidateIndex < 0 || candidateIndex >= choices.Length) throw new ArgumentException("--candidate is a 1-based index in the selected role's routes.");
+                    var current = routing.ForUnit(id).FirstOrDefault(item => item.Role == role)?.Active;
+                    if ((role is UnitRouteRole.Command or UnitRouteRole.Gimbal) && current != choices[candidateIndex] && !args.Has("confirm"))
+                        throw new InvalidOperationException("Switching command or gimbal routes requires --confirm.");
+                    if (choices[candidateIndex].ConnectionId is { Length: > 0 } connectionId)
+                    {
+                        await connections.ConnectAsync(connectionId, null, cancellationToken);
+                        await lifecycle.StartAsync(false, connectionId, cancellationToken);
+                    }
+                    var result = await routing.SelectAsync(id, role, candidateIndex, args.Has("confirm"), cancellationToken);
+                    reporter.Event("unit.route.selected", result);
+                    return 0;
+                }
             default: return Usage();
         }
 
         var saved = await associations.SaveAsync(id, new UnitDefinitionRequest(existing.DisplayName, vehicles, cameras,
-            commandAuthority, telemetryAuthority, diagnosticsAuthority), cancellationToken);
+            commandAuthority, telemetryAuthority, diagnosticsAuthority,
+            existing.ConnectionIds, logicalCameras, routes), cancellationToken);
         reporter.Event($"unit.{group}.{operation}", saved);
         return 0;
     }
@@ -187,7 +347,53 @@ internal static class ConnectionCommands
 
     private static UnitDefinitionRequest RequestFor(UnitDefinitionSnapshot snapshot, string name)
         => new(name, snapshot.VehicleSources, snapshot.CameraSources, snapshot.CommandAuthorityConnectionId,
-            snapshot.TelemetryAuthorityConnectionId, snapshot.DiagnosticsAuthorityConnectionId);
+            snapshot.TelemetryAuthorityConnectionId, snapshot.DiagnosticsAuthorityConnectionId,
+            snapshot.ConnectionIds, snapshot.Cameras, snapshot.Routes);
+
+    private static void SetPrimaryRoute(List<UnitRouteCandidate> routes, UnitRouteRole role, string connectionId,
+        IReadOnlyList<UnitVehicleSourceBinding> vehicles)
+    {
+        var candidate = vehicles.FirstOrDefault(item => item.ConnectionId == connectionId)
+            ?? throw new ArgumentException($"Connection '{connectionId}' has no vehicle source on this unit.");
+        routes.RemoveAll(item => item.Role == role);
+        routes.Add(new UnitRouteCandidate(role, connectionId, candidate.VehicleId));
+    }
+
+    private static UnitRouteCandidate RouteCandidate(UnitRouteRole role, CliArguments args,
+        IReadOnlyList<UnitVehicleSourceBinding> vehicles, IReadOnlyList<UnitCameraDeviceBinding> cameras)
+    {
+        if (role is UnitRouteRole.Command or UnitRouteRole.Telemetry or UnitRouteRole.Diagnostics)
+        {
+            var connectionId = args.Required("connection");
+            var vehicleId = args.Get("vehicle") ?? vehicles.FirstOrDefault(item => item.ConnectionId == connectionId)?.VehicleId
+                ?? throw new ArgumentException("--vehicle is required when the connection has no vehicle binding.");
+            return new UnitRouteCandidate(role, connectionId, vehicleId);
+        }
+        if (role == UnitRouteRole.Gimbal)
+        {
+            var cameraId = args.Required("camera-id");
+            var camera = cameras.FirstOrDefault(item => item.Id == cameraId && item.ControlConnectionId is not null && item.ControlCameraSourceId is not null)
+                ?? throw new ArgumentException("--camera-id must identify a unit camera with a MAVLink control binding.");
+            return new UnitRouteCandidate(role, camera.ControlConnectionId,
+                vehicles.FirstOrDefault(item => item.ConnectionId == camera.ControlConnectionId)?.VehicleId,
+                camera.ControlCameraSourceId);
+        }
+        var videoConnectionId = args.Get("video-connection") ?? args.Get("connection");
+        var mediaSourceId = videoConnectionId is null
+            ? throw new ArgumentException("--video-connection is required for video routes.")
+            : videoConnectionId.StartsWith("media:", StringComparison.Ordinal) ? videoConnectionId[6..] : videoConnectionId;
+        return new UnitRouteCandidate(UnitRouteRole.Video, MediaSourceId: mediaSourceId);
+    }
+
+    private static UnitRouteRole ParseRouteRole(string value) => value.ToLowerInvariant() switch
+    {
+        "command" => UnitRouteRole.Command,
+        "gimbal" or "camera" => UnitRouteRole.Gimbal,
+        "telemetry" => UnitRouteRole.Telemetry,
+        "diagnostics" => UnitRouteRole.Diagnostics,
+        "video" => UnitRouteRole.Video,
+        _ => throw new ArgumentException("--role must be command, gimbal, telemetry, diagnostics, or video.")
+    };
 
     private static UnitDefinitionSnapshot RequireAssociation(IUnitAssociationWorkflow workflow, string id)
         => workflow.TryGet(id, out var result) && result is not null ? result : throw new KeyNotFoundException($"Saved unit '{id}' was not found.");
@@ -270,7 +476,37 @@ internal static class ConnectionCommands
         => workflow.TryGet(id, out var result) && result is not null ? result : throw new KeyNotFoundException($"Connection '{id}' was not found.");
     private static UnitObservationSnapshot RequireUnit(IUnitObservationWorkflow workflow, string id)
         => workflow.TryGet(id, out var result) && result is not null ? result : throw new KeyNotFoundException($"Unit '{id}' was not found.");
-    private static ManagedConnectionMode ParseMode(string value) => value.ToLowerInvariant() switch { "direct" or "logos" => ManagedConnectionMode.Direct, "fieldlink" or "linkd" => ManagedConnectionMode.FieldLink, "mavlink" => ManagedConnectionMode.Mavlink, _ => throw new ArgumentException("--mode must be direct, fieldlink, or mavlink.") };
+    private static ManagedConnectionMode ParseMode(string value) => value.ToLowerInvariant() switch { "direct" or "logos" => ManagedConnectionMode.Direct, "fieldlink" or "linkd" => ManagedConnectionMode.FieldLink, "mavlink" => ManagedConnectionMode.Mavlink, "media" or "rtsp" => ManagedConnectionMode.Media, _ => throw new ArgumentException("--mode must be direct, fieldlink, mavlink, or media.") };
+    private static object SafeConnectionSummary(ManagedConnectionSnapshot connection, bool includeId = false)
+    {
+        var target = connection.Mode == ManagedConnectionMode.Media && Uri.TryCreate(connection.Target, UriKind.Absolute, out var uri)
+            ? $"{uri.Host}:{uri.Port}"
+            : connection.Target;
+        return includeId
+            ? new
+            {
+                connection.Id,
+                connection.Name,
+                Mode = connection.Mode,
+                State = connection.State,
+                Target = target,
+                connection.AutoConnect,
+                connection.AutoReconnect,
+                connection.LastSeen,
+                connection.LastError
+            }
+            : new
+            {
+                connection.Name,
+                Mode = connection.Mode,
+                State = connection.State,
+                Target = target,
+                connection.AutoConnect,
+                connection.AutoReconnect,
+                connection.LastSeen,
+                connection.LastError
+            };
+    }
     private static byte ParseByte(string? value, byte fallback) => value is null ? fallback : byte.TryParse(value, out var parsed) && parsed > 0 ? parsed : throw new ArgumentException($"'{value}' is not a valid MAVLink ID.");
     private static KeyValuePair<byte, string>? ParseAlias(string value)
     {
@@ -278,8 +514,8 @@ internal static class ConnectionCommands
     }
     private static int Usage()
     {
-        Console.Error.WriteLine("Connection: list, show <id>, add, update <id>, remove <id>, connect <id> [--watch], disconnect <id>, refresh <id>, watch [id].");
-        Console.Error.WriteLine("Unit: list, show <id>, create --name <name> --connection <id> --vehicle <id>, update <id>, delete <id>, vehicle add/remove, camera add/remove, authority set, watch [id]. Use --json for newline-delimited JSON.");
+        Console.Error.WriteLine("Connection: list, show/status <id>, add --mode media --name <name> --target rtsp://host/path, update <id>, probe <id>, stream <id> [--seconds 10], remove <id>, connect <id> [--watch], disconnect <id>, refresh <id>, watch [id].");
+        Console.Error.WriteLine("Unit: list, show <id>, create --name <name> --connection <id> --vehicle <id>, update <id>, delete <id>, vehicle add/remove, camera add/remove/bind/unbind, authority set, route add/remove/select, watch [id]. Use --json for newline-delimited JSON.");
         return 2;
     }
 }
@@ -297,7 +533,7 @@ internal sealed class CliArguments
             var item = arguments[index];
             if (!item.StartsWith("--", StringComparison.Ordinal)) { parsed.Positionals.Add(item); continue; }
             var key = item[2..];
-            if (key is "json" or "watch" or "execute" or "off" or "verbose" or "auto-connect" or "no-auto-connect" or "auto-reconnect" or "no-auto-reconnect" or "replace" or "local" or "remote" or "reverse" or "reverse-entry" or "images-in-turnarounds" or "enabled") { parsed.Add(key, "true"); continue; }
+            if (key is "json" or "watch" or "execute" or "off" or "verbose" or "confirm" or "auto-connect" or "no-auto-connect" or "auto-reconnect" or "no-auto-reconnect" or "replace" or "local" or "remote" or "reverse" or "reverse-entry" or "images-in-turnarounds" or "enabled") { parsed.Add(key, "true"); continue; }
             if (++index >= arguments.Length || arguments[index].StartsWith("--", StringComparison.Ordinal)) { parsed.Error = $"Option '{item}' requires a value."; return parsed; }
             parsed.Add(key, arguments[index]);
         }

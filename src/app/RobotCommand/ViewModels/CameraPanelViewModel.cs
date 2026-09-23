@@ -12,6 +12,7 @@ using RobotCommand.Services.Evidence;
 using RobotCommand.Services.Mavlink;
 using RobotCommand.Services.Media;
 using RobotCommand.Services.Operations;
+using RobotCommand.Services.Reconciliation;
 using RobotCommand.State;
 
 namespace RobotCommand.ViewModels;
@@ -41,6 +42,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private readonly IMediaWorkflow? _mediaWorkflow;
     private readonly ILocalizationService? _localization;
     private readonly IMavlinkCameraControlService? _cameraControl;
+    private readonly IUnitAssociationWorkflow? _unitAssociations;
+    private readonly IUnitRoutingWorkflow? _routing;
     private readonly VideoFrameBuffer _ghostFrameBuffer = new();
     private readonly SwitchableVideoFrameSource _frameSource = new();
     private CancellationTokenSource? _ghostVideoCancellation;
@@ -126,7 +129,9 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         IMediaSettingsService? mediaSettings = null,
         ILocalizationService? localization = null,
         IEntityStore<string, MavlinkCameraDefinitionRecord>? cameraDefinitions = null,
-        IMavlinkCameraControlService? cameraControl = null)
+        IMavlinkCameraControlService? cameraControl = null,
+        IUnitAssociationWorkflow? unitAssociations = null,
+        IUnitRoutingWorkflow? routing = null)
     {
         _selection = selection;
         _vehicles = vehicles;
@@ -150,6 +155,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _mediaWorkflow = mediaWorkflow;
         _localization = localization;
         _cameraControl = cameraControl;
+        _unitAssociations = unitAssociations;
+        _routing = routing;
         if (_localization is not null)
         {
             _localization.PropertyChanged += OnLocalizationChanged;
@@ -212,6 +219,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         CenterGimbalCommand = _centerGimbalCommand;
 
         _selection.Changed += OnSelectionChanged;
+        if (_routing is not null) _routing.Changed += OnRoutingChanged;
         _playback.Changed += OnPlaybackChanged;
         _nativePipeline.Changed += OnNativePipelineChanged;
         _localVideo.Changed += OnLocalVideoChanged;
@@ -571,6 +579,31 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     private void OnDataChanged(object? sender, NotifyCollectionChangedEventArgs e) => Refresh();
 
+    private void OnRoutingChanged(object? sender, EventArgs e)
+        => _ = HandleRoutingChangedAsync();
+
+    private async Task HandleRoutingChangedAsync()
+    {
+        await _uiDispatcher.InvokeAsync(Refresh);
+        var vehicle = GetSelectedVehicle();
+        var unit = vehicle is null ? null : _unitAssociations?.FindByVehicle(vehicle.Id);
+        var activeSource = unit is null
+            ? null
+            : _routing?.ForUnit(unit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Video)?.Active?.MediaSourceId;
+        if (_activeStream is null || !_activeStream.ConnectionId.StartsWith("media:", StringComparison.Ordinal) ||
+            string.Equals(_activeStream.CameraSourceId, activeSource, StringComparison.Ordinal) || SelectedCamera is null)
+            return;
+
+        await _streamGate.WaitAsync();
+        try
+        {
+            await CloseActiveStreamCoreAsync(suppressErrors: true, CancellationToken.None);
+            Refresh();
+        }
+        finally { _streamGate.Release(); }
+        if (CanOpenStream()) await OpenStreamAsync(CancellationToken.None);
+    }
+
     private void OnPlaybackChanged(object? sender, EventArgs e)
         => _ = HandlePlaybackChangedAsync();
 
@@ -623,10 +656,34 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             : new HashSet<string>(selectedVehicle.ConnectionIds, StringComparer.Ordinal);
         var available = _cameraSources.Items
             .Where(item => allowedConnections is null || allowedConnections.Contains(item.ConnectionId))
+            .Where(item => !item.ConnectionId.StartsWith("media:", StringComparison.Ordinal))
             .OrderByDescending(item => item.Active)
             .ThenByDescending(item => item.Fresh)
             .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+            .ToList();
+
+        var unit = selectedVehicle is null ? null : _unitAssociations?.FindByVehicle(selectedVehicle.Id);
+        var mediaBindings = unit?.Cameras?.Where(item => !string.IsNullOrWhiteSpace(item.MediaSourceId) || (item.StandbyMediaSourceIds?.Count ?? 0) > 0).ToArray() ?? [];
+        var activeVideoSourceId = unit is null
+            ? null
+            : _routing?.ForUnit(unit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Video)?.Active?.MediaSourceId;
+        foreach (var binding in mediaBindings)
+        {
+            var controlCamera = binding.ControlConnectionId is null || binding.ControlCameraSourceId is null
+                ? null
+                : _cameraSources.Items.FirstOrDefault(item => item.ConnectionId == binding.ControlConnectionId && item.CameraSourceId == binding.ControlCameraSourceId);
+            foreach (var sourceId in new[] { binding.MediaSourceId }.Concat(binding.StandbyMediaSourceIds ?? []).Where(id => !string.IsNullOrWhiteSpace(id)))
+            {
+                var mediaCamera = _cameraSources.Items.FirstOrDefault(item => item.ConnectionId == $"media:{sourceId}");
+                if (mediaCamera is null) continue;
+                available.Add(mediaCamera with
+                {
+                    Name = binding.Name,
+                    SupportsGimbal = controlCamera?.SupportsGimbal == true,
+                    SupportsPhoto = controlCamera?.SupportsPhoto == true
+                });
+            }
+        }
 
         var selectedId = SelectedCamera?.Id;
         Cameras.Clear();
@@ -635,7 +692,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             Cameras.Add(camera);
         }
 
-        SelectedCamera = Cameras.FirstOrDefault(item => item.Id == selectedId)
+        SelectedCamera = Cameras.FirstOrDefault(item => item.CameraSourceId == activeVideoSourceId)
+                         ?? Cameras.FirstOrDefault(item => item.Id == selectedId)
                          ?? Cameras.FirstOrDefault(item => item.Active)
                          ?? Cameras.FirstOrDefault();
 
@@ -882,6 +940,13 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     private async Task BuildProtocolPlanAsync(CameraSourceRecord camera, CancellationToken cancellationToken)
     {
+        if (_connections.TryGetDefinition(camera.ConnectionId, out var mediaDefinition) && mediaDefinition?.Mode == ConnectionMode.Media)
+        {
+            _protocolPlan = [VideoProtocolPreference.Rtsp];
+            _automaticFallback = false;
+            ProtocolPlanText = "RTSP";
+            return;
+        }
         var diagnostics = await _gStreamerRuntime.InspectAsync(cancellationToken: cancellationToken);
         _connections.TryGetDefinition(camera.ConnectionId, out var connection);
         _protocolPlan = _protocolPolicy.BuildPlan(connection, SelectedProtocol, diagnostics);
@@ -911,10 +976,11 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
                 : $"Fallback {_protocolPlanIndex + 1}/{_protocolPlan.Count}: requesting {DisplayPreference(preference)}. {reason}";
             try
             {
-                var stream = await _connections.OpenCameraStreamAsync(
-                    camera.ConnectionId,
-                    new CameraStreamOpenRequest(camera.CameraSourceId, preference),
-                    cancellationToken);
+                var stream = IsManagedMediaConnection(camera)
+                    ? await _connections.OpenCameraStreamAsync(camera.ConnectionId,
+                        new CameraStreamOpenRequest(camera.CameraSourceId, preference), cancellationToken)
+                    : await _connections.OpenCameraStreamAsync(camera.ConnectionId,
+                        new CameraStreamOpenRequest(camera.CameraSourceId, preference), cancellationToken);
                 var nativeProtocol = NativeVideoProtocolResolver.Resolve(stream);
                 if (nativeProtocol != NativeVideoProtocol.Unknown &&
                     !_attemptedNativeProtocols.Add(nativeProtocol) &&
@@ -1062,7 +1128,9 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
         try
         {
-            if (!string.Equals(stream.Protocol, "Synthetic", StringComparison.OrdinalIgnoreCase))
+            if (_connections.TryGetDefinition(stream.ConnectionId, out var definition) && definition?.Mode == ConnectionMode.Media)
+                await _connections.CloseCameraStreamAsync(stream.ConnectionId, stream.StreamId, cancellationToken);
+            else if (!string.Equals(stream.Protocol, "Synthetic", StringComparison.OrdinalIgnoreCase))
                 await _connections.CloseCameraStreamAsync(stream.ConnectionId, stream.StreamId, cancellationToken);
         }
         catch (Exception ex) when (suppressErrors && ex is not OperationCanceledException)
@@ -1117,7 +1185,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     {
         try
         {
-            await _connections.CloseCameraStreamAsync(stream.ConnectionId, stream.StreamId, cancellationToken);
+            if (_connections.TryGetDefinition(stream.ConnectionId, out var definition) && definition?.Mode == ConnectionMode.Media)
+                await _connections.CloseCameraStreamAsync(stream.ConnectionId, stream.StreamId, cancellationToken);
+            else
+                await _connections.CloseCameraStreamAsync(stream.ConnectionId, stream.StreamId, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -1129,6 +1200,9 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         => SelectedCamera is not null &&
            SelectedCamera.State is not (AvailabilityState.Offline or AvailabilityState.Faulted) &&
            _activeStream is null;
+
+    private bool IsManagedMediaConnection(CameraSourceRecord camera)
+        => _connections.TryGetDefinition(camera.ConnectionId, out var definition) && definition?.Mode == ConnectionMode.Media;
 
     private bool CanCapturePhoto()
         => _cameraControl is not null && GetSelectedVehicle() is not null &&
@@ -1167,10 +1241,38 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             return;
         }
 
+        var unit = _unitAssociations?.FindByVehicle(vehicle.Id);
+        var logical = unit?.Cameras?.FirstOrDefault(item =>
+            item.MediaSourceId == camera.CameraSourceId ||
+            (item.ControlConnectionId == camera.ConnectionId && item.ControlCameraSourceId == camera.CameraSourceId));
+        var connectionId = logical?.ControlConnectionId ?? camera.ConnectionId;
+        var cameraSourceId = logical?.ControlCameraSourceId ?? camera.CameraSourceId;
+        var targetVehicleId = vehicle.Id;
+        if (unit is not null && _routing is not null)
+        {
+            var route = _routing.ForUnit(unit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Gimbal);
+            if (route is { Health: UnitRouteHealth.Unavailable or UnitRouteHealth.AwaitingConfirmation })
+            {
+                CameraControlStatus = "Gimbal route unavailable; select and confirm a healthy route in unit settings.";
+                return;
+            }
+            if (route?.Active is { ConnectionId: not null } active)
+            {
+                connectionId = active.ConnectionId;
+                cameraSourceId = active.CameraSourceId ?? cameraSourceId;
+                if (active.VehicleId is { Length: > 0 } activeVehicleId) targetVehicleId = activeVehicleId;
+            }
+        }
+        if (string.IsNullOrWhiteSpace(connectionId) || string.IsNullOrWhiteSpace(cameraSourceId))
+        {
+            CameraControlStatus = "This logical camera has no MAVLink gimbal-control binding.";
+            return;
+        }
+
         var result = await _cameraControl.ExecuteAsync(
-            camera.ConnectionId,
-            vehicle.Id,
-            camera.CameraSourceId,
+            connectionId,
+            targetVehicleId,
+            cameraSourceId,
             action,
             cancellationToken);
         CameraControlStatus = result.Message;
@@ -1769,6 +1871,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _selection.Changed -= OnSelectionChanged;
+        if (_routing is not null) _routing.Changed -= OnRoutingChanged;
         _ghostVideoCancellation?.Cancel();
         _ghostVideoCancellation?.Dispose();
         _ghostVideoCancellation = null;
