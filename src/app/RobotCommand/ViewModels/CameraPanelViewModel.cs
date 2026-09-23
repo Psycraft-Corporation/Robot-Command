@@ -871,6 +871,18 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     private async Task OpenStreamAsync(CancellationToken cancellationToken)
     {
+        if (!CanOpenStream())
+        {
+            return;
+        }
+
+        // Give the operator immediate feedback. Opening the media connection and
+        // attaching the native decoder can both take long enough that otherwise
+        // the video surface appears to ignore the play action.
+        PlaybackSummary = Text("VideoOpeningStream", "Opening stream…");
+        PlaybackDetail = Text("VideoConnectingToCamera", "Connecting to the selected camera source.");
+        FallbackStatus = Text("VideoOpeningStream", "Opening stream…");
+
         await _streamGate.WaitAsync(cancellationToken);
         try
         {
@@ -993,6 +1005,12 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
                 _activeStream = stream;
                 ActiveProtocolText = NativeVideoProtocolResolver.DisplayName(nativeProtocol);
+                StreamStatus = $"{stream.Protocol} · Opening";
+                StreamEndpoint = string.IsNullOrWhiteSpace(stream.StreamUrl)
+                    ? "Negotiation payload only"
+                    : GStreamerPipelineArguments.RedactEndpoint(stream.StreamUrl);
+                PlaybackSummary = Text("VideoStartingPlayback", "Starting video playback…");
+                PlaybackDetail = Text("VideoWaitingForFrames", "Stream opened; waiting for decoded frames.");
                 await _playback.AttachAsync(stream, cancellationToken);
                 var state = _playback.Status.State;
                 if (state is not (VideoPlaybackState.Faulted or VideoPlaybackState.Unsupported or VideoPlaybackState.Offline))
