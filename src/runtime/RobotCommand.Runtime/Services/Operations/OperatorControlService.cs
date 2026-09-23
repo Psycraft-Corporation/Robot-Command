@@ -129,21 +129,39 @@ public sealed class OperatorControlService : IOperatorControlService
         CancellationToken cancellationToken)
     {
         var unit = _reconciliation?.FindBySource(vehicleId);
-        if (unit is not null && HasConfiguredButUnavailableCommandRoute(unit.Id))
+        var routeRole = RouteRoleFor(command);
+        var selectedRoute = unit is null
+            ? null
+            : _routing?.ForUnit(unit.Id).FirstOrDefault(item => item.Role == routeRole);
+        if (unit is not null && _routing is not null && selectedRoute is null)
         {
-            throw new InvalidOperationException("The unit command route is unavailable. Select a healthy route and confirm the switch before controlling this unit.");
+            var roleName = routeRole == UnitRouteRole.Gimbal ? "camera/gimbal" : "command";
+            throw new InvalidOperationException($"The unit has no configured {roleName} route.");
+        }
+        if (selectedRoute is { Health: UnitRouteHealth.Unavailable or UnitRouteHealth.AwaitingConfirmation })
+        {
+            var roleName = routeRole == UnitRouteRole.Gimbal ? "camera/gimbal" : "command";
+            throw new InvalidOperationException($"The unit {roleName} route is unavailable. Select a healthy route and confirm the switch before controlling this unit.");
         }
         var activeCommandVehicle = unit is null
             ? null
             : _routing?.ForUnit(unit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Command)?.Active?.VehicleId;
-        vehicleId = activeCommandVehicle ?? _reconciliation?.ResolveCommandSource(vehicleId) ?? vehicleId;
+        vehicleId = selectedRoute?.Active?.VehicleId ?? activeCommandVehicle ?? _reconciliation?.ResolveCommandSource(vehicleId) ?? vehicleId;
         if (!_vehicles.TryGet(vehicleId, out var vehicle) || vehicle is null)
         {
             throw new KeyNotFoundException($"Vehicle '{vehicleId}' was not found.");
         }
 
         var telemetry = LatestTelemetry(vehicle.Id);
-        var connection = ResolveConnection(vehicle, unit is null ? null : _routing?.ActiveConnectionFor(unit.Id, UnitRouteRole.Command) ?? unit.CommandAuthorityConnectionId);
+        var connectionId = selectedRoute?.Active?.ConnectionId ??
+            (unit is null ? null : _routing?.ActiveConnectionFor(unit.Id, routeRole) ??
+                (routeRole == UnitRouteRole.Command ? unit.CommandAuthorityConnectionId : null));
+        if (routeRole == UnitRouteRole.Gimbal && unit is not null && _routing is not null &&
+            (selectedRoute?.Active is null || string.IsNullOrWhiteSpace(selectedRoute.Active.CameraSourceId)))
+        {
+            throw new InvalidOperationException("The active camera/gimbal route has no validated camera identity.");
+        }
+        var connection = ResolveConnection(vehicle, connectionId);
         if (connection?.Mode == ConnectionMode.TeamObserver)
         {
             throw new InvalidOperationException("This unit is mirrored from another Robot Command and is read-only.");
@@ -165,14 +183,16 @@ public sealed class OperatorControlService : IOperatorControlService
             OperatorCommandKind.StopVideo or
             OperatorCommandKind.CenterGimbal or
             OperatorCommandKind.NadirGimbal or
-            OperatorCommandKind.SetGimbal
+            OperatorCommandKind.SetGimbal or
+            OperatorCommandKind.SetCameraSettings
             ? parameters ?? OperatorCommandParameters.None
             : OperatorCommandParameters.None;
         var target = new OperatorCommandTarget(
             connection?.Id ?? (vehicle.ConnectionIds.Count > 0 ? vehicle.ConnectionIds[0] : null) ?? string.Empty,
             vehicle.Id,
             vehicle.LogosInstanceId,
-            now);
+            now,
+            selectedRoute?.Active?.CameraSourceId);
         var findings = OperatorControlRules.Evaluate(
             vehicle,
             telemetry,
@@ -365,15 +385,21 @@ public sealed class OperatorControlService : IOperatorControlService
         }
 
         var currentUnit = _reconciliation?.FindBySource(currentVehicle.Id);
-        var currentCommandRoute = currentUnit is null
+        var routeRole = RouteRoleFor(plan.Command);
+        var currentRoute = currentUnit is null
             ? null
-            : _routing?.ForUnit(currentUnit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Command);
-        if (currentCommandRoute is not null &&
-            (currentCommandRoute.Health is UnitRouteHealth.Unavailable or UnitRouteHealth.AwaitingConfirmation ||
-             currentCommandRoute.Active?.ConnectionId != plan.Target.ConnectionId ||
-             currentCommandRoute.Active?.VehicleId is { Length: > 0 } routedVehicle && routedVehicle != plan.Target.VehicleId))
+            : _routing?.ForUnit(currentUnit.Id).FirstOrDefault(item => item.Role == routeRole);
+        if (currentUnit is not null && _routing is not null && currentRoute is null)
         {
-            return await RejectAsync(plan, "The unit command route changed after preparation. Prepare the command again; it will not be replayed on another route.", cancellationToken);
+            return await RejectAsync(plan, $"The unit {routeRole.ToString().ToLowerInvariant()} route was removed after preparation. Prepare the command again.", cancellationToken);
+        }
+        if (currentRoute is not null &&
+            (currentRoute.Health is UnitRouteHealth.Unavailable or UnitRouteHealth.AwaitingConfirmation ||
+             currentRoute.Active?.ConnectionId != plan.Target.ConnectionId ||
+             currentRoute.Active?.CameraSourceId != plan.Target.CameraSourceId ||
+             currentRoute.Active?.VehicleId is { Length: > 0 } routedVehicle && routedVehicle != plan.Target.VehicleId))
+        {
+            return await RejectAsync(plan, $"The unit {routeRole.ToString().ToLowerInvariant()} route or camera identity changed after preparation. Prepare the command again; it will not be replayed on another route.", cancellationToken);
         }
 
         var currentConnection = ResolveConnection(currentVehicle, plan.Target.ConnectionId);
@@ -534,6 +560,14 @@ public sealed class OperatorControlService : IOperatorControlService
         => _routing?.ForUnit(unitId).Any(item => item.Role == UnitRouteRole.Command &&
             item.Health is UnitRouteHealth.Unavailable or UnitRouteHealth.AwaitingConfirmation) == true;
 
+    private static UnitRouteRole RouteRoleFor(OperatorCommandKind command)
+        => command is OperatorCommandKind.CapturePhoto or OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal or
+            OperatorCommandKind.SetCameraSettings
+            ? UnitRouteRole.Gimbal
+            : UnitRouteRole.Command;
+
     private static bool PreparedTargetMatches(OperatorCommandPlan plan, VehicleRecord currentVehicle)
     {
         var target = plan.Preparation?.Target;
@@ -572,6 +606,7 @@ public sealed class OperatorControlService : IOperatorControlService
             OperatorCommandKind.CenterGimbal => "gimbal.center",
             OperatorCommandKind.NadirGimbal => "gimbal.nadir",
             OperatorCommandKind.SetGimbal => "gimbal.set_attitude",
+            OperatorCommandKind.SetCameraSettings => "camera.set_settings",
             _ => $"vehicle.operator.{command.ToString().ToLowerInvariant()}"
         };
 
@@ -625,7 +660,10 @@ public sealed class OperatorControlService : IOperatorControlService
             ,
             gimbal_zoom_percent = parameters?.GimbalZoomPercent
             ,
-            gimbal_earth_frame = parameters?.GimbalEarthFrame
+            gimbal_earth_frame = parameters?.GimbalEarthFrame,
+            camera_mode = parameters?.CameraMode?.ToString(),
+            camera_resolution_width = parameters?.CameraResolutionWidth,
+            camera_resolution_height = parameters?.CameraResolutionHeight
         });
 
     private static void AddPolicyFindings(

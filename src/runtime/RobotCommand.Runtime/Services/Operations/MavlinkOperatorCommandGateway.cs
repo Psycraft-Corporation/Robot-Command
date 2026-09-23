@@ -139,7 +139,7 @@ public sealed class MavlinkOperatorCommandGateway(
             {
                 result = await connection.SendCameraActionAsync(
                     request.Target.VehicleId,
-                    null,
+                    request.Target.CameraSourceId,
                     action,
                     cancellationToken);
                 if (!result.Accepted)

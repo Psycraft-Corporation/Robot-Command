@@ -91,6 +91,7 @@ public sealed class OperateViewModel : ObservableObject
         _localization = localization;
         Map = map;
         Camera = camera;
+        Camera.PropertyChanged += OnCameraPropertyChanged;
         Controls = controls;
         Units = units;
         _selection.Changed += OnSelectionChanged;
@@ -114,6 +115,8 @@ public sealed class OperateViewModel : ObservableObject
 
     public CameraPanelViewModel Camera { get; }
 
+    public bool CameraPaneVisible => VideoVisible && Camera.HasSelectedUnit;
+
     public OperatorControlsViewModel Controls { get; }
 
     public UnitsPanelViewModel Units { get; }
@@ -127,6 +130,14 @@ public sealed class OperateViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(UnitsHeaderText));
         OnPropertyChanged(nameof(OperationsHeaderText));
+    }
+
+    private void OnCameraPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CameraPanelViewModel.HasSelectedUnit))
+        {
+            OnPropertyChanged(nameof(CameraPaneVisible));
+        }
     }
 
     public string SelectionTitle { get => _selectionTitle; private set => SetProperty(ref _selectionTitle, value); }
@@ -278,6 +289,7 @@ public sealed class OperateViewModel : ObservableObject
 
         Map.SetMapVisible(MapVisible);
         OnPropertyChanged(nameof(LayoutLabel));
+        OnPropertyChanged(nameof(CameraPaneVisible));
     }
 
     private void ApplySelection()

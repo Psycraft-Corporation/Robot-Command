@@ -3,6 +3,7 @@
              xmlns:loc="using:RobotCommand.Localization"
              xmlns:controls="using:RobotCommand.Controls"
              xmlns:render="using:RobotCommand.Rendering.Avalonia"
+             xmlns:core="using:RobotCommand.Core"
              xmlns:models="using:RobotCommand.Models"
              xmlns:vm="using:RobotCommand.ViewModels"
              x:Class="RobotCommand.Views.Workspaces.OperateView"
@@ -293,7 +294,7 @@
                       ResizeBehavior="PreviousAndNext" />
 
         <ScrollViewer Grid.Column="2"
-                      IsVisible="{Binding VideoVisible}"
+                      IsVisible="{Binding CameraPaneVisible}"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
           <Border Classes="videoSurface">
@@ -351,24 +352,24 @@
                 <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6">
                     <Button Classes="primary"
                             Content="{loc:Loc Key=CameraCapturePhoto}"
-                            ToolTip.Tip="{Binding Camera.CapturePhotoTooltip}"
+                            ToolTip.Tip="{loc:Loc Key=CameraCapturePhoto}"
                             AutomationProperties.Name="{loc:Loc Key=CameraCapturePhoto}"
-                            Command="{Binding Camera.CapturePhotoCommand}" />
+                            Command="{Binding Controls.PrepareCapturePhotoCommand}" />
                     <Button Content="{loc:Loc Key=CameraStartVideo}"
-                            ToolTip.Tip="{Binding Camera.StartRemoteVideoTooltip}"
+                            ToolTip.Tip="{loc:Loc Key=CameraStartVideo}"
                             AutomationProperties.Name="{loc:Loc Key=CameraStartVideo}"
-                            Command="{Binding Camera.StartRemoteVideoCommand}" />
+                            Command="{Binding Controls.PrepareStartVideoCommand}" />
                     <Button Content="{loc:Loc Key=CameraStopVideo}"
-                            ToolTip.Tip="{Binding Camera.StopRemoteVideoTooltip}"
+                            ToolTip.Tip="{loc:Loc Key=CameraStopVideo}"
                             AutomationProperties.Name="{loc:Loc Key=CameraStopVideo}"
-                            Command="{Binding Camera.StopRemoteVideoCommand}" />
+                            Command="{Binding Controls.PrepareStopVideoCommand}" />
                     <Button Content="{loc:Loc Key=CameraCenterGimbal}"
-                            ToolTip.Tip="{Binding Camera.CenterGimbalTooltip}"
+                            ToolTip.Tip="{loc:Loc Key=CameraCenterGimbal}"
                             AutomationProperties.Name="{loc:Loc Key=CameraCenterGimbal}"
-                            Command="{Binding Camera.CenterGimbalCommand}" />
+                            Command="{Binding Controls.PrepareCenterGimbalCommand}" />
                   <TextBlock Classes="muted"
                              VerticalAlignment="Center"
-                             Text="{Binding Camera.CameraControlStatus}" />
+                             Text="{Binding Controls.StatusMessage}" />
                 </StackPanel>
                 <Border Grid.Row="3" Classes="surfaceInset" Padding="8" IsVisible="{Binding Camera.HasCameraDefinition}">
                   <StackPanel Spacing="5">
@@ -394,9 +395,6 @@
                     </Grid>
                     <TextBlock Classes="muted" Text="{Binding Controls.GimbalTelemetrySummary}" />
                     <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
-                      <Button Classes="primary" Content="Queue photo" Command="{Binding Controls.PrepareCapturePhotoCommand}" />
-                      <Button Content="{Binding Controls.VideoToggleText}" Command="{Binding Controls.ToggleVideoCommand}" />
-                      <Button Content="Centre gimbal" Command="{Binding Controls.PrepareCenterGimbalCommand}" />
                       <Button Content="Nadir gimbal" Command="{Binding Controls.PrepareNadirGimbalCommand}" />
                     </WrapPanel>
                     <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="5">
@@ -410,6 +408,19 @@
                       <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Controls.GimbalZoomText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="0–100%" />
                     </Grid>
                     <Button HorizontalAlignment="Left" Content="Queue gimbal settings" Command="{Binding Controls.PrepareSetGimbalCommand}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Controls.HasGhostCameraSettingsSelection}">
+                      <TextBlock VerticalAlignment="Center" Text="Camera mode" />
+                      <ComboBox Width="105" ItemsSource="{Binding Controls.CameraModes}" SelectedItem="{Binding Controls.SelectedCameraMode, Mode=TwoWay}" />
+                      <TextBlock VerticalAlignment="Center" Text="Video resolution" />
+                      <ComboBox Width="175" ItemsSource="{Binding Controls.CameraVideoFormats}" SelectedItem="{Binding Controls.SelectedCameraVideoFormat, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate x:DataType="core:CameraVideoFormatSnapshot">
+                            <TextBlock Text="{Binding Label}" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                      <Button Content="Queue camera settings" Command="{Binding Controls.PrepareSetCameraSettingsCommand}" />
+                    </StackPanel>
                     <TextBlock Classes="muted" Text="Commands are queued for operator review and execution." />
                   </StackPanel>
                 </Border>
@@ -427,7 +438,7 @@
                 <TextBlock HorizontalAlignment="Center"
                            FontSize="20"
                            FontWeight="SemiBold"
-                           Text="{Binding Camera.PlaybackSummary}" />
+                           Text="{Binding Camera.PlaybackEmptyMessage}" />
                 <TextBlock Classes="muted"
                            TextAlignment="Center"
                            TextTrimming="CharacterEllipsis"

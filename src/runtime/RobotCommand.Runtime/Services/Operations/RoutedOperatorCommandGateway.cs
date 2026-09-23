@@ -41,6 +41,13 @@ public sealed class RoutedOperatorCommandGateway : IOperatorCommandGateway
             return _ghosts.PrepareAsync(request, cancellationToken);
         }
 
+        if (request.Command == OperatorCommandKind.SetCameraSettings)
+        {
+            return Task.FromResult(OperatorCommandPreparationResult.Rejected(
+                "Camera setting changes are currently supported only by Ghost camera simulation.",
+                "CAMERA_SETTINGS_BACKEND_UNSUPPORTED"));
+        }
+
         return _mavlinkConnections.TryGet(request.Target.ConnectionId, out _)
             ? _mavlink.PrepareAsync(request, cancellationToken)
             : _logos.PrepareAsync(request, cancellationToken);
@@ -54,6 +61,12 @@ public sealed class RoutedOperatorCommandGateway : IOperatorCommandGateway
         {
             await _formation.HandleIndependentOperationAsync(request.Target.VehicleId, ToWorkflow(request.Command), cancellationToken);
             return await _ghosts.ExecuteAsync(request, cancellationToken);
+        }
+
+        if (request.Command == OperatorCommandKind.SetCameraSettings)
+        {
+            return new(false, OperationalCommandState.Rejected,
+                "Camera setting changes are currently supported only by Ghost camera simulation.");
         }
 
         return await (_mavlinkConnections.TryGet(request.Target.ConnectionId, out _)

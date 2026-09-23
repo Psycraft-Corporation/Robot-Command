@@ -355,6 +355,33 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
             {
                 return Task.FromResult(OperatorCommandPreparationResult.Rejected("Ghost unit was deleted."));
             }
+            if (IsCameraCommand(request.Command) && !CameraIdentityMatches(ghost, request.Target.CameraSourceId))
+            {
+                return Task.FromResult(OperatorCommandPreparationResult.Rejected(
+                    "The selected camera does not belong to this Ghost unit.",
+                    "GHOST_CAMERA_IDENTITY_MISMATCH"));
+            }
+
+            var parameters = request.Parameters ?? OperatorCommandParameters.None;
+            if (request.Command is OperatorCommandKind.SetGimbal &&
+                ((parameters.GimbalPitchDegrees is { } pitch &&
+                  (!double.IsFinite(pitch) || pitch < GhostCameraDefaults.MinimumPitchDegrees || pitch > GhostCameraDefaults.MaximumPitchDegrees)) ||
+                 (parameters.GimbalYawDegrees is { } yaw &&
+                  (!double.IsFinite(yaw) || Math.Abs(yaw) > GhostCameraDefaults.MaximumYawDegrees)) ||
+                 (parameters.GimbalRollDegrees is { } roll &&
+                  (!double.IsFinite(roll) || Math.Abs(roll) > GhostCameraDefaults.MaximumRollDegrees)) ||
+                 (parameters.GimbalZoomPercent is { } zoom &&
+                  (!double.IsFinite(zoom) || zoom is < 0 or > 100))))
+            {
+                return Task.FromResult(OperatorCommandPreparationResult.Rejected(
+                    "The requested gimbal target is outside this Ghost gimbal's limits.",
+                    "GHOST_GIMBAL_TARGET_OUT_OF_RANGE"));
+            }
+            if (request.Command == OperatorCommandKind.SetCameraSettings &&
+                !ValidateCameraSettings(parameters, out var settingError))
+            {
+                return Task.FromResult(OperatorCommandPreparationResult.Rejected(settingError, "GHOST_CAMERA_SETTING_INVALID"));
+            }
 
             var now = DateTimeOffset.UtcNow;
             var preparation = new PreparedVehicleOperation(
@@ -381,11 +408,18 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
     {
         cancellationToken.ThrowIfCancellationRequested();
         GhostState? ghost;
+        var immediateSuccess = false;
+        var immediateMessage = "Ghost operation started.";
         lock (_gate)
         {
             if (!_ghosts.TryGetValue(request.Target.VehicleId, out ghost))
             {
                 return new(false, OperationalCommandState.Rejected, "Ghost unit was deleted.");
+            }
+            if (IsCameraCommand(request.Command) && !CameraIdentityMatches(ghost, request.Target.CameraSourceId))
+            {
+                return new(false, OperationalCommandState.Rejected,
+                    "The selected camera does not belong to this Ghost unit.");
             }
 
             if (ghost.Operation is not null)
@@ -402,6 +436,44 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
             if (request.Command == OperatorCommandKind.Arm) ghost.Armed = true;
             if (request.Command == OperatorCommandKind.Disarm) ghost.Armed = false;
             ghost.Operation = new GhostOperation(request.CommandId, request.Command, request.Parameters ?? OperatorCommandParameters.None);
+            if (request.Command is OperatorCommandKind.SetGimbal or OperatorCommandKind.CenterGimbal or OperatorCommandKind.NadirGimbal)
+            {
+                SetGimbalTarget(ghost, request.Command, request.Parameters ?? OperatorCommandParameters.None);
+            }
+            switch (request.Command)
+            {
+                case OperatorCommandKind.CapturePhoto:
+                    ghost.Camera.PhotoCount++;
+                    immediateSuccess = true;
+                    immediateMessage = "Ghost photo captured.";
+                    break;
+                case OperatorCommandKind.StartVideo:
+                    ghost.Camera.Mode = FlightMissionCameraMode.Video;
+                    ghost.Camera.IsRecording = true;
+                    immediateSuccess = true;
+                    immediateMessage = "Ghost camera recording started.";
+                    break;
+                case OperatorCommandKind.StopVideo:
+                    ghost.Camera.IsRecording = false;
+                    immediateSuccess = true;
+                    immediateMessage = "Ghost camera recording stopped.";
+                    break;
+                case OperatorCommandKind.SetCameraSettings:
+                    if (!TryApplyCameraSettings(ghost, request.Parameters ?? OperatorCommandParameters.None, out var cameraError))
+                    {
+                        ghost.Operation = null;
+                        UpdateCommand(request.CommandId, OperationalCommandState.Rejected, cameraError, "GHOST_CAMERA_SETTING_INVALID");
+                        return new(false, OperationalCommandState.Rejected, cameraError, request.CommandId);
+                    }
+                    immediateSuccess = true;
+                    immediateMessage = "Ghost camera settings updated.";
+                    break;
+            }
+            if (immediateSuccess)
+            {
+                ghost.Operation = null;
+                UpdateCommand(request.CommandId, OperationalCommandState.Succeeded, immediateMessage);
+            }
             if (request.Command is OperatorCommandKind.Arm or OperatorCommandKind.Disarm)
             {
                 ghost.Operation = null;
@@ -410,10 +482,10 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
         }
 
         await PublishAsync(cancellationToken);
-        return new(true, request.Command is OperatorCommandKind.Arm or OperatorCommandKind.Disarm
+        return new(true, immediateSuccess || request.Command is OperatorCommandKind.Arm or OperatorCommandKind.Disarm
             ? OperationalCommandState.Succeeded
             : OperationalCommandState.InProgress,
-            "Ghost operation started.", request.CommandId);
+            immediateSuccess ? immediateMessage : "Ghost operation started.", request.CommandId);
     }
 
     public async Task<bool> BeginManualControlAsync(string vehicleId, string sessionId, CancellationToken cancellationToken = default)
@@ -662,7 +734,19 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
                         for (var step = 0; step < stepCount; step++)
                         {
                             foreach (var ghost in _ghosts.Values)
-                                changed |= Step(ghost);
+                            {
+                                try
+                                {
+                                    changed |= Step(ghost);
+                                }
+                                finally
+                                {
+                                    // Camera motion is an independent simulated
+                                    // subsystem. Continue advancing it even if a
+                                    // flight-controller step throws this tick.
+                                    changed |= StepGimbal(ghost);
+                                }
+                            }
                         }
                     }
 
@@ -821,6 +905,10 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
                 ghost.Heading = NormalizeHeading(ghost.Heading + Math.Sign(delta) * turn);
                 completed = Math.Abs(NormalizeSigned(targetHeading - ghost.Heading)) < 0.5;
                 break;
+            case OperatorCommandKind.SetGimbal:
+            case OperatorCommandKind.CenterGimbal:
+            case OperatorCommandKind.NadirGimbal:
+                return true;
             case OperatorCommandKind.Recover:
                 north = (ghost.HomeLatitude - ghost.Latitude) * Math.PI / 180d * EarthRadiusMetres;
                 east = (ghost.HomeLongitude - ghost.Longitude) * Math.PI / 180d * EarthRadiusMetres * Math.Cos(ghost.Latitude * Math.PI / 180d);
@@ -860,6 +948,103 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
 
         return true;
     }
+
+    private bool StepGimbal(GhostState ghost)
+    {
+        var changed = false;
+        var step = GhostCameraDefaults.SlewRateDegreesPerSecond * TickSeconds;
+        ghost.Camera.PitchDegrees = MoveTowards(ghost.Camera.PitchDegrees, ghost.Camera.TargetPitchDegrees, step);
+        ghost.Camera.YawDegrees = MoveTowards(ghost.Camera.YawDegrees, ghost.Camera.TargetYawDegrees, step);
+        ghost.Camera.RollDegrees = MoveTowards(ghost.Camera.RollDegrees, ghost.Camera.TargetRollDegrees, step);
+        changed |= ghost.Camera.PitchDegrees != ghost.Camera.TargetPitchDegrees ||
+                   ghost.Camera.YawDegrees != ghost.Camera.TargetYawDegrees ||
+                   ghost.Camera.RollDegrees != ghost.Camera.TargetRollDegrees;
+
+        if (ghost.Operation is { Command: OperatorCommandKind.SetGimbal or OperatorCommandKind.CenterGimbal or OperatorCommandKind.NadirGimbal } operation && !changed)
+        {
+            UpdateCommand(operation.CommandId, OperationalCommandState.Succeeded, "Ghost gimbal reached its target.");
+            ghost.Operation = null;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static void SetGimbalTarget(GhostState ghost, OperatorCommandKind command, OperatorCommandParameters parameters)
+    {
+        if (command == OperatorCommandKind.CenterGimbal)
+        {
+            ghost.Camera.TargetPitchDegrees = 0;
+            ghost.Camera.TargetYawDegrees = 0;
+            ghost.Camera.TargetRollDegrees = 0;
+            return;
+        }
+        if (command == OperatorCommandKind.NadirGimbal)
+        {
+            ghost.Camera.TargetPitchDegrees = GhostCameraDefaults.MinimumPitchDegrees;
+            ghost.Camera.TargetYawDegrees = 0;
+            ghost.Camera.TargetRollDegrees = 0;
+            return;
+        }
+
+        if (parameters.GimbalPitchDegrees is { } pitch) ghost.Camera.TargetPitchDegrees = pitch;
+        if (parameters.GimbalYawDegrees is { } yaw)
+            ghost.Camera.TargetYawDegrees = NormalizeSigned(yaw - (parameters.GimbalEarthFrame ? ghost.Heading : 0));
+        if (parameters.GimbalRollDegrees is { } roll) ghost.Camera.TargetRollDegrees = roll;
+        if (parameters.GimbalZoomPercent is { } zoom)
+            ghost.Camera.ZoomMagnification = GhostCameraDefaults.MinimumZoomMagnification +
+                (GhostCameraDefaults.MaximumZoomMagnification - GhostCameraDefaults.MinimumZoomMagnification) * zoom / 100d;
+    }
+
+    private static bool TryApplyCameraSettings(GhostState ghost, OperatorCommandParameters parameters, out string error)
+    {
+        if (!ValidateCameraSettings(parameters, out error)) return false;
+
+        if (parameters.CameraMode is { } selectedMode) ghost.Camera.Mode = selectedMode;
+        if (parameters.CameraResolutionWidth is { } selectedWidth && parameters.CameraResolutionHeight is { } selectedHeight)
+        {
+            ghost.Camera.Width = selectedWidth;
+            ghost.Camera.Height = selectedHeight;
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool ValidateCameraSettings(OperatorCommandParameters parameters, out string error)
+    {
+        if (parameters.CameraMode is null && parameters.CameraResolutionWidth is null && parameters.CameraResolutionHeight is null)
+        {
+            error = "Select a camera mode or video resolution.";
+            return false;
+        }
+        if (parameters.CameraMode is { } mode && !Enum.IsDefined(mode))
+        {
+            error = "Camera mode must be Photo or Video.";
+            return false;
+        }
+        if ((parameters.CameraResolutionWidth is null) != (parameters.CameraResolutionHeight is null))
+        {
+            error = "Video resolution requires both width and height.";
+            return false;
+        }
+        if (parameters.CameraResolutionWidth is { } width && parameters.CameraResolutionHeight is { } height &&
+            !GhostCameraDefaults.SupportedVideoFormats.Any(format => format.Width == width && format.Height == height))
+        {
+            error = "The requested video resolution is not supported by this Ghost camera.";
+            return false;
+        }
+        error = string.Empty;
+        return true;
+    }
+
+    private static bool IsCameraCommand(OperatorCommandKind command)
+        => command is OperatorCommandKind.CapturePhoto or OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal or
+            OperatorCommandKind.SetCameraSettings;
+
+    private static bool CameraIdentityMatches(GhostState ghost, string? cameraSourceId)
+        => cameraSourceId is null || string.Equals(cameraSourceId, $"ghost-camera-{ghost.Number}", StringComparison.Ordinal);
 
     private bool EnforceActiveFence(GhostState ghost)
     {
@@ -1195,7 +1380,9 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
                 if (_cameraSources is not null)
                     _cameraSources.ReplaceAll(_cameraSources.Items.Where(item => !item.ConnectionId.StartsWith("ghost-connection-", StringComparison.Ordinal)).Concat(ghosts.Select(ToCameraSource)));
                 if (_cameraStreams is not null)
-                    _cameraStreams.ReplaceAll(_cameraStreams.Items.Where(item => !item.ConnectionId.StartsWith("ghost-connection-", StringComparison.Ordinal)));
+                    _cameraStreams.ReplaceAll(_cameraStreams.Items.Where(item =>
+                        !item.ConnectionId.StartsWith("ghost-connection-", StringComparison.Ordinal) ||
+                        string.Equals(item.Protocol, "Ghost3D", StringComparison.OrdinalIgnoreCase)));
             }, cancellationToken);
         }
         finally
@@ -1221,9 +1408,14 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
                 {
                     var ghostVehicleIds = ghosts.Select(item => item.VehicleId).ToHashSet(StringComparer.Ordinal);
                     _diagnostics.ReplaceAll(_diagnostics.Items.Where(item => !ghostVehicleIds.Contains(item.VehicleId)).Concat(ghosts.Select(ToDiagnostics)));
-                    // Link and camera identity are discovery state, not
-                    // telemetry.  Rewriting them at 20 Hz caused every Ghost
-                    // to trigger unrelated link/camera projections.
+                    // Camera identity is discovery state, but its device
+                    // snapshot includes simulated settings and gimbal pose.
+                    // Publish that mutable state at the same bounded rate as
+                    // diagnostics rather than at the 60 Hz physics rate.
+                    if (_cameraSources is not null)
+                        _cameraSources.ReplaceAll(_cameraSources.Items
+                            .Where(item => !item.ConnectionId.StartsWith("ghost-connection-", StringComparison.Ordinal))
+                            .Concat(ghosts.Select(ToCameraSource)));
                     Volatile.Write(ref _lastSlowPublicationTimestamp, now.ToUnixTimeMilliseconds());
                 }
             }, cancellationToken);
@@ -1302,6 +1494,7 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
     private static CameraSourceRecord ToCameraSource(GhostState ghost)
     {
         var now = DateTimeOffset.UtcNow;
+        var camera = ghost.Camera;
         return new(
             $"ghost-camera-{ghost.Number}",
             $"ghost-camera-{ghost.Number}",
@@ -1315,21 +1508,50 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
             true,
             true,
             true,
-            30,
+            GhostCameraDefaults.FramesPerSecond,
             0,
-            960,
-            540,
+            camera.Width,
+            camera.Height,
             $"ghost-frame-{ghost.Number}",
             "SIMULATED_CAMERA",
-            "Dark simulated sky/ground horizon",
-            now);
+            "Simulated camera and 3-axis gimbal",
+            now,
+            SupportsPhoto: true,
+            SupportsVideo: true,
+            SupportsGimbal: true,
+            DeviceState: new CameraDeviceStateSnapshot(
+                camera.Mode,
+                camera.Width,
+                camera.Height,
+                GhostCameraDefaults.FramesPerSecond,
+                GhostCameraDefaults.SupportedVideoFormats,
+                camera.ZoomMagnification,
+                GhostCameraDefaults.MinimumZoomMagnification,
+                GhostCameraDefaults.MaximumZoomMagnification,
+                camera.IsRecording,
+                camera.PhotoCount,
+                true,
+                true,
+                true,
+                new CameraGimbalSnapshot(
+                    camera.PitchDegrees,
+                    camera.YawDegrees,
+                    camera.RollDegrees,
+                    camera.TargetPitchDegrees,
+                    camera.TargetYawDegrees,
+                    camera.TargetRollDegrees,
+                    GhostCameraDefaults.MinimumPitchDegrees,
+                    GhostCameraDefaults.MaximumPitchDegrees,
+                    GhostCameraDefaults.MaximumYawDegrees,
+                    GhostCameraDefaults.MaximumRollDegrees,
+                    GhostCameraDefaults.SlewRateDegreesPerSecond)));
     }
 
     private static RuntimeRecord ToRuntime(GhostState ghost)
-        => new($"ghost-runtime-{ghost.Number}", ghost.Name, [ghost.ConnectionId], AvailabilityState.Online, "Ghost", "Simulated", "multicopter", ghost.Profile.Id, "in-app", "Healthy", "Ready", ["operator_control", "arm", "disarm", "hold", "takeoff", "go_to", "change_altitude", "set_heading", "land", "return_home"], DateTimeOffset.UtcNow, ghost.VehicleId, ghost.Name, true);
+        => new($"ghost-runtime-{ghost.Number}", ghost.Name, [ghost.ConnectionId], AvailabilityState.Online, "Ghost", "Simulated", "multicopter", ghost.Profile.Id, "in-app", "Healthy", "Ready", ["operator_control", "arm", "disarm", "hold", "takeoff", "go_to", "change_altitude", "set_heading", "land", "return_home", "camera", "camera_photo", "camera_video", "camera_settings", "gimbal"], DateTimeOffset.UtcNow, ghost.VehicleId, ghost.Name, true);
 
     private static VehicleRecord ToVehicle(GhostState ghost)
-        => new(ghost.VehicleId, ghost.Name, [ghost.ConnectionId], $"ghost-runtime-{ghost.Number}", null, "Multicopter", "Air", ghost.Profile.Id, AvailabilityState.Online, "Ready", ghost.Landed ? "Landed" : "Flying", ghost.Armed ? "Armed" : "Disarmed", "Healthy", ["operator_control", "arm", "disarm", "hold", "takeoff", "go_to", "change_altitude", "set_heading", "land", "return_home"], DateTimeOffset.UtcNow, true);
+        => new(ghost.VehicleId, ghost.Name, [ghost.ConnectionId], $"ghost-runtime-{ghost.Number}", null, "Multicopter", "Air", ghost.Profile.Id, AvailabilityState.Online, "Ready", ghost.Landed ? "Landed" : "Flying", ghost.Armed ? "Armed" : "Disarmed", "Healthy", ["operator_control", "arm", "disarm", "hold", "takeoff", "go_to", "change_altitude", "set_heading", "land", "return_home", "camera", "camera_photo", "camera_video", "camera_settings", "gimbal"], DateTimeOffset.UtcNow, true);
 
     private static VehicleDiagnosticsSnapshot ToDiagnostics(GhostState ghost)
     {
@@ -1384,7 +1606,13 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
     }
 
     private static VehicleTelemetryRecord ToTelemetry(GhostState ghost)
-        => new($"ghost-telemetry-{ghost.Number}", ghost.VehicleId, ghost.ConnectionId, $"ghost-runtime-{ghost.Number}", AvailabilityState.Online, ghost.Armed, ghost.Landed ? "Landed" : "Flying", "Multicopter", ghost.FormationTarget is not null ? "Formation" : ghost.ManualSessionId is null ? ghost.Mission is { State: FlightMissionExecutionState.Running } ? "Mission" : ghost.Mission is { State: FlightMissionExecutionState.Paused } ? "Mission hold" : ghost.Operation?.Command.ToString() ?? "Simulated" : ghost.ManualHold ? "Manual hold" : "Manual control", "Healthy", "Ready", ghost.Latitude, ghost.Longitude, ghost.GroundAltitude + ghost.AltitudeAgl, ghost.AltitudeAgl, ghost.LocalNorth, ghost.LocalEast, -ghost.AltitudeAgl, ghost.NorthVelocity, ghost.EastVelocity, -ghost.VerticalVelocity, ghost.Heading, false, "SIMULATED", "In-app ghost telemetry", DateTimeOffset.UtcNow, true);
+        => new($"ghost-telemetry-{ghost.Number}", ghost.VehicleId, ghost.ConnectionId, $"ghost-runtime-{ghost.Number}", AvailabilityState.Online, ghost.Armed, ghost.Landed ? "Landed" : "Flying", "Multicopter", ghost.FormationTarget is not null ? "Formation" : ghost.ManualSessionId is null ? ghost.Mission is { State: FlightMissionExecutionState.Running } ? "Mission" : ghost.Mission is { State: FlightMissionExecutionState.Paused } ? "Mission hold" : ghost.Operation?.Command.ToString() ?? "Simulated" : ghost.ManualHold ? "Manual hold" : "Manual control", "Healthy", "Ready", ghost.Latitude, ghost.Longitude, ghost.GroundAltitude + ghost.AltitudeAgl, ghost.AltitudeAgl, ghost.LocalNorth, ghost.LocalEast, -ghost.AltitudeAgl, ghost.NorthVelocity, ghost.EastVelocity, -ghost.VerticalVelocity, ghost.Heading, false, "SIMULATED", "In-app ghost telemetry", DateTimeOffset.UtcNow, true,
+            GimbalPitchDegrees: ghost.Camera.PitchDegrees,
+            GimbalYawDegrees: ghost.Camera.YawDegrees,
+            GimbalRollDegrees: ghost.Camera.RollDegrees,
+            CameraZoomPercent: (ghost.Camera.ZoomMagnification - GhostCameraDefaults.MinimumZoomMagnification) /
+                (GhostCameraDefaults.MaximumZoomMagnification - GhostCameraDefaults.MinimumZoomMagnification) * 100,
+            CameraRecordingVideo: ghost.Camera.IsRecording);
 
     private static double NormalizeHeading(double heading) => (heading % 360 + 360) % 360;
     private static double MoveHeading(double current, double target, double maximumStep)
@@ -1444,6 +1672,23 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
         public double YawRate { get; set; }
         public FenceDocument? ActiveFence { get; set; }
         public bool FenceBreachReported { get; set; }
+        public GhostCameraState Camera { get; } = new();
+    }
+
+    private sealed class GhostCameraState
+    {
+        public FlightMissionCameraMode Mode { get; set; } = FlightMissionCameraMode.Video;
+        public uint Width { get; set; } = GhostCameraDefaults.DefaultWidth;
+        public uint Height { get; set; } = GhostCameraDefaults.DefaultHeight;
+        public double ZoomMagnification { get; set; } = GhostCameraDefaults.MinimumZoomMagnification;
+        public bool IsRecording { get; set; }
+        public ulong PhotoCount { get; set; }
+        public double PitchDegrees { get; set; }
+        public double YawDegrees { get; set; }
+        public double RollDegrees { get; set; }
+        public double TargetPitchDegrees { get; set; }
+        public double TargetYawDegrees { get; set; }
+        public double TargetRollDegrees { get; set; }
     }
 
     private sealed record GhostOperation(string CommandId, OperatorCommandKind Command, OperatorCommandParameters Parameters);

@@ -320,7 +320,8 @@ internal static class AppHost
                 serviceProvider.GetRequiredService<IUnitSettingsService>(),
                 serviceProvider.GetRequiredService<IUiDispatcher>(),
                 serviceProvider.GetRequiredService<IOperatorTargetScopeWorkflow>(),
-                serviceProvider.GetRequiredService<ITerrainElevationService>()));
+                serviceProvider.GetRequiredService<ITerrainElevationService>(),
+                serviceProvider.GetRequiredService<IEntityStore<string, CameraSourceRecord>>()));
         services.AddSingleton<ManualControlViewModel>();
         services.AddSingleton<OperateViewModel>();
         services.AddSingleton<EventsViewModel>();

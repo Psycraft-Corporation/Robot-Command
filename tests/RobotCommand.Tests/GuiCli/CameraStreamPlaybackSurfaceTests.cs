@@ -13,7 +13,7 @@ public sealed class CameraStreamPlaybackSurfaceTests
 
         Assert.Contains("AutomationProperties.Name=\"Open stream\"", view);
         Assert.Contains("Command=\"{Binding Camera.OpenStreamCommand}\"", view);
-        Assert.Contains("Text=\"{Binding Camera.PlaybackSummary}\"", view);
+        Assert.Contains("Text=\"{Binding Camera.PlaybackEmptyMessage}\"", view);
         Assert.Contains("Text=\"{Binding Camera.PlaybackDetail}\"", view);
     }
 

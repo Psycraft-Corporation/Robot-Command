@@ -451,7 +451,8 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
         value.HeadingTargetKind is null ? null : (OperatorHeadingTargetKind)value.HeadingTargetKind.Value,
         value.HeadingDegrees, value.RelativeYawDegrees, value.AirborneDisarmConfirmed,
         value.GimbalPitchDegrees, value.GimbalYawDegrees, value.GimbalRollDegrees,
-        value.GimbalZoomPercent, value.GimbalEarthFrame);
+        value.GimbalZoomPercent, value.GimbalEarthFrame,
+        value.CameraMode, value.CameraResolutionWidth, value.CameraResolutionHeight);
 
     private static OperatorWorkflowParameters ToCore(OperatorCommandParameters value) => new(
         value.TakeoffAltitudeAglMetres,
@@ -463,7 +464,8 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
         value.HeadingTargetKind is null ? null : (OperatorWorkflowHeadingTargetKind)value.HeadingTargetKind.Value,
         value.HeadingDegrees, value.RelativeYawDegrees, value.AirborneDisarmConfirmed,
         value.GimbalPitchDegrees, value.GimbalYawDegrees, value.GimbalRollDegrees,
-        value.GimbalZoomPercent, value.GimbalEarthFrame);
+        value.GimbalZoomPercent, value.GimbalEarthFrame,
+        value.CameraMode, value.CameraResolutionWidth, value.CameraResolutionHeight);
 
     private static string DisplayName(OperatorWorkflowCommandKind command) => command switch
     {

@@ -1,3 +1,5 @@
+using RobotCommand.Core;
+
 namespace RobotCommand.Models;
 
 public enum MapFrameKind
@@ -67,7 +69,8 @@ public sealed record CameraSourceRecord(
     bool SupportsPhoto = false,
     bool SupportsVideo = false,
     bool SupportsGimbal = false,
-    byte? GimbalComponentId = null);
+    byte? GimbalComponentId = null,
+    CameraDeviceStateSnapshot? DeviceState = null);
 
 /// <summary>
 /// Normalized camera-definition data discovered through the MAVLink Camera

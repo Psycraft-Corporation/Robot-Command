@@ -166,7 +166,7 @@ public sealed class OperationalMapSceneBuilderTests
     }
 
     [Fact]
-    public void Build_ShowsCameraConeOnlyForReportedPx4OrArduPilotCameras()
+    public void Build_ShowsCameraConeForReportedCameraCapabilitiesIncludingGhosts()
     {
         var px4 = Vehicle("px4-camera", "conn-camera") with
         {
@@ -178,12 +178,22 @@ public sealed class OperationalMapSceneBuilderTests
             ProfileKey = "test-backend",
             CapabilityKeys = ["camera_capture"]
         };
+        var unreported = Vehicle("unreported", "conn-unreported") with
+        {
+            ProfileKey = "test-backend"
+        };
+        var ghost = Vehicle("ghost-camera", "conn-ghost") with
+        {
+            IsGhost = true,
+            CapabilityKeys = ["camera", "gimbal"]
+        };
 
         var scene = _builder.Build(
-            [px4, other],
+            [px4, other, ghost],
             [
                 Telemetry("px4-camera", "conn-camera", latitude: 43.65, longitude: -79.38, heading: 90),
-                Telemetry("other-camera", "conn-other", latitude: 43.66, longitude: -79.37, heading: 90)
+                Telemetry("other-camera", "conn-other", latitude: 43.66, longitude: -79.37, heading: 90),
+                Telemetry("ghost-camera", "conn-ghost", latitude: 43.67, longitude: -79.36, heading: 90)
             ],
             [],
             "px4-camera",
@@ -191,12 +201,14 @@ public sealed class OperationalMapSceneBuilderTests
             geometryVisible: true);
 
         Assert.NotNull(Assert.Single(scene.Vehicles, item => item.VehicleId == "px4-camera").CameraCone);
+        Assert.NotNull(Assert.Single(scene.Vehicles, item => item.VehicleId == "ghost-camera").CameraCone);
+        Assert.NotNull(Assert.Single(scene.Vehicles, item => item.VehicleId == "other-camera").CameraCone);
 
         var otherScene = _builder.Build(
-            [other],
-            [Telemetry("other-camera", "conn-other", latitude: 43.66, longitude: -79.37, heading: 90)],
+            [unreported],
+            [Telemetry("unreported", "conn-unreported", latitude: 43.66, longitude: -79.37, heading: 90)],
             [],
-            "other-camera",
+            "unreported",
             MapViewportMode.FitAll,
             geometryVisible: true);
         Assert.Null(Assert.Single(otherScene.Vehicles).CameraCone);

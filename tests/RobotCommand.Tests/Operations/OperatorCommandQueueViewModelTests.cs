@@ -249,6 +249,72 @@ public sealed class OperatorCommandQueueViewModelTests
         Assert.Equal(1, gateway.CancellationCount);
     }
 
+    [Fact]
+    public async Task GhostCameraSettingsAreUnitScopedAndQueuedThroughTheSharedOperatorWorkflow()
+    {
+        var vehicles = new EntityStore<string, VehicleRecord>(item => item.Id, StringComparer.Ordinal);
+        var telemetry = new EntityStore<string, VehicleTelemetryRecord>(item => item.Id, StringComparer.Ordinal);
+        var connections = new EntityStore<string, ConnectionRecord>(item => item.Id, StringComparer.Ordinal);
+        var cameraSources = new EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal);
+        var commands = new EntityStore<string, OperationalCommandRecord>(item => item.Id, StringComparer.Ordinal);
+        var selection = new SelectionService();
+        var gateway = new RecordingOperatorControlService();
+        using var workflow = new OperatorCommandWorkflow(gateway, telemetry, commands);
+        var ghost = Unit("ghost-1", "ghost-connection-1") with { IsGhost = true };
+        vehicles.Upsert(ghost);
+        selection.Select(SelectionFactory.From(ghost));
+        var reportedState = new CameraDeviceStateSnapshot(
+            FlightMissionCameraMode.Photo,
+            1280,
+            720,
+            30,
+            GhostCameraDefaults.SupportedVideoFormats,
+            1,
+            1,
+            10,
+            false,
+            0,
+            true,
+            true,
+            true,
+            new CameraGimbalSnapshot(0, 0, 0, 0, 0, 0, -90, 30, 180, 45, 60));
+        var reportedCamera = new CameraSourceRecord(
+            "ghost-camera-1", "ghost-camera-1", "ghost-connection-1", "ghost-1", "Ghost camera",
+            "Simulated camera", AvailabilityState.Online, "Healthy", "Ready", true, true, false,
+            0, 0, 1280, 720, "camera", "SIMULATED_CAMERA", "Ghost camera", DateTimeOffset.UtcNow,
+            true, true, true, DeviceState: reportedState);
+        cameraSources.Upsert(reportedCamera);
+        var viewModel = new OperatorControlsViewModel(
+            workflow, selection, vehicles, telemetry, connections, commands,
+            cameraSources: cameraSources);
+
+        Assert.True(viewModel.HasGhostCameraSettingsSelection);
+        Assert.True(viewModel.HasGimbalCameraSelection);
+        Assert.Equal(2, viewModel.CameraModes.Count);
+        Assert.Equal(3, viewModel.CameraVideoFormats.Count);
+        Assert.Equal(FlightMissionCameraMode.Photo, viewModel.SelectedCameraMode);
+        Assert.Equal((1280u, 720u), (viewModel.SelectedCameraVideoFormat.Width, viewModel.SelectedCameraVideoFormat.Height));
+        Assert.True(viewModel.PrepareSetCameraSettingsCommand.CanExecute(null));
+
+        viewModel.SelectedCameraMode = FlightMissionCameraMode.Video;
+        viewModel.SelectedCameraVideoFormat = GhostCameraDefaults.SupportedVideoFormats[0];
+        cameraSources.Upsert(reportedCamera with { FrameRateHz = 1 });
+        Assert.Equal(FlightMissionCameraMode.Video, viewModel.SelectedCameraMode);
+        Assert.Equal((640u, 360u), (viewModel.SelectedCameraVideoFormat.Width, viewModel.SelectedCameraVideoFormat.Height));
+
+        viewModel.PrepareSetCameraSettingsCommand.Execute(null);
+        await EventuallyAsync(() => viewModel.QueuedPlans.Count == 1);
+
+        var queued = Assert.Single(viewModel.QueuedPlans.Values);
+        Assert.Equal(OperatorWorkflowCommandKind.SetCameraSettings, queued.Command);
+        Assert.Equal(FlightMissionCameraMode.Video, queued.Parameters.CameraMode);
+        Assert.Equal((640u, 360u), (queued.Parameters.CameraResolutionWidth, queued.Parameters.CameraResolutionHeight));
+
+        selection.Select(new OperationalSelection(SelectionKind.Vehicle, "hardware-1", "Hardware", "", []));
+        Assert.False(viewModel.HasGhostCameraSettingsSelection);
+        Assert.False(viewModel.PrepareSetCameraSettingsCommand.CanExecute(null));
+    }
+
     private static async Task EventuallyAsync(Func<bool> predicate)
     {
         for (var i = 0; i < 500 && !predicate(); i++)
