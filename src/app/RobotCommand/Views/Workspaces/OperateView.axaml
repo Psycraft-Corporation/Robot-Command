@@ -296,36 +296,17 @@
         <ScrollViewer Grid.Column="2"
                       IsVisible="{Binding CameraPaneVisible}"
                       VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
+          HorizontalScrollBarVisibility="Disabled">
           <Border Classes="videoSurface">
             <Grid RowDefinitions="Auto,Auto,Auto,Auto">
-            <Border Classes="surfaceHeader">
-              <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                  <StackPanel Spacing="2">
-                    <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=VideoCamera}" />
-                    <TextBlock Classes="muted" FontSize="11" Text="{Binding Camera.CameraStatus}" />
-                  </StackPanel>
-                  <Border Grid.Column="1" Classes="smallPill" VerticalAlignment="Center">
-                    <TextBlock FontSize="11" Text="{Binding Camera.TrackSummary}" />
-                  </Border>
-                </Grid>
-
-                <Grid Grid.Row="1" ColumnDefinitions="2*,*,Auto,Auto,Auto" ColumnSpacing="8">
+              <Border Classes="surfaceHeader">
+                <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+                  <Grid ColumnDefinitions="2*,*,Auto,Auto,Auto" ColumnSpacing="8">
                   <ComboBox ItemsSource="{Binding Camera.Cameras}"
                             SelectedItem="{Binding Camera.SelectedCamera}">
                     <ComboBox.ItemTemplate>
                       <DataTemplate x:DataType="models:CameraSourceRecord">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                          <StackPanel>
-                            <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
-                            <TextBlock Classes="muted" FontSize="10" Text="{Binding CameraSourceId}" />
-                          </StackPanel>
-                          <TextBlock Grid.Column="1"
-                                     VerticalAlignment="Center"
-                                     Classes="muted"
-                                     Text="{Binding State}" />
-                        </Grid>
+                        <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
                       </DataTemplate>
                     </ComboBox.ItemTemplate>
                   </ComboBox>
@@ -349,7 +330,7 @@
                           AutomationProperties.Name="Close stream"
                           Command="{Binding Camera.CloseStreamCommand}" />
                 </Grid>
-                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6">
+                  <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
                     <Button Classes="primary"
                             Content="{loc:Loc Key=CameraCapturePhoto}"
                             ToolTip.Tip="{loc:Loc Key=CameraCapturePhoto}"
@@ -363,69 +344,10 @@
                             ToolTip.Tip="{loc:Loc Key=CameraStopVideo}"
                             AutomationProperties.Name="{loc:Loc Key=CameraStopVideo}"
                             Command="{Binding Controls.PrepareStopVideoCommand}" />
-                    <Button Content="{loc:Loc Key=CameraCenterGimbal}"
-                            ToolTip.Tip="{loc:Loc Key=CameraCenterGimbal}"
-                            AutomationProperties.Name="{loc:Loc Key=CameraCenterGimbal}"
-                            Command="{Binding Controls.PrepareCenterGimbalCommand}" />
-                  <TextBlock Classes="muted"
-                             VerticalAlignment="Center"
-                             Text="{Binding Controls.StatusMessage}" />
-                </StackPanel>
-                <Border Grid.Row="3" Classes="surfaceInset" Padding="8" IsVisible="{Binding Camera.HasCameraDefinition}">
-                  <StackPanel Spacing="5">
-                    <TextBlock FontSize="10" FontWeight="SemiBold" Text="{loc:Loc Key=CameraDefinition}" />
-                    <TextBlock Classes="muted" FontSize="10" Text="{Binding Camera.CameraDefinitionSummary}" />
-                    <ItemsControl ItemsSource="{Binding Camera.CameraSettings}">
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="models:MavlinkCameraSettingRecord">
-                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,1">
-                            <TextBlock Text="{Binding Label}" />
-                            <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Summary}" />
-                          </Grid>
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding Controls.StatusMessage}" />
                   </StackPanel>
-                </Border>
-                <Border Grid.Row="4" Classes="surfaceInset" Padding="8" IsVisible="{Binding Controls.HasGimbalCameraSelection}">
-                  <StackPanel Spacing="6">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                      <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=GimbalCameraControls}" />
-                      <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Controls.GimbalCameraSupportedSummary}" ToolTip.Tip="{Binding Controls.GimbalCameraSupportedTooltip}" />
-                    </Grid>
-                    <TextBlock Classes="muted" Text="{Binding Controls.GimbalTelemetrySummary}" />
-                    <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
-                      <Button Content="Nadir gimbal" Command="{Binding Controls.PrepareNadirGimbalCommand}" />
-                    </WrapPanel>
-                    <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="5">
-                      <TextBlock VerticalAlignment="Center" Text="Pitch" />
-                      <TextBox Grid.Column="1" Text="{Binding Controls.GimbalPitchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="degrees" />
-                      <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Roll" />
-                      <TextBox Grid.Column="3" Text="{Binding Controls.GimbalRollText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="degrees" />
-                      <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="Yaw" />
-                      <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Controls.GimbalYawText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="degrees" />
-                      <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Text="Zoom" />
-                      <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Controls.GimbalZoomText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Watermark="0–100%" />
-                    </Grid>
-                    <Button HorizontalAlignment="Left" Content="Queue gimbal settings" Command="{Binding Controls.PrepareSetGimbalCommand}" />
-                    <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Controls.HasGhostCameraSettingsSelection}">
-                      <TextBlock VerticalAlignment="Center" Text="Camera mode" />
-                      <ComboBox Width="105" ItemsSource="{Binding Controls.CameraModes}" SelectedItem="{Binding Controls.SelectedCameraMode, Mode=TwoWay}" />
-                      <TextBlock VerticalAlignment="Center" Text="Video resolution" />
-                      <ComboBox Width="175" ItemsSource="{Binding Controls.CameraVideoFormats}" SelectedItem="{Binding Controls.SelectedCameraVideoFormat, Mode=TwoWay}">
-                        <ComboBox.ItemTemplate>
-                          <DataTemplate x:DataType="core:CameraVideoFormatSnapshot">
-                            <TextBlock Text="{Binding Label}" />
-                          </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                      </ComboBox>
-                      <Button Content="Queue camera settings" Command="{Binding Controls.PrepareSetCameraSettingsCommand}" />
-                    </StackPanel>
-                    <TextBlock Classes="muted" Text="Commands are queued for operator review and execution." />
-                  </StackPanel>
-                </Border>
-              </Grid>
-            </Border>
+                </Grid>
+              </Border>
 
             <Grid Grid.Row="1">
               <controls:NativeVideoSurface Source="{Binding Camera.NativeFrameSource}" />
@@ -448,48 +370,11 @@
 
             <Border Grid.Row="2" Classes="surfaceFooter">
               <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-                  <StackPanel Spacing="1">
-                    <TextBlock FontSize="10" FontWeight="SemiBold" Text="{Binding Camera.LocalRecordingStatus}" />
-                    <TextBlock Classes="muted" FontSize="9" TextTrimming="CharacterEllipsis" Text="{Binding Camera.LocalRecordingDetail}" />
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Camera.LocalRecordingStatus}" />
+                    <TextBlock Classes="muted" Text="{Binding Camera.StreamStatus}" />
                   </StackPanel>
-                  <Border Grid.Column="1" Classes="smallPill" VerticalAlignment="Center">
-                    <TextBlock FontSize="10" Text="{Binding Camera.TimelineModeText}" />
-                  </Border>
-                  <Button Grid.Column="2"
-                          Classes="toolbarButton"
-                          Content="↻"
-                          ToolTip.Tip="{Binding Camera.RefreshTimelineTooltip}"
-                          AutomationProperties.Name="Refresh timeline"
-                          Command="{Binding Camera.RefreshTimelineCommand}" />
-                </Grid>
-                <controls:LocalVideoTimelineControl Grid.Row="1"
-                                                    Height="28"
-                                                    Timeline="{Binding Camera.VideoTimeline}"
-                                                    Position="{Binding Camera.TimelinePosition, Mode=TwoWay}" />
-                <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6">
-                  <StackPanel VerticalAlignment="Center" Spacing="1">
-                    <TextBlock Classes="muted" FontSize="9" Text="{Binding Camera.TimelineRangeText}" />
-                    <TextBlock Classes="muted" FontSize="9" Text="{Binding Camera.RecordingStorageText}" />
-                  </StackPanel>
-                  <Button Grid.Column="1" Classes="toolbarButton" Content="▶" ToolTip.Tip="{Binding Camera.PlayTimelineTooltip}" AutomationProperties.Name="Play" Command="{Binding Camera.PlayTimelineCommand}" />
-                  <Button Grid.Column="2" Classes="toolbarButton" Content="Ⅱ" ToolTip.Tip="{Binding Camera.PauseTimelineTooltip}" AutomationProperties.Name="Pause" Command="{Binding Camera.PauseTimelineCommand}" />
-                  <Button Grid.Column="3" Classes="toolbarButton" Content="▶" ToolTip.Tip="{Binding Camera.ResumeTimelineTooltip}" AutomationProperties.Name="Resume" Command="{Binding Camera.ResumeTimelineCommand}" />
-                  <Button Grid.Column="4" Classes="toolbarButton" Content="⇩" ToolTip.Tip="{Binding Camera.CacheTimelineTooltip}" AutomationProperties.Name="Cache recording" Command="{Binding Camera.DownloadTimelineCommand}" />
-                  <Button Grid.Column="5" Classes="toolbarButton" Content="★" ToolTip.Tip="{Binding Camera.RetainTimelineTooltip}" AutomationProperties.Name="Retain recording" Command="{Binding Camera.RetainTimelineCommand}" />
-                  <Button Grid.Column="6" Classes="toolbarButton" Content="⇧" ToolTip.Tip="{Binding Camera.ExportTimelineTooltip}" AutomationProperties.Name="Export clip" Command="{Binding Camera.ExportTimelineClipCommand}" />
-                  <Button Grid.Column="7" Classes="primary" Content="●" ToolTip.Tip="{Binding Camera.GoLiveTooltip}" AutomationProperties.Name="Go live" Command="{Binding Camera.GoLiveCommand}" />
-                </Grid>
-              </Grid>
-            </Border>
-
-            <Border Grid.Row="3" Classes="surfaceFooter">
-              <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
-                <StackPanel Spacing="2">
-                  <TextBlock FontSize="10" FontWeight="SemiBold" Text="{Binding Camera.NativeVideoStatus}" />
-                  <TextBlock Classes="muted" FontSize="9" Text="{Binding Camera.NativeVideoMetrics}" />
-                  <TextBlock Classes="muted" FontSize="9" TextTrimming="CharacterEllipsis" Text="{Binding Camera.StreamStatus}" />
-                </StackPanel>
                   <CheckBox Grid.Column="1"
                             VerticalAlignment="Center"
                             Content="{loc:Loc Key=VideoIncludeOverlays}"
@@ -507,7 +392,84 @@
                           AutomationProperties.Name="Capture source image"
                           ToolTip.Tip="{Binding Camera.CaptureSourceTooltip}"
                           Command="{Binding Camera.CaptureSourceImageCommand}" />
+                  <Button Grid.Column="4"
+                          Classes="toolbarButton"
+                          Content="↻"
+                          ToolTip.Tip="{Binding Camera.RefreshTimelineTooltip}"
+                          AutomationProperties.Name="Refresh timeline"
+                          Command="{Binding Camera.RefreshTimelineCommand}" />
+                </Grid>
+                <controls:LocalVideoTimelineControl Grid.Row="1"
+                                                    Height="28"
+                                                    Timeline="{Binding Camera.VideoTimeline}"
+                                                    Position="{Binding Camera.TimelinePosition, Mode=TwoWay}" />
+                <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6">
+                  <StackPanel VerticalAlignment="Center" Spacing="1">
+                    <TextBlock Classes="muted" Text="{Binding Camera.TimelineRangeText}" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="toolbarButton" Content="▶" ToolTip.Tip="{Binding Camera.PlayTimelineTooltip}" AutomationProperties.Name="Play" Command="{Binding Camera.PlayTimelineCommand}" />
+                  <Button Grid.Column="2" Classes="toolbarButton" Content="Ⅱ" ToolTip.Tip="{Binding Camera.PauseTimelineTooltip}" AutomationProperties.Name="Pause" Command="{Binding Camera.PauseTimelineCommand}" />
+                  <Button Grid.Column="3" Classes="toolbarButton" Content="▶" ToolTip.Tip="{Binding Camera.ResumeTimelineTooltip}" AutomationProperties.Name="Resume" Command="{Binding Camera.ResumeTimelineCommand}" />
+                  <Button Grid.Column="4" Classes="toolbarButton" Content="⇩" ToolTip.Tip="{Binding Camera.CacheTimelineTooltip}" AutomationProperties.Name="Cache recording" Command="{Binding Camera.DownloadTimelineCommand}" />
+                  <Button Grid.Column="5" Classes="toolbarButton" Content="★" ToolTip.Tip="{Binding Camera.RetainTimelineTooltip}" AutomationProperties.Name="Retain recording" Command="{Binding Camera.RetainTimelineCommand}" />
+                  <Button Grid.Column="6" Classes="toolbarButton" Content="⇧" ToolTip.Tip="{Binding Camera.ExportTimelineTooltip}" AutomationProperties.Name="Export clip" Command="{Binding Camera.ExportTimelineClipCommand}" />
+                  <Button Grid.Column="7" Classes="primary" Content="●" ToolTip.Tip="{Binding Camera.GoLiveTooltip}" AutomationProperties.Name="Go live" Command="{Binding Camera.GoLiveCommand}" />
+                </Grid>
               </Grid>
+            </Border>
+
+            <Border Grid.Row="3" Classes="surfaceFooter" IsVisible="{Binding Controls.HasGimbalCameraSelection}">
+              <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=GimbalCameraControls}" />
+                  <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Controls.GimbalCameraSupportedSummary}" ToolTip.Tip="{Binding Controls.GimbalCameraSupportedTooltip}" />
+                </Grid>
+                <TextBlock Classes="muted" Text="{Binding Controls.GimbalTelemetrySummary}" />
+                <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
+                  <Button Content="{loc:Loc Key=CameraCenterGimbal}" Command="{Binding Controls.PrepareCenterGimbalCommand}" />
+                  <Button Content="Nadir gimbal" Command="{Binding Controls.PrepareNadirGimbalCommand}" />
+                </WrapPanel>
+                <Grid ColumnDefinitions="Auto,96,Auto,96" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="5">
+                  <TextBlock VerticalAlignment="Center" Text="Pitch" />
+                  <TextBox Grid.Column="1" Width="96" Text="{Binding Controls.GimbalPitchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="°" />
+                  <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Roll" />
+                  <TextBox Grid.Column="3" Width="96" Text="{Binding Controls.GimbalRollText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="°" />
+                  <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="Yaw" />
+                  <TextBox Grid.Row="1" Grid.Column="1" Width="96" Text="{Binding Controls.GimbalYawText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="°" />
+                  <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Text="Zoom" />
+                  <TextBox Grid.Row="1" Grid.Column="3" Width="96" Text="{Binding Controls.GimbalZoomText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="%" />
+                </Grid>
+                <Button HorizontalAlignment="Left" Content="Apply gimbal settings" Command="{Binding Controls.PrepareSetGimbalCommand}" />
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Controls.HasGhostCameraSettingsSelection}">
+                  <TextBlock VerticalAlignment="Center" Text="Camera mode" />
+                  <ComboBox Width="105" ItemsSource="{Binding Controls.CameraModes}" SelectedItem="{Binding Controls.SelectedCameraMode, Mode=TwoWay}" />
+                  <TextBlock VerticalAlignment="Center" Text="Video resolution" />
+                  <ComboBox Width="175" ItemsSource="{Binding Controls.CameraVideoFormats}" SelectedItem="{Binding Controls.SelectedCameraVideoFormat, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="core:CameraVideoFormatSnapshot">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Button Content="Apply camera settings" Command="{Binding Controls.PrepareSetCameraSettingsCommand}" />
+                </StackPanel>
+                <Border Classes="surfaceInset" Padding="8" IsVisible="{Binding Camera.HasCameraDefinition}">
+                  <StackPanel Spacing="5">
+                    <TextBlock FontWeight="SemiBold" Text="{loc:Loc Key=CameraDefinition}" />
+                    <TextBlock Classes="muted" Text="{Binding Camera.CameraDefinitionSummary}" />
+                    <ItemsControl ItemsSource="{Binding Camera.CameraSettings}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:MavlinkCameraSettingRecord">
+                          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,1">
+                            <TextBlock Text="{Binding Label}" />
+                            <TextBlock Grid.Column="1" Classes="muted" Text="{Binding Summary}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
             </Border>
             </Grid>
           </Border>

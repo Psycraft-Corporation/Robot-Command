@@ -66,12 +66,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private string? _activeStreamUnitId;
     private VideoProtocolPreference _selectedProtocol = VideoProtocolPreference.Automatic;
     private VideoOverlayScene _overlayScene = VideoOverlayScene.Empty;
-    private string _cameraStatus = "No camera source available";
     private string _streamStatus = "No stream";
     private string _playbackSummary = VideoPlaybackStatus.Detached.Summary;
     private string _playbackDetail = VideoPlaybackStatus.Detached.Detail;
     private string _streamEndpoint = "-";
-    private string _trackSummary = "No perception tracks";
     private string _gStreamerStatus = GStreamerRuntimeDiagnostics.Unknown.Summary;
     private string _gStreamerDetail = GStreamerRuntimeDiagnostics.Unknown.Detail;
     private string _nativeVideoStatus = NativeVideoPipelineStatus.Stopped.Summary;
@@ -92,7 +90,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private string _localRecordingStatus = LocalVideoRecorderStatus.Stopped.Summary;
     private string _localRecordingDetail = LocalVideoRecorderStatus.Stopped.Detail;
     private string _timelineRangeText = "No console or vehicle recordings";
-    private string _recordingStorageText = "0 B console video · 0 B vehicle cache";
     private string _remoteRecordingStatus = RemoteVideoRecordingStatus.NotConfigured.Summary;
     private string _remoteRecordingDetail = RemoteVideoRecordingStatus.NotConfigured.Detail;
     private bool _captureIncludeOverlays = true;
@@ -314,12 +311,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     public IVideoFrameSource NativeFrameSource => _frameSource;
 
-    public string CameraStatus
-    {
-        get => _cameraStatus;
-        private set => SetProperty(ref _cameraStatus, value);
-    }
-
     public string StreamStatus
     {
         get => _streamStatus;
@@ -345,12 +336,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     {
         get => _streamEndpoint;
         private set => SetProperty(ref _streamEndpoint, value);
-    }
-
-    public string TrackSummary
-    {
-        get => _trackSummary;
-        private set => SetProperty(ref _trackSummary, value);
     }
 
     public string GStreamerStatus
@@ -540,12 +525,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _timelineRangeText, value);
     }
 
-    public string RecordingStorageText
-    {
-        get => _recordingStorageText;
-        private set => SetProperty(ref _recordingStorageText, value);
-    }
-
     public string RemoteRecordingStatus
     {
         get => _remoteRecordingStatus;
@@ -557,15 +536,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         get => _remoteRecordingDetail;
         private set => SetProperty(ref _remoteRecordingDetail, value);
     }
-
-    public bool IsTimelineLive => VideoTimeline.Mode == LocalVideoTimelineMode.Live;
-
-    public string TimelineModeText => VideoTimeline.Mode switch
-    {
-        LocalVideoTimelineMode.Live => "LIVE EDGE",
-        LocalVideoTimelineMode.Playback => "TIMELINE PLAYBACK",
-        _ => "PAUSED FRAME"
-    };
 
     private void Subscribe(System.Collections.IEnumerable collection)
         => ((INotifyCollectionChanged)collection).CollectionChanged += OnDataChanged;
@@ -828,20 +798,13 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         var camera = SelectedCamera;
         if (camera is null)
         {
-            CameraStatus = Text("VideoNoCameraSource", "No camera source available");
             OverlayScene = VideoOverlayScene.Empty;
-            TrackSummary = Text("VideoNoPerceptionTracks", "No perception tracks");
             CameraSettings.Clear();
             HasCameraDefinition = false;
             CameraDefinitionSummary = string.Empty;
         }
         else
         {
-            var deviceState = camera.DeviceState;
-            var deviceSummary = deviceState is null
-                ? string.Empty
-                : $" · {deviceState.Mode} · {deviceState.VideoWidth}×{deviceState.VideoHeight} · {deviceState.ZoomMagnification:0.0}× · Gimbal {deviceState.Gimbal.PitchDegrees:0.#}/{deviceState.Gimbal.YawDegrees:0.#}/{deviceState.Gimbal.RollDegrees:0.#}°";
-            CameraStatus = $"{camera.State} · {camera.Health} · {(camera.Fresh ? "fresh" : "stale")} · {camera.FrameRateHz:0.0} fps{deviceSummary}";
             var definition = _cameraDefinitions?.Items.FirstOrDefault(item => item.Id == camera.Id);
             CameraSettings.Clear();
             if (definition is not null)
@@ -881,13 +844,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
                 camera.Width,
                 camera.Height,
                 relevantTracks);
-            TrackSummary = relevantTracks.Length == 0
-                ? Text("VideoNoPerceptionTracks", "No perception tracks")
-                : Text("VideoTracksOverlayed", "{0} track(s) overlaid")
-                    .Replace(
-                        "{0}",
-                        relevantTracks.Length.ToString(CultureInfo.InvariantCulture),
-                        StringComparison.Ordinal);
         }
 
         if (_activeStream is null)
@@ -897,7 +853,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         }
         else
         {
-            StreamStatus = $"{_activeStream.Protocol} · {_activeStream.State} · {_activeStream.Width}×{_activeStream.Height} · {_activeStream.FrameRateHz:0.0} fps";
+            StreamStatus = FormatStreamStatus(_activeStream);
             StreamEndpoint = _activeStream.Protocol == "Ghost3D"
                 ? "Simulated world scene"
                 : string.IsNullOrWhiteSpace(_activeStream.StreamUrl)
@@ -913,6 +869,13 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         }
         RaiseCommandStates();
     }
+
+    private static string FormatStreamStatus(CameraStreamRecord stream)
+        => string.Equals(stream.State, "Playing", StringComparison.OrdinalIgnoreCase)
+            ? $"{stream.Width}×{stream.Height} · {stream.FrameRateHz:0.#} fps"
+            : string.Equals(stream.State, "Faulted", StringComparison.OrdinalIgnoreCase)
+                ? $"Stream faulted: {stream.Message}"
+                : stream.State;
 
     private async Task RefreshGStreamerAsync(
         bool force,
@@ -1124,7 +1087,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
                 _activeStream = stream;
                 _activeStreamUnitId = GetSelectedVehicle()?.Id;
                 ActiveProtocolText = NativeVideoProtocolResolver.DisplayName(nativeProtocol);
-                StreamStatus = $"{stream.Protocol} · Opening";
+                StreamStatus = FormatStreamStatus(stream);
                 StreamEndpoint = string.IsNullOrWhiteSpace(stream.StreamUrl)
                     ? "Negotiation payload only"
                     : GStreamerPipelineArguments.RedactEndpoint(stream.StreamUrl);
@@ -1766,8 +1729,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         RemoteRecordingStatus = remoteStatus.Summary;
         RemoteRecordingDetail = remoteStatus.Detail;
         OnPropertyChanged(nameof(VideoTimeline));
-        OnPropertyChanged(nameof(IsTimelineLive));
-        OnPropertyChanged(nameof(TimelineModeText));
         if (timeline.Mode == LocalVideoTimelineMode.Live)
         {
             _timelinePosition = 1;
@@ -1776,7 +1737,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         TimelineRangeText = timeline.RangeStart is null || timeline.RangeEnd is null
             ? Text("VideoNoRecordings", "No recordings")
             : $"{timeline.RangeStart.Value.ToLocalTime():HH:mm:ss} – {timeline.RangeEnd.Value.ToLocalTime():HH:mm:ss} · {timeline.Items.Count} item(s)";
-        RecordingStorageText = $"{FormatBytes(timeline.ConsoleBytes)} console video · {FormatBytes(timeline.CachedVehicleBytes)} vehicle cache";
         ApplyNativeStatus();
         RaiseTimelineCommandStates();
     }
@@ -1790,20 +1750,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _retainTimelineCommand.RaiseCanExecuteChanged();
         _downloadTimelineCommand.RaiseCanExecuteChanged();
         _exportTimelineClipCommand.RaiseCanExecuteChanged();
-    }
-
-    private static string FormatBytes(long bytes)
-    {
-        string[] units = ["B", "KB", "MB", "GB", "TB"];
-        var value = Math.Max(0, bytes);
-        var unit = 0;
-        var display = (double)value;
-        while (display >= 1024 && unit < units.Length - 1)
-        {
-            display /= 1024;
-            unit++;
-        }
-        return $"{display:0.#} {units[unit]}";
     }
 
     private void RaiseCommandStates()
@@ -1827,8 +1773,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             nameof(RefreshTimelineTooltip), nameof(PlayTimelineTooltip), nameof(PauseTimelineTooltip),
             nameof(ResumeTimelineTooltip), nameof(CacheTimelineTooltip), nameof(RetainTimelineTooltip),
             nameof(ExportTimelineTooltip), nameof(GoLiveTooltip), nameof(CaptureFrameTooltip),
-            nameof(CaptureSourceTooltip), nameof(OpenStreamLabel), nameof(CameraStatus),
-            nameof(TrackSummary), nameof(ProtocolOptions), nameof(SelectedProtocolDisplay)
+            nameof(CaptureSourceTooltip), nameof(OpenStreamLabel),
+            nameof(ProtocolOptions), nameof(SelectedProtocolDisplay)
         })
         {
             OnPropertyChanged(name);

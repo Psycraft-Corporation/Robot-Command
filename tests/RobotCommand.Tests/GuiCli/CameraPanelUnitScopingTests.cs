@@ -96,6 +96,34 @@ public sealed class CameraPanelUnitScopingTests
     }
 
     [Fact]
+    public void OperateView_PrioritizesVideoAndKeepsCameraControlsBelowPlayback()
+    {
+        var root = FindRepositoryRoot();
+        var view = File.ReadAllText(Path.Combine(root, "src", "app", "RobotCommand", "Views", "Workspaces", "OperateView.axaml"));
+        var cameraStart = view.IndexOf("<ScrollViewer Grid.Column=\"2\"", StringComparison.Ordinal);
+        var cameraEnd = view.IndexOf("<Border Grid.Column=\"0\"", cameraStart, StringComparison.Ordinal);
+        Assert.True(cameraStart >= 0 && cameraEnd > cameraStart);
+        var cameraView = view[cameraStart..cameraEnd];
+        var sourceControls = cameraView.IndexOf("ItemsSource=\"{Binding Camera.Cameras}\"", StringComparison.Ordinal);
+        var video = cameraView.IndexOf("NativeVideoSurface", StringComparison.Ordinal);
+        var playback = cameraView.IndexOf("LocalVideoTimelineControl", StringComparison.Ordinal);
+        var gimbal = cameraView.IndexOf("GimbalCameraControls", StringComparison.Ordinal);
+
+        Assert.True(sourceControls >= 0 && sourceControls < video);
+        Assert.True(video < playback && playback < gimbal);
+        Assert.Contains("ColumnDefinitions=\"Auto,96,Auto,96\"", cameraView);
+        Assert.DoesNotContain("Commands are queued for operator review and execution", cameraView);
+        Assert.DoesNotContain("Camera.TrackSummary", cameraView);
+        Assert.DoesNotContain("No perception tracks", cameraView);
+        Assert.DoesNotContain("LIVE EDGE", cameraView);
+        Assert.DoesNotContain("Camera.RecordingStorageText", cameraView);
+        Assert.DoesNotContain("Camera.NativeVideoStatus", cameraView);
+        Assert.DoesNotContain("Camera.NativeVideoMetrics", cameraView);
+        Assert.DoesNotContain("FontSize=\"9\"", cameraView);
+        Assert.DoesNotContain("FontSize=\"10\"", cameraView);
+    }
+
+    [Fact]
     public void OperateCameraActionsUseTheSharedQueueWithoutDuplicateButtons()
     {
         var root = FindRepositoryRoot();
