@@ -2,7 +2,7 @@ using RobotCommand.Core;
 
 namespace RobotCommand.Rendering;
 
-/// <summary>Renders world-scene snapshots into portable BGRA video frames.</summary>
+/// <summary>Rasterizes the common 3D scene render plan into portable BGRA video frames.</summary>
 public static class ThreeDSceneFrameRenderer
 {
     public static byte[] Render(ThreeDSceneSnapshot scene, int width, int height, string? excludedPrimitiveId = null)
@@ -11,76 +11,39 @@ public static class ThreeDSceneFrameRenderer
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
 
+        var plan = ThreeDSceneRenderPlan.Build(scene, width, height, excludedPrimitiveId);
         var pixels = new byte[checked(width * height * 4)];
-        FillBackground(pixels, width, height);
-        foreach (var primitive in scene.Primitives)
+        Fill(pixels, width, height, plan.Background);
+        foreach (var plane in plan.GroundPlanes)
+            FillPolygon(pixels, width, height, plane.Points, plane.Color);
+        foreach (var line in plan.Lines)
+            DrawLine(pixels, width, height, line.Start, line.End, line.Color, (int)Math.Round(line.Width));
+        foreach (var primitive in plan.Primitives)
         {
-            if (string.Equals(primitive.Id, excludedPrimitiveId, StringComparison.Ordinal)) continue;
-            if (primitive.Kind == ThreeDPrimitiveKind.GroundPlane)
-                DrawGround(pixels, width, height, scene.Camera, primitive);
-        }
-
-        foreach (var line in scene.Lines)
-        {
-            var color = ParseColor(line.Color);
-            for (var index = 1; index < line.Points.Count; index++)
+            if (primitive.Kind == ThreeDPrimitiveKind.Arrow)
             {
-                if (ThreeDProjection.TryProjectSegment(line.Points[index - 1], line.Points[index], scene.Camera,
-                        width, height, out var from, out var to))
-                    DrawLine(pixels, width, height, from, to, color);
-            }
-            if (line.Closed && line.Points.Count > 2 &&
-                ThreeDProjection.TryProjectSegment(line.Points[^1], line.Points[0], scene.Camera,
-                    width, height, out var last, out var first))
-                DrawLine(pixels, width, height, last, first, color);
-        }
-
-        foreach (var primitive in scene.Primitives)
-        {
-            if (primitive.Id == excludedPrimitiveId || primitive.Kind == ThreeDPrimitiveKind.GroundPlane) continue;
-            var center = ThreeDProjection.Project(primitive.Transform.Position, scene.Camera, width, height);
-            if (!center.Visible) continue;
-            var color = ParseColor(primitive.Color);
-            if (primitive.Kind is ThreeDPrimitiveKind.Point or ThreeDPrimitiveKind.Marker)
-            {
-                DrawDisc(pixels, width, height, center.X, center.Y, primitive.Kind == ThreeDPrimitiveKind.Marker ? 4 : 2, color);
+                if (primitive.ArrowEnd is { } end)
+                    DrawArrow(pixels, width, height, primitive.Center, end, primitive.Color);
                 continue;
             }
-
-            var radiusWorld = Math.Max(0.25, Math.Max(primitive.Transform.Scale.X,
-                Math.Max(primitive.Transform.Scale.Y, primitive.Transform.Scale.Z)) * 0.5);
-            var edge = ThreeDProjection.Project(new(primitive.Transform.Position.X + radiusWorld,
-                primitive.Transform.Position.Y, primitive.Transform.Position.Z), scene.Camera, width, height);
-            var radius = edge.Visible ? (int)Math.Clamp(Math.Abs(edge.X - center.X), 2, 48) : 3;
-            DrawDisc(pixels, width, height, center.X, center.Y, radius, color);
+            DrawDisc(pixels, width, height, primitive.Center.X, primitive.Center.Y,
+                (int)Math.Round(primitive.Radius), primitive.Color);
         }
         return pixels;
     }
 
-    private static void DrawGround(byte[] pixels, int width, int height, ThreeDCameraSnapshot camera, ThreeDPrimitiveSnapshot primitive)
+    private static void Fill(byte[] pixels, int width, int height, ThreeDColor color)
     {
-        var sx = Math.Max(1, primitive.Transform.Scale.X / 2);
-        var sz = Math.Max(1, primitive.Transform.Scale.Z / 2);
-        var p = primitive.Transform.Position;
-        var polygon = ThreeDProjection.ProjectPolygon(
-        [new(p.X - sx, p.Y, p.Z - sz), new(p.X + sx, p.Y, p.Z - sz),
-         new(p.X + sx, p.Y, p.Z + sz), new(p.X - sx, p.Y, p.Z + sz)], camera, width, height);
-        if (polygon.Count >= 3) FillPolygon(pixels, width, height, polygon, ParseColor(primitive.Color));
-    }
-
-    private static void FillBackground(byte[] pixels, int width, int height)
-    {
-        for (var y = 0; y < height; y++)
+        for (var offset = 0; offset < pixels.Length; offset += 4)
         {
-            var t = y / (double)Math.Max(1, height - 1);
-            var r = (byte)(18 + 16 * t);
-            var g = (byte)(42 + 12 * t);
-            var b = (byte)(72 + 4 * t);
-            for (var x = 0; x < width; x++) SetPixel(pixels, width, height, x, y, (b, g, r));
+            pixels[offset] = color.Blue;
+            pixels[offset + 1] = color.Green;
+            pixels[offset + 2] = color.Red;
+            pixels[offset + 3] = 255;
         }
     }
 
-    private static void FillPolygon(byte[] pixels, int width, int height, IReadOnlyList<ProjectedPoint> polygon, (byte B, byte G, byte R) color)
+    private static void FillPolygon(byte[] pixels, int width, int height, IReadOnlyList<ProjectedPoint> polygon, ThreeDColor color)
     {
         var minY = Math.Max(0, (int)Math.Floor(polygon.Min(point => point.Y)));
         var maxY = Math.Min(height - 1, (int)Math.Ceiling(polygon.Max(point => point.Y)));
@@ -96,29 +59,81 @@ public static class ThreeDSceneFrameRenderer
             }
             intersections.Sort();
             for (var i = 0; i + 1 < intersections.Count; i += 2)
-                for (var x = Math.Max(0, (int)Math.Ceiling(intersections[i])); x <= Math.Min(width - 1, (int)intersections[i + 1]); x++)
-                    SetPixel(pixels, width, height, x, y, color);
+            {
+                var start = Math.Max(0, (int)Math.Ceiling(intersections[i]));
+                var end = Math.Min(width - 1, (int)Math.Ceiling(intersections[i + 1]));
+                for (var x = start; x <= end; x++) SetPixel(pixels, width, height, x, y, color);
+            }
         }
     }
 
-    private static void DrawLine(byte[] pixels, int width, int height, ProjectedPoint from, ProjectedPoint to, (byte B, byte G, byte R) color)
+    private static void DrawArrow(byte[] pixels, int width, int height, ProjectedPoint from, ProjectedPoint to, ThreeDColor color)
     {
-        var x0 = (int)Math.Round(from.X); var y0 = (int)Math.Round(from.Y);
-        var x1 = (int)Math.Round(to.X); var y1 = (int)Math.Round(to.Y);
-        var dx = Math.Abs(x1 - x0); var sx = x0 < x1 ? 1 : -1;
-        var dy = -Math.Abs(y1 - y0); var sy = y0 < y1 ? 1 : -1;
+        DrawLine(pixels, width, height, from, to, color, 4);
+        var dx = to.X - from.X;
+        var dy = to.Y - from.Y;
+        var length = Math.Sqrt(dx * dx + dy * dy);
+        if (length <= 0.1) return;
+        var ux = dx / length;
+        var uy = dy / length;
+        var headX = to.X - ux * 14;
+        var headY = to.Y - uy * 14;
+        var perpendicularX = -uy * 7;
+        var perpendicularY = ux * 7;
+        DrawLine(pixels, width, height, to, new(headX + perpendicularX, headY + perpendicularY, to.Depth, to.Visible), color, 4);
+        DrawLine(pixels, width, height, to, new(headX - perpendicularX, headY - perpendicularY, to.Depth, to.Visible), color, 4);
+    }
+
+    private static void DrawLine(byte[] pixels, int width, int height, ProjectedPoint from, ProjectedPoint to, ThreeDColor color, int lineWidth)
+    {
+        var x0 = from.X;
+        var y0 = from.Y;
+        var dxClip = to.X - from.X;
+        var dyClip = to.Y - from.Y;
+        var start = 0d;
+        var end = 1d;
+        if (!Clip(-dxClip, x0, ref start, ref end) ||
+            !Clip(dxClip, width - 1 - x0, ref start, ref end) ||
+            !Clip(-dyClip, y0, ref start, ref end) ||
+            !Clip(dyClip, height - 1 - y0, ref start, ref end)) return;
+
+        var x1 = from.X + end * dxClip;
+        var y1 = from.Y + end * dyClip;
+        x0 += start * dxClip;
+        y0 += start * dyClip;
+        var roundedX0 = (int)Math.Round(x0); var roundedY0 = (int)Math.Round(y0);
+        var roundedX1 = (int)Math.Round(x1); var roundedY1 = (int)Math.Round(y1);
+        var dx = Math.Abs(roundedX1 - roundedX0); var sx = roundedX0 < roundedX1 ? 1 : -1;
+        var dy = -Math.Abs(roundedY1 - roundedY0); var sy = roundedY0 < roundedY1 ? 1 : -1;
         var error = dx + dy;
         while (true)
         {
-            SetPixel(pixels, width, height, x0, y0, color);
-            if (x0 == x1 && y0 == y1) break;
+            DrawDisc(pixels, width, height, roundedX0, roundedY0, Math.Max(0, (lineWidth - 1) / 2), color);
+            if (roundedX0 == roundedX1 && roundedY0 == roundedY1) break;
             var twice = 2 * error;
-            if (twice >= dy) { error += dy; x0 += sx; }
-            if (twice <= dx) { error += dx; y0 += sy; }
+            if (twice >= dy) { error += dy; roundedX0 += sx; }
+            if (twice <= dx) { error += dx; roundedY0 += sy; }
         }
     }
 
-    private static void DrawDisc(byte[] pixels, int width, int height, double centerX, double centerY, int radius, (byte B, byte G, byte R) color)
+    private static bool Clip(double p, double q, ref double start, ref double end)
+    {
+        if (Math.Abs(p) < 1e-12) return q >= 0;
+        var ratio = q / p;
+        if (p < 0)
+        {
+            if (ratio > end) return false;
+            if (ratio > start) start = ratio;
+        }
+        else
+        {
+            if (ratio < start) return false;
+            if (ratio < end) end = ratio;
+        }
+        return start <= end;
+    }
+
+    private static void DrawDisc(byte[] pixels, int width, int height, double centerX, double centerY, int radius, ThreeDColor color)
     {
         var cx = (int)Math.Round(centerX); var cy = (int)Math.Round(centerY);
         for (var y = -radius; y <= radius; y++)
@@ -126,19 +141,13 @@ public static class ThreeDSceneFrameRenderer
                 if (x * x + y * y <= radius * radius) SetPixel(pixels, width, height, cx + x, cy + y, color);
     }
 
-    private static void SetPixel(byte[] pixels, int width, int height, int x, int y, (byte B, byte G, byte R) color)
+    private static void SetPixel(byte[] pixels, int width, int height, int x, int y, ThreeDColor color)
     {
         if ((uint)x >= (uint)width || (uint)y >= (uint)height) return;
         var offset = (y * width + x) * 4;
-        pixels[offset] = color.B; pixels[offset + 1] = color.G; pixels[offset + 2] = color.R; pixels[offset + 3] = 255;
-    }
-
-    private static (byte B, byte G, byte R) ParseColor(string value)
-    {
-        if (value.Length == 7 && value[0] == '#' &&
-            byte.TryParse(value.AsSpan(1, 2), System.Globalization.NumberStyles.HexNumber, null, out var r) &&
-            byte.TryParse(value.AsSpan(3, 2), System.Globalization.NumberStyles.HexNumber, null, out var g) &&
-            byte.TryParse(value.AsSpan(5, 2), System.Globalization.NumberStyles.HexNumber, null, out var b)) return (b, g, r);
-        return (180, 180, 180);
+        pixels[offset] = color.Blue;
+        pixels[offset + 1] = color.Green;
+        pixels[offset + 2] = color.Red;
+        pixels[offset + 3] = 255;
     }
 }

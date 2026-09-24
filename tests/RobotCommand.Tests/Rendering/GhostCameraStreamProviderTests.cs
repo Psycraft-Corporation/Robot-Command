@@ -30,6 +30,54 @@ public sealed class GhostCameraStreamProviderTests
     }
 
     [Fact]
+    public void CameraPoseUsesFreshTelemetryInsteadOfSlowCameraCapabilitySnapshot()
+    {
+        var scene = Scene();
+        var staleCameraState = CameraState(pitch: 0, yaw: 0, roll: 0);
+        var telemetry = Telemetry() with
+        {
+            GimbalPitchDegrees = -25,
+            GimbalYawDegrees = 40,
+            GimbalRollDegrees = 12
+        };
+
+        var pose = GhostCameraStreamProvider.CreateCameraPose(scene, telemetry, staleCameraState, 960, 540);
+
+        Assert.Equal(25, pose.PitchDegrees);
+        Assert.Equal(320, pose.YawDegrees);
+        Assert.Equal(12, pose.RollDegrees);
+    }
+
+    [Fact]
+    public void TelemetryInterpolationSmoothsGimbalAndVehicleAnglesAcrossWraparound()
+    {
+        var start = DateTimeOffset.UtcNow;
+        var earlier = Telemetry(heading: 359) with
+        {
+            ObservedAt = start,
+            GimbalPitchDegrees = 0,
+            GimbalYawDegrees = 179,
+            GimbalRollDegrees = 0
+        };
+        var later = earlier with
+        {
+            ObservedAt = start.AddMilliseconds(50),
+            HeadingDegrees = 1,
+            GimbalPitchDegrees = -30,
+            GimbalYawDegrees = -179,
+            GimbalRollDegrees = 20
+        };
+
+        var middle = GhostCameraStreamProvider.InterpolateTelemetry(earlier, later, start.AddMilliseconds(25));
+
+        Assert.Equal(0, middle.HeadingDegrees);
+        Assert.Equal(-15, middle.GimbalPitchDegrees);
+        Assert.Equal(180, middle.GimbalYawDegrees);
+        Assert.Equal(10, middle.GimbalRollDegrees);
+        Assert.Equal(start.AddMilliseconds(25), middle.ObservedAt);
+    }
+
+    [Fact]
     public async Task OpenPublishesFramesAndCloseUpdatesSimulatedStreamLifecycle()
     {
         var vehicles = new EntityStore<string, VehicleRecord>(item => item.Id, StringComparer.Ordinal);
@@ -81,8 +129,7 @@ public sealed class GhostCameraStreamProviderTests
         var streams = new EntityStore<string, CameraStreamRecord>(item => item.Id, StringComparer.Ordinal);
         var invalidScene = Scene() with
         {
-            Primitives = [new("broken", ThreeDPrimitiveKind.GroundPlane,
-                new(ThreeDVector3.Zero, ThreeDVector3.Zero, new(500, 1, 500)), null!)]
+            Lines = [new("broken-line", null!, "#FFFFFF")]
         };
         var provider = new GhostCameraStreamProvider(vehicles, telemetry, sources, streams, new TestSceneWorkflow(invalidScene), new InlineUiDispatcher());
 

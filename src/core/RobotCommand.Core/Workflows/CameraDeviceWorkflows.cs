@@ -50,6 +50,7 @@ public static class GhostCameraDefaults
     public const double MaximumYawDegrees = 180;
     public const double MaximumRollDegrees = 45;
     public const double SlewRateDegreesPerSecond = 60;
+    public const double SlewAccelerationDegreesPerSecondSquared = 240;
 
     public static IReadOnlyList<CameraVideoFormatSnapshot> SupportedVideoFormats { get; } =
     [

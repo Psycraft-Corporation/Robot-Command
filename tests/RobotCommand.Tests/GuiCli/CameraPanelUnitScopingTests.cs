@@ -75,6 +75,15 @@ public sealed class CameraPanelUnitScopingTests
     }
 
     [Fact]
+    public void StreamRemainsOpenForSelectionRefreshOfTheSameUnit()
+    {
+        Assert.False(CameraPanelViewModel.ShouldCloseStreamForSelection("ghost-1", ["ghost-1"]));
+        Assert.True(CameraPanelViewModel.ShouldCloseStreamForSelection("ghost-1", []));
+        Assert.True(CameraPanelViewModel.ShouldCloseStreamForSelection("ghost-1", ["dracula"]));
+        Assert.True(CameraPanelViewModel.ShouldCloseStreamForSelection("ghost-1", ["ghost-1", "dracula"]));
+    }
+
+    [Fact]
     public void OperateView_HidesCameraWorkspaceUnlessAUnitIsSelected()
     {
         var root = FindRepositoryRoot();

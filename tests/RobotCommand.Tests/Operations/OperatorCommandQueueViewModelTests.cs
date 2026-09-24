@@ -11,6 +11,38 @@ namespace RobotCommand.Tests;
 public sealed class OperatorCommandQueueViewModelTests
 {
     [Fact]
+    public async Task ConcurrentFlightAndGimbalCommandsRemainIndependentlyActive()
+    {
+        var telemetry = new EntityStore<string, VehicleTelemetryRecord>(item => item.Id, StringComparer.Ordinal);
+        var commands = new EntityStore<string, OperationalCommandRecord>(item => item.Id, StringComparer.Ordinal);
+        var gateway = new RecordingOperatorControlService
+        {
+            CommandStore = commands,
+            ExecutionResult = new(true, OperationalCommandState.InProgress, "In progress")
+        };
+        using var workflow = new OperatorCommandWorkflow(gateway, telemetry, commands);
+
+        var takeoff = await workflow.QueueAsync(new OperatorCommandQueueRequest(
+            OperatorWorkflowCommandKind.Takeoff,
+            [new OperatorCommandQueueTarget("vehicle-1", new(TakeoffAltitudeAglMetres: 5))],
+            "Takeoff"));
+        await workflow.ExecuteAsync(takeoff.BatchId);
+        var gimbal = await workflow.QueueAsync(new OperatorCommandQueueRequest(
+            OperatorWorkflowCommandKind.SetGimbal,
+            [new OperatorCommandQueueTarget("vehicle-1", new(GimbalPitchDegrees: -30))],
+            "Set gimbal"));
+        await workflow.ExecuteAsync(gimbal.BatchId);
+
+        Assert.Equal(2, workflow.ActiveCommands.Count);
+        var activeTakeoff = Assert.Single(workflow.ActiveCommands.Where(item => item.Command == OperatorWorkflowCommandKind.Takeoff));
+        var takeoffRecord = Assert.Single(commands.Items.Where(item => item.Id == activeTakeoff.CommandId));
+        commands.Upsert(takeoffRecord with { State = OperationalCommandState.Succeeded, UpdatedAt = DateTimeOffset.UtcNow });
+
+        await EventuallyAsync(() => workflow.ActiveCommands.Count == 1);
+        Assert.Equal(OperatorWorkflowCommandKind.SetGimbal, Assert.Single(workflow.ActiveCommands).Command);
+    }
+
+    [Fact]
     public async Task CancellingLandingRequestsHoldInsteadOfTreatingLandingAsGrounded()
     {
         var telemetry = new EntityStore<string, VehicleTelemetryRecord>(item => item.Id, StringComparer.Ordinal);

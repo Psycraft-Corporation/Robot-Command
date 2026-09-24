@@ -63,6 +63,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private readonly AsyncRelayCommand _exportTimelineClipCommand;
     private CameraSourceRecord? _selectedCamera;
     private CameraStreamRecord? _activeStream;
+    private string? _activeStreamUnitId;
     private VideoProtocolPreference _selectedProtocol = VideoProtocolPreference.Automatic;
     private VideoOverlayScene _overlayScene = VideoOverlayScene.Empty;
     private string _cameraStatus = "No camera source available";
@@ -277,8 +278,11 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             }
 
             OnPropertyChanged(nameof(PlaybackEmptyMessage));
-            if (_activeStream is not null && previous?.Id != value?.Id &&
-                (value is null || _activeStream.CameraSourceId != value.CameraSourceId))
+            // Camera source snapshots can briefly disappear while providers
+            // reconcile their stores. Keep an open stream attached during that
+            // transient gap; selection/association changes close it explicitly.
+            if (_activeStream is not null && value is not null && previous?.Id != value.Id &&
+                _activeStream.CameraSourceId != value.CameraSourceId)
                 _ = CloseForCameraChangeAsync();
             RefreshPresentation();
         }
@@ -570,7 +574,19 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         => ((INotifyCollectionChanged)collection).CollectionChanged -= OnDataChanged;
 
     private void OnSelectionChanged(object? sender, EventArgs e)
-        => _ = ResetForSelectionAsync();
+    {
+        if (_activeStreamUnitId is not null &&
+            !ShouldCloseStreamForSelection(_activeStreamUnitId, _selection.SelectedUnitIds))
+        {
+            Refresh();
+            return;
+        }
+
+        _ = ResetForSelectionAsync();
+    }
+
+    internal static bool ShouldCloseStreamForSelection(string activeUnitId, IReadOnlyList<string> selectedUnitIds)
+        => selectedUnitIds.Count != 1 || !string.Equals(activeUnitId, selectedUnitIds[0], StringComparison.Ordinal);
 
     private void OnDataChanged(object? sender, NotifyCollectionChangedEventArgs e) => Refresh();
 
@@ -1012,6 +1028,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             _activeStream = null;
+            _activeStreamUnitId = null;
             ActiveProtocolText = "No active protocol";
             PlaybackSummary = "Camera stream failed";
             PlaybackDetail = GStreamerPipelineArguments.RedactText(ex.Message);
@@ -1105,6 +1122,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
                 }
 
                 _activeStream = stream;
+                _activeStreamUnitId = GetSelectedVehicle()?.Id;
                 ActiveProtocolText = NativeVideoProtocolResolver.DisplayName(nativeProtocol);
                 StreamStatus = $"{stream.Protocol} · Opening";
                 StreamEndpoint = string.IsNullOrWhiteSpace(stream.StreamUrl)
@@ -1265,6 +1283,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         }
 
         _activeStream = null;
+        _activeStreamUnitId = null;
         ActiveProtocolText = "No active protocol";
         await _playback.DetachAsync(cancellationToken);
         if (resetPlan)
@@ -1328,6 +1347,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         if (_ghostStreams is null) throw new InvalidOperationException("The simulated Ghost video provider is not available.");
         var session = await _ghostStreams.OpenAsync(camera, cancellationToken);
         _activeStream = session.Stream;
+        _activeStreamUnitId = GetSelectedVehicle()?.Id;
         _frameSource.SetSource(session.Frames);
         ActiveProtocolText = "Ghost 3D scene";
         StreamEndpoint = "Simulated world scene";

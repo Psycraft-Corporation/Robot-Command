@@ -169,8 +169,8 @@ public sealed class GhostUnitServiceTests
         await ghosts.StartAsync(TestContext.Current.CancellationToken);
         var ghost = await ghosts.CreateAsync();
         var camera = Assert.Single(stores.CameraSources.Items);
-        var gateway = new RoutedOperatorCommandGateway(null!, null!, null!, ghosts,
-            DispatchProxy.Create<IFormationLockWorkflow, NoOpFormationLockWorkflow>());
+        var formation = DispatchProxy.Create<IFormationLockWorkflow, NoOpFormationLockWorkflow>();
+        var gateway = new RoutedOperatorCommandGateway(null!, null!, null!, ghosts, formation);
         var target = new OperatorCommandTarget(
             camera.ConnectionId, ghost.Id, null, DateTimeOffset.UtcNow, camera.CameraSourceId);
 
@@ -214,6 +214,7 @@ public sealed class GhostUnitServiceTests
         Assert.Equal(OperationalCommandState.Succeeded, settings.State);
         Assert.Contains(stores.CameraSources.Items, item => item.DeviceState is
         { Mode: FlightMissionCameraMode.Photo, VideoWidth: 1280, VideoHeight: 720 });
+        Assert.Equal(0, ((NoOpFormationLockWorkflow)formation).IndependentOperationCalls);
     }
 
     private static async Task<OperatorCommandResult> ExecuteCameraCommandAsync(
@@ -262,6 +263,38 @@ public sealed class GhostUnitServiceTests
         Assert.Equal(30d, state.Gimbal.TargetPitchDegrees);
         Assert.InRange(state.Gimbal.PitchDegrees, 0.001, 29.999);
         Assert.Equal(60d, state.Gimbal.SlewRateDegreesPerSecond);
+    }
+
+    [Fact]
+    public async Task GimbalCommandsDoNotInterruptGhostTakeoffAndSlewStartsSmoothly()
+    {
+        var stores = new Stores();
+        await using var service = stores.CreateService();
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        var ghost = await service.CreateAsync();
+        var target = new OperatorCommandTarget("ghost-connection-1", ghost.Id, null, DateTimeOffset.UtcNow);
+        var takeoff = new OperatorCommandRequest(
+            "takeoff-with-gimbal", "takeoff-correlation", "takeoff-idempotency",
+            OperatorCommandKind.Takeoff, target, "test", false, DateTimeOffset.UtcNow,
+            Parameters: new OperatorCommandParameters(TakeoffAltitudeAglMetres: 3));
+        var gimbal = new OperatorCommandRequest(
+            "gimbal-during-takeoff", "gimbal-during-correlation", "gimbal-during-idempotency",
+            OperatorCommandKind.SetGimbal, target, "test", false, DateTimeOffset.UtcNow,
+            Parameters: new OperatorCommandParameters(GimbalPitchDegrees: 20));
+
+        Assert.True((await service.ExecuteAsync(takeoff)).Accepted);
+        Assert.True((await service.ExecuteAsync(gimbal)).Accepted);
+
+        await Task.Delay(150, TestContext.Current.CancellationToken);
+        var earlyState = Assert.Single(stores.CameraSources.Items).DeviceState!;
+        Assert.InRange(earlyState.Gimbal.PitchDegrees, 0.01, 2.5);
+
+        await EventuallyAsync(() =>
+            stores.Telemetry.Items.Single(item => item.VehicleId == ghost.Id).AltitudeAglMetres >= 2.9 &&
+            stores.CameraSources.Items.Single().DeviceState?.Gimbal.PitchDegrees == 20);
+        var finalAltitude = stores.Telemetry.Items.Single(item => item.VehicleId == ghost.Id).AltitudeAglMetres;
+        Assert.NotNull(finalAltitude);
+        Assert.InRange(finalAltitude.Value, 2.95, 3.05);
     }
 
     private static async Task EventuallyAsync(Func<bool> condition)
@@ -671,7 +704,13 @@ public sealed class GhostUnitServiceTests
 
     public class NoOpFormationLockWorkflow : DispatchProxy
     {
+        public int IndependentOperationCalls { get; private set; }
+
         protected override object? Invoke(System.Reflection.MethodInfo? targetMethod, object?[]? args)
-            => targetMethod?.ReturnType == typeof(Task) ? Task.CompletedTask : null;
+        {
+            if (targetMethod?.Name == nameof(IFormationLockWorkflow.HandleIndependentOperationAsync))
+                IndependentOperationCalls++;
+            return targetMethod?.ReturnType == typeof(Task) ? Task.CompletedTask : null;
+        }
     }
 }

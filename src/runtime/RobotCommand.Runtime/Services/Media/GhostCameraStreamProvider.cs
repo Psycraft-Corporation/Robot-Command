@@ -112,7 +112,9 @@ public sealed class GhostCameraStreamProvider : IGhostCameraStreamProvider, IAsy
                 var telemetry = FindTelemetry(vehicle);
                 var currentCamera = _cameraSources.Items.FirstOrDefault(item => item.Id == camera.Id) ?? camera;
                 if (telemetry is null) throw new InvalidOperationException("Ghost camera telemetry is no longer available.");
-                RenderFrame(session, currentCamera, vehicle, telemetry, width, height);
+                session.AddTelemetrySample(telemetry);
+                RenderFrame(session, currentCamera, vehicle,
+                    session.InterpolateTelemetry(DateTimeOffset.UtcNow - TimeSpan.FromMilliseconds(60)), width, height);
             }
         }
         catch (OperationCanceledException) when (session.Cancellation.IsCancellationRequested) { }
@@ -153,11 +155,51 @@ public sealed class GhostCameraStreamProvider : IGhostCameraStreamProvider, IAsy
         var verticalFov = 2 * Math.Atan(Math.Tan(baseHorizontalFov * Math.PI / 360) * height / width / zoom) * 180 / Math.PI;
         // Vehicle heading and gimbal yaw are compass-clockwise, while the 3D
         // projection's positive camera yaw turns counter-clockwise around +Z.
-        var yaw = NormalizeHeading(-((telemetry.HeadingDegrees ?? 0) + (gimbal?.YawDegrees ?? telemetry.GimbalYawDegrees ?? 0)));
+        var gimbalPitch = telemetry.GimbalPitchDegrees ?? gimbal?.PitchDegrees ?? 0;
+        var gimbalYaw = telemetry.GimbalYawDegrees ?? gimbal?.YawDegrees ?? 0;
+        var gimbalRoll = telemetry.GimbalRollDegrees ?? gimbal?.RollDegrees ?? 0;
+        var yaw = NormalizeHeading(-((telemetry.HeadingDegrees ?? 0) + gimbalYaw));
         return new(position, yaw,
-            -(gimbal?.PitchDegrees ?? telemetry.GimbalPitchDegrees ?? 0),
-            gimbal?.RollDegrees ?? telemetry.GimbalRollDegrees ?? 0,
+            -gimbalPitch,
+            gimbalRoll,
             verticalFov, 0.1, 10000, 0);
+    }
+
+    /// <summary>Interpolates between simulation telemetry samples at the video presentation timestamp.</summary>
+    public static VehicleTelemetryRecord InterpolateTelemetry(
+        VehicleTelemetryRecord earlier,
+        VehicleTelemetryRecord later,
+        DateTimeOffset presentationTime)
+    {
+        ArgumentNullException.ThrowIfNull(earlier);
+        ArgumentNullException.ThrowIfNull(later);
+        if (later.ObservedAt <= earlier.ObservedAt || presentationTime <= earlier.ObservedAt) return earlier;
+        if (presentationTime >= later.ObservedAt) return later;
+
+        var fraction = (presentationTime - earlier.ObservedAt).TotalSeconds /
+                       (later.ObservedAt - earlier.ObservedAt).TotalSeconds;
+        return later with
+        {
+            LatitudeDegrees = Lerp(earlier.LatitudeDegrees, later.LatitudeDegrees, fraction),
+            LongitudeDegrees = Lerp(earlier.LongitudeDegrees, later.LongitudeDegrees, fraction),
+            AltitudeMslMetres = Lerp(earlier.AltitudeMslMetres, later.AltitudeMslMetres, fraction),
+            AltitudeAglMetres = Lerp(earlier.AltitudeAglMetres, later.AltitudeAglMetres, fraction),
+            HeadingDegrees = LerpAngle(earlier.HeadingDegrees, later.HeadingDegrees, fraction),
+            GimbalPitchDegrees = Lerp(earlier.GimbalPitchDegrees, later.GimbalPitchDegrees, fraction),
+            GimbalYawDegrees = LerpAngle(earlier.GimbalYawDegrees, later.GimbalYawDegrees, fraction),
+            GimbalRollDegrees = Lerp(earlier.GimbalRollDegrees, later.GimbalRollDegrees, fraction),
+            ObservedAt = presentationTime
+        };
+    }
+
+    private static double? Lerp(double? from, double? to, double fraction)
+        => from is { } first && to is { } second ? first + (second - first) * fraction : to ?? from;
+
+    private static double? LerpAngle(double? from, double? to, double fraction)
+    {
+        if (from is not { } first || to is not { } second) return to ?? from;
+        var delta = ((second - first + 540) % 360) - 180;
+        return NormalizeHeading(first + delta * fraction);
     }
 
     private VehicleTelemetryRecord? FindTelemetry(VehicleRecord vehicle)
@@ -183,9 +225,26 @@ public sealed class GhostCameraStreamProvider : IGhostCameraStreamProvider, IAsy
 
     private sealed class Session(CameraStreamRecord stream, VideoFrameBuffer frames, CancellationTokenSource cancellation)
     {
+        private VehicleTelemetryRecord? _earlierTelemetry;
+        private VehicleTelemetryRecord? _laterTelemetry;
         public CameraStreamRecord Stream { get; set; } = stream;
         public VideoFrameBuffer Frames { get; } = frames;
         public CancellationTokenSource Cancellation { get; } = cancellation;
         public Task? Producer { get; set; }
+
+        public void AddTelemetrySample(VehicleTelemetryRecord sample)
+        {
+            if (_laterTelemetry?.ObservedAt == sample.ObservedAt) return;
+            _earlierTelemetry = _laterTelemetry ?? sample;
+            _laterTelemetry = sample;
+        }
+
+        public VehicleTelemetryRecord InterpolateTelemetry(DateTimeOffset presentationTime)
+        {
+            var earlier = _earlierTelemetry ?? _laterTelemetry
+                ?? throw new InvalidOperationException("Ghost camera telemetry has not been sampled.");
+            var later = _laterTelemetry ?? earlier;
+            return GhostCameraStreamProvider.InterpolateTelemetry(earlier, later, presentationTime);
+        }
     }
 }

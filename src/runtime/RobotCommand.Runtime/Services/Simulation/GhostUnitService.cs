@@ -422,12 +422,13 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
                     "The selected camera does not belong to this Ghost unit.");
             }
 
-            if (ghost.Operation is not null)
+            var cameraCommand = IsCameraCommand(request.Command);
+            if (!cameraCommand && ghost.Operation is not null)
             {
                 UpdateCommand(ghost.Operation.CommandId, OperationalCommandState.Cancelled,
                     $"Replaced by ghost operation {request.CommandId}.", "OPERATOR_OVERRIDE");
             }
-            if (ghost.Mission is { State: FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused } mission)
+            if (!cameraCommand && ghost.Mission is { State: FlightMissionExecutionState.Running or FlightMissionExecutionState.Paused } mission)
             {
                 mission.State = FlightMissionExecutionState.Interrupted;
                 mission.LastEvent = $"Ghost mission interrupted by {request.Command}.";
@@ -435,10 +436,19 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
 
             if (request.Command == OperatorCommandKind.Arm) ghost.Armed = true;
             if (request.Command == OperatorCommandKind.Disarm) ghost.Armed = false;
-            ghost.Operation = new GhostOperation(request.CommandId, request.Command, request.Parameters ?? OperatorCommandParameters.None);
             if (request.Command is OperatorCommandKind.SetGimbal or OperatorCommandKind.CenterGimbal or OperatorCommandKind.NadirGimbal)
             {
+                if (ghost.GimbalOperation is { } previousGimbalOperation)
+                {
+                    UpdateCommand(previousGimbalOperation.CommandId, OperationalCommandState.Cancelled,
+                        $"Replaced by gimbal command {request.CommandId}.", "GIMBAL_TARGET_REPLACED");
+                }
+                ghost.GimbalOperation = new GhostOperation(request.CommandId, request.Command, request.Parameters ?? OperatorCommandParameters.None);
                 SetGimbalTarget(ghost, request.Command, request.Parameters ?? OperatorCommandParameters.None);
+            }
+            else if (!cameraCommand)
+            {
+                ghost.Operation = new GhostOperation(request.CommandId, request.Command, request.Parameters ?? OperatorCommandParameters.None);
             }
             switch (request.Command)
             {
@@ -461,7 +471,6 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
                 case OperatorCommandKind.SetCameraSettings:
                     if (!TryApplyCameraSettings(ghost, request.Parameters ?? OperatorCommandParameters.None, out var cameraError))
                     {
-                        ghost.Operation = null;
                         UpdateCommand(request.CommandId, OperationalCommandState.Rejected, cameraError, "GHOST_CAMERA_SETTING_INVALID");
                         return new(false, OperationalCommandState.Rejected, cameraError, request.CommandId);
                     }
@@ -471,7 +480,6 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
             }
             if (immediateSuccess)
             {
-                ghost.Operation = null;
                 UpdateCommand(request.CommandId, OperationalCommandState.Succeeded, immediateMessage);
             }
             if (request.Command is OperatorCommandKind.Arm or OperatorCommandKind.Disarm)
@@ -821,14 +829,25 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
                     mission.LastEvent = $"Ghost mission interrupted: {exception.Message}";
                 }
                 if (ghost.Operation is not { } operation)
+                {
+                    if (ghost.GimbalOperation is { } gimbalOperation)
+                    {
+                        UpdateCommand(gimbalOperation.CommandId, OperationalCommandState.Failed,
+                            $"Ghost camera simulation failed: {exception.Message}", "GHOST_CAMERA_SIMULATION_FAILED");
+                        ghost.GimbalOperation = null;
+                    }
                     continue;
+                }
 
-                UpdateCommand(
-                    operation.CommandId,
-                    OperationalCommandState.Failed,
-                    $"Ghost simulation failed: {exception.Message}",
-                    "GHOST_SIMULATION_FAILED");
+                UpdateCommand(operation.CommandId, OperationalCommandState.Failed,
+                    $"Ghost simulation failed: {exception.Message}", "GHOST_SIMULATION_FAILED");
                 ghost.Operation = null;
+                if (ghost.GimbalOperation is { } activeGimbal)
+                {
+                    UpdateCommand(activeGimbal.CommandId, OperationalCommandState.Failed,
+                        $"Ghost camera simulation failed: {exception.Message}", "GHOST_CAMERA_SIMULATION_FAILED");
+                    ghost.GimbalOperation = null;
+                }
             }
         }
     }
@@ -952,22 +971,41 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
     private bool StepGimbal(GhostState ghost)
     {
         var changed = false;
-        var step = GhostCameraDefaults.SlewRateDegreesPerSecond * TickSeconds;
-        ghost.Camera.PitchDegrees = MoveTowards(ghost.Camera.PitchDegrees, ghost.Camera.TargetPitchDegrees, step);
-        ghost.Camera.YawDegrees = MoveTowards(ghost.Camera.YawDegrees, ghost.Camera.TargetYawDegrees, step);
-        ghost.Camera.RollDegrees = MoveTowards(ghost.Camera.RollDegrees, ghost.Camera.TargetRollDegrees, step);
+        var pitch = AdvanceGimbalAxis(ghost.Camera.PitchDegrees, ghost.Camera.TargetPitchDegrees, ghost.Camera.PitchVelocityDegreesPerSecond);
+        var yaw = AdvanceGimbalAxis(ghost.Camera.YawDegrees, ghost.Camera.TargetYawDegrees, ghost.Camera.YawVelocityDegreesPerSecond);
+        var roll = AdvanceGimbalAxis(ghost.Camera.RollDegrees, ghost.Camera.TargetRollDegrees, ghost.Camera.RollVelocityDegreesPerSecond);
+        ghost.Camera.PitchDegrees = pitch.Position;
+        ghost.Camera.PitchVelocityDegreesPerSecond = pitch.Velocity;
+        ghost.Camera.YawDegrees = yaw.Position;
+        ghost.Camera.YawVelocityDegreesPerSecond = yaw.Velocity;
+        ghost.Camera.RollDegrees = roll.Position;
+        ghost.Camera.RollVelocityDegreesPerSecond = roll.Velocity;
         changed |= ghost.Camera.PitchDegrees != ghost.Camera.TargetPitchDegrees ||
                    ghost.Camera.YawDegrees != ghost.Camera.TargetYawDegrees ||
                    ghost.Camera.RollDegrees != ghost.Camera.TargetRollDegrees;
 
-        if (ghost.Operation is { Command: OperatorCommandKind.SetGimbal or OperatorCommandKind.CenterGimbal or OperatorCommandKind.NadirGimbal } operation && !changed)
+        if (ghost.GimbalOperation is { } operation && !changed)
         {
             UpdateCommand(operation.CommandId, OperationalCommandState.Succeeded, "Ghost gimbal reached its target.");
-            ghost.Operation = null;
+            ghost.GimbalOperation = null;
             changed = true;
         }
 
         return changed;
+    }
+
+    private static (double Position, double Velocity) AdvanceGimbalAxis(double position, double target, double velocity)
+    {
+        var delta = target - position;
+        if (Math.Abs(delta) < 1e-6) return (target, 0);
+
+        var acceleration = GhostCameraDefaults.SlewAccelerationDegreesPerSecondSquared;
+        var brakingSpeed = Math.Sqrt(2 * acceleration * Math.Abs(delta));
+        var desiredVelocity = Math.Sign(delta) * Math.Min(GhostCameraDefaults.SlewRateDegreesPerSecond, brakingSpeed);
+        var nextVelocity = MoveTowards(velocity, desiredVelocity, acceleration * TickSeconds);
+        var nextPosition = position + nextVelocity * TickSeconds;
+        if (Math.Sign(target - nextPosition) != Math.Sign(delta)) return (target, 0);
+        return (nextPosition, nextVelocity);
     }
 
     private static void SetGimbalTarget(GhostState ghost, OperatorCommandKind command, OperatorCommandParameters parameters)
@@ -1661,6 +1699,7 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
         public bool Armed { get; set; } = armed;
         public bool Landed { get; set; } = landed;
         public GhostOperation? Operation { get; set; }
+        public GhostOperation? GimbalOperation { get; set; }
         public GhostMissionRuntime? Mission { get; set; }
         public string? ManualSessionId { get; set; }
         public ManualControlSetpoint? ManualSetpoint { get; set; }
@@ -1689,6 +1728,9 @@ public sealed class GhostUnitService : IGhostUnitService, IHostedService
         public double TargetPitchDegrees { get; set; }
         public double TargetYawDegrees { get; set; }
         public double TargetRollDegrees { get; set; }
+        public double PitchVelocityDegreesPerSecond { get; set; }
+        public double YawVelocityDegreesPerSecond { get; set; }
+        public double RollVelocityDegreesPerSecond { get; set; }
     }
 
     private sealed record GhostOperation(string CommandId, OperatorCommandKind Command, OperatorCommandParameters Parameters);

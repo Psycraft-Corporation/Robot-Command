@@ -59,7 +59,8 @@ public sealed class RoutedOperatorCommandGateway : IOperatorCommandGateway
     {
         if (_ghosts.IsGhostVehicle(request.Target.VehicleId))
         {
-            await _formation.HandleIndependentOperationAsync(request.Target.VehicleId, ToWorkflow(request.Command), cancellationToken);
+            if (!IsCameraCommand(request.Command))
+                await _formation.HandleIndependentOperationAsync(request.Target.VehicleId, ToWorkflow(request.Command), cancellationToken);
             return await _ghosts.ExecuteAsync(request, cancellationToken);
         }
 
@@ -79,4 +80,10 @@ public sealed class RoutedOperatorCommandGateway : IOperatorCommandGateway
         OperatorCommandKind.Recover => OperatorWorkflowCommandKind.ReturnHome,
         _ => Enum.TryParse<OperatorWorkflowCommandKind>(command.ToString(), out var mapped) ? mapped : OperatorWorkflowCommandKind.Hold
     };
+
+    private static bool IsCameraCommand(OperatorCommandKind command)
+        => command is OperatorCommandKind.CapturePhoto or OperatorCommandKind.StartVideo or
+            OperatorCommandKind.StopVideo or OperatorCommandKind.CenterGimbal or
+            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal or
+            OperatorCommandKind.SetCameraSettings;
 }
