@@ -159,6 +159,31 @@ public sealed class NativeVideoPlaybackAdapterTests
         Assert.Equal(VideoPlaybackState.Detached, adapter.Status.State);
     }
 
+    [Fact]
+    public async Task PlaybackAdapterFactory_CreatesIndependentPipelineAndFrameSessions()
+    {
+        var pipelines = new RecordingPipelineFactory();
+        var factory = new VideoPlaybackAdapterFactory(pipelines,
+            new AppConfiguration { GStreamerRtspReconnectAttempts = 0 },
+            NullLoggerFactory.Instance);
+        var first = factory.Create();
+        var second = factory.Create();
+
+        Assert.NotSame(first.Frames, second.Frames);
+        Assert.NotSame(first.Playback, second.Playback);
+        await first.Playback.AttachAsync(CreateStream());
+        await second.Playback.AttachAsync(CreateStream(endpoint: "rtsp://camera.local:8554/rear"));
+        await first.Playback.DetachAsync();
+
+        Assert.Equal(1, pipelines.Items[0].RtspStartCount);
+        Assert.Equal(1, pipelines.Items[1].RtspStartCount);
+        Assert.True(pipelines.Items[0].StopCount > 0);
+        Assert.Equal(VideoPlaybackState.Connecting, second.Playback.Status.State);
+
+        await ((IAsyncDisposable)first.Playback).DisposeAsync();
+        await ((IAsyncDisposable)second.Playback).DisposeAsync();
+    }
+
     private static NativeVideoPlaybackAdapter CreateAdapter(
         RecordingPipeline pipeline,
         AppConfiguration? configuration = null)
@@ -258,5 +283,17 @@ public sealed class NativeVideoPlaybackAdapterTests
 
         public void Dispose() { }
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    private sealed class RecordingPipelineFactory : IGStreamerVideoPipelineFactory
+    {
+        public List<RecordingPipeline> Items { get; } = [];
+
+        public IGStreamerVideoPipeline Create()
+        {
+            var pipeline = new RecordingPipeline();
+            Items.Add(pipeline);
+            return pipeline;
+        }
     }
 }

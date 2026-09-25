@@ -128,6 +128,41 @@ public sealed class OperatorCommandQueueViewModelTests
     }
 
     [Fact]
+    public async Task FocusedCameraCommand_QueuesOnlyTheFocusedUnitFromMultiSelection()
+    {
+        var vehicles = new EntityStore<string, VehicleRecord>(item => item.Id, StringComparer.Ordinal);
+        var telemetry = new EntityStore<string, VehicleTelemetryRecord>(item => item.Id, StringComparer.Ordinal);
+        var connections = new EntityStore<string, ConnectionRecord>(item => item.Id, StringComparer.Ordinal);
+        var commands = new EntityStore<string, OperationalCommandRecord>(item => item.Id, StringComparer.Ordinal);
+        var cameras = new EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal);
+        var selection = new SelectionService();
+        var gateway = new RecordingOperatorControlService();
+        using var workflow = new OperatorCommandWorkflow(gateway, telemetry, commands);
+
+        vehicles.Upsert(new VehicleRecord("vehicle-1", "One", ["connection-1"], "logos-1", null,
+            "Multicopter", "Air", "test", AvailabilityState.Online, CapabilityKeys: ["gimbal"]));
+        vehicles.Upsert(new VehicleRecord("vehicle-2", "Two", ["connection-2"], "logos-2", null,
+            "Multicopter", "Air", "test", AvailabilityState.Online, CapabilityKeys: ["gimbal"]));
+        connections.Upsert(new ConnectionRecord("connection-1", "One", "http://one", ConnectionMode.Direct,
+            AvailabilityState.Online, false));
+        connections.Upsert(new ConnectionRecord("connection-2", "Two", "http://two", ConnectionMode.Direct,
+            AvailabilityState.Online, false));
+        selection.SetUnitSelection([
+            new OperationalSelection(SelectionKind.Vehicle, "vehicle-1", "One", "", []),
+            new OperationalSelection(SelectionKind.Vehicle, "vehicle-2", "Two", "", [])]);
+
+        var viewModel = new OperatorControlsViewModel(workflow, selection, vehicles, telemetry,
+            connections, commands, cameraSources: cameras);
+
+        Assert.True(viewModel.PrepareFocusedSetGimbalCommand.CanExecute("vehicle-2"));
+        viewModel.PrepareFocusedSetGimbalCommand.Execute("vehicle-2");
+        await EventuallyAsync(() => viewModel.QueuedPlans.Count == 1);
+
+        Assert.Equal(["vehicle-2"], viewModel.QueuedPlans.Keys);
+        Assert.False(viewModel.PrepareFocusedSetGimbalCommand.CanExecute("not-selected"));
+    }
+
+    [Fact]
     public async Task RejectedExecutionRemainsVisibleUntilDismissed()
     {
         var vehicles = new EntityStore<string, VehicleRecord>(item => item.Id, StringComparer.Ordinal);

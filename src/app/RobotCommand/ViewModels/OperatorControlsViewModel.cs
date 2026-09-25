@@ -116,6 +116,13 @@ public sealed class OperatorControlsViewModel : ObservableObject
         PrepareNadirGimbalCommand = CreatePrepareCommand(OperatorCommandKind.NadirGimbal);
         PrepareSetGimbalCommand = CreatePrepareCommand(OperatorCommandKind.SetGimbal);
         PrepareSetCameraSettingsCommand = CreatePrepareCommand(OperatorCommandKind.SetCameraSettings);
+        PrepareFocusedCapturePhotoCommand = CreateFocusedCameraCommand(OperatorCommandKind.CapturePhoto);
+        PrepareFocusedStartVideoCommand = CreateFocusedCameraCommand(OperatorCommandKind.StartVideo);
+        PrepareFocusedStopVideoCommand = CreateFocusedCameraCommand(OperatorCommandKind.StopVideo);
+        PrepareFocusedCenterGimbalCommand = CreateFocusedCameraCommand(OperatorCommandKind.CenterGimbal);
+        PrepareFocusedNadirGimbalCommand = CreateFocusedCameraCommand(OperatorCommandKind.NadirGimbal);
+        PrepareFocusedSetGimbalCommand = CreateFocusedCameraCommand(OperatorCommandKind.SetGimbal);
+        PrepareFocusedSetCameraSettingsCommand = CreateFocusedCameraCommand(OperatorCommandKind.SetCameraSettings);
         ToggleVideoCommand = new AsyncRelayCommand(ToggleVideoAsync, () => CanPrepareCommand(IsVideoRecording ? OperatorCommandKind.StopVideo : OperatorCommandKind.StartVideo));
         PrepareMapGoToCommand = new RelayCommand(
             parameter => _ = PrepareMapCommandAsync(OperatorCommandKind.GoTo, parameter),
@@ -178,6 +185,13 @@ public sealed class OperatorControlsViewModel : ObservableObject
     public ICommand PrepareNadirGimbalCommand { get; }
     public ICommand PrepareSetGimbalCommand { get; }
     public ICommand PrepareSetCameraSettingsCommand { get; }
+    public ICommand PrepareFocusedCapturePhotoCommand { get; }
+    public ICommand PrepareFocusedStartVideoCommand { get; }
+    public ICommand PrepareFocusedStopVideoCommand { get; }
+    public ICommand PrepareFocusedCenterGimbalCommand { get; }
+    public ICommand PrepareFocusedNadirGimbalCommand { get; }
+    public ICommand PrepareFocusedSetGimbalCommand { get; }
+    public ICommand PrepareFocusedSetCameraSettingsCommand { get; }
     public ICommand ToggleVideoCommand { get; }
     public ICommand PrepareMapGoToCommand { get; }
     public ICommand PrepareMapSetHeadingCommand { get; }
@@ -884,6 +898,38 @@ public sealed class OperatorControlsViewModel : ObservableObject
 
     private AsyncRelayCommand CreatePrepareCommand(OperatorCommandKind command)
         => new(token => QueueFromFormAsync(command, token), () => CanPrepareCommand(command));
+
+    private RelayCommand CreateFocusedCameraCommand(OperatorCommandKind command)
+        => new(parameter => _ = PrepareFocusedCameraAsync(command, parameter),
+            parameter => CanPrepareFocusedCamera(command, parameter));
+
+    private bool CanPrepareFocusedCamera(OperatorCommandKind command, object? parameter)
+    {
+        if (parameter is not string unitId || !_selection.SelectedUnitIds.Contains(unitId, StringComparer.Ordinal))
+            return false;
+        if (command == OperatorCommandKind.SetCameraSettings)
+            return _vehicles.TryGet(unitId, out var vehicle) && vehicle?.IsGhost == true;
+        return IsCameraCommand(command) && IsGimbalCameraSupported(unitId);
+    }
+
+    private async Task PrepareFocusedCameraAsync(OperatorCommandKind command, object? parameter)
+    {
+        if (parameter is not string unitId || !CanPrepareFocusedCamera(command, unitId)) return;
+        if (TryGetFormCommandError(command, out var error))
+        {
+            ParameterValidationMessage = error;
+            StatusMessage = error;
+            return;
+        }
+
+        await QueueAsync(command,
+            new Dictionary<string, OperatorCommandParameters>(StringComparer.Ordinal)
+            {
+                [unitId] = ParametersFor(command)
+            },
+            null,
+            CancellationToken.None);
+    }
 
     private Task QueueFromFormAsync(OperatorCommandKind command, CancellationToken cancellationToken)
     {

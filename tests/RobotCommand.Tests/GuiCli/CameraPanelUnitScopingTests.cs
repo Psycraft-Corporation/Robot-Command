@@ -92,7 +92,84 @@ public sealed class CameraPanelUnitScopingTests
 
         Assert.Contains("IsVisible=\"{Binding CameraPaneVisible}\"", view);
         Assert.Contains("No video source is configured for this unit.", File.ReadAllText(Path.Combine(root, "src", "app", "RobotCommand", "ViewModels", "CameraPanelViewModel.cs")));
-        Assert.Contains("CameraPaneVisible => VideoVisible && Camera.HasSelectedUnit", viewModel);
+        Assert.Contains("CameraPaneVisible => VideoVisible && Camera.HasSelectedUnit && VideoGrid?.IsVisible != true", viewModel);
+        Assert.Contains("VideoGridVisible => VideoVisible && VideoGrid?.IsVisible == true", viewModel);
+    }
+
+    [Fact]
+    public async Task MultiUnitGrid_ShowsFiveTilesAndUsesExplicitOverflowSwap()
+    {
+        var selection = new RobotCommand.State.SelectionService();
+        var vehicles = new RobotCommand.State.EntityStore<string, VehicleRecord>(item => item.Id, StringComparer.Ordinal);
+        var sources = new RobotCommand.State.EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal);
+        var streams = new RobotCommand.State.EntityStore<string, CameraStreamRecord>(item => item.Id, StringComparer.Ordinal);
+        for (var index = 0; index < 7; index++)
+            vehicles.Upsert(new VehicleRecord($"unit-{index}", $"Unit {index}", [], null, null,
+                "Multicopter", "Air", "test", AvailabilityState.Online));
+        selection.SetUnitSelection(Enumerable.Range(0, 7)
+            .Select(index => new OperationalSelection(SelectionKind.Vehicle, $"unit-{index}", $"Unit {index}", "", []))
+            .ToArray());
+
+        using var grid = new MultiUnitVideoGridViewModel(selection, vehicles, sources, streams,
+            null!, null!, null!, null!);
+
+        Assert.True(grid.IsVisible);
+        Assert.Equal(5, grid.Tiles.Count);
+        Assert.Equal(["unit-0", "unit-1", "unit-2", "unit-3", "unit-4"], grid.Tiles.Select(tile => tile.UnitId));
+        Assert.Equal(["unit-5", "unit-6"], grid.OverflowUnits.Select(unit => unit.Id));
+        Assert.All(grid.Tiles, tile => Assert.Equal("No source", tile.Status));
+
+        var firstTile = grid.Tiles[0];
+        firstTile.FocusCommand.Execute(null);
+        Assert.Same(firstTile, grid.FocusedTile);
+        firstTile.SelectedSwapUnitId = "unit-6";
+        grid.SwapTileCommand.Execute(firstTile);
+        await EventuallyAsync(() => firstTile.UnitId == "unit-6");
+
+        Assert.Null(grid.FocusedTile);
+        Assert.Equal("unit-6", grid.Tiles[0].UnitId);
+        Assert.Contains(grid.OverflowUnits, unit => unit.Id == "unit-0");
+
+        selection.SetUnitSelection([
+            new OperationalSelection(SelectionKind.Vehicle, "unit-1", "Unit 1", "", []),
+            new OperationalSelection(SelectionKind.Vehicle, "unit-2", "Unit 2", "", [])]);
+        await EventuallyAsync(() => grid.Tiles.Count == 2 && grid.Tiles.All(tile => tile.UnitId is "unit-1" or "unit-2"));
+        Assert.Null(grid.FocusedTile);
+        Assert.Empty(grid.OverflowUnits);
+
+        selection.Clear();
+        Assert.False(grid.IsVisible);
+        await EventuallyAsync(() => grid.Tiles.Count == 0);
+    }
+
+    [Fact]
+    public void MultiUnitGrid_ResolvesEachGhostsBuiltInCameraWithoutAVideoRoute()
+    {
+        var selection = new RobotCommand.State.SelectionService();
+        var vehicles = new RobotCommand.State.EntityStore<string, VehicleRecord>(item => item.Id, StringComparer.Ordinal);
+        var sources = new RobotCommand.State.EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal);
+        var streams = new RobotCommand.State.EntityStore<string, CameraStreamRecord>(item => item.Id, StringComparer.Ordinal);
+        for (var index = 1; index <= 2; index++)
+        {
+            var connectionId = $"ghost-connection-{index}";
+            vehicles.Upsert(new VehicleRecord($"ghost-{index}", $"Ghost {index}", [connectionId], null, null,
+                "Multicopter", "Air", "ghost", AvailabilityState.Online, IsGhost: true));
+            sources.Upsert(Camera($"ghost-camera-{index}", $"ghost-camera-{index}", connectionId));
+        }
+        selection.SetUnitSelection(Enumerable.Range(1, 2)
+            .Select(index => new OperationalSelection(SelectionKind.Vehicle, $"ghost-{index}", $"Ghost {index}", "", []))
+            .ToArray());
+
+        using var grid = new MultiUnitVideoGridViewModel(selection, vehicles, sources, streams,
+            null!, null!, null!, null!);
+
+        Assert.Equal(2, grid.Tiles.Count);
+        foreach (var (tile, index) in grid.Tiles.Select((tile, index) => (tile, index)))
+        {
+            Assert.Equal($"ghost-camera-{index + 1}", tile.Camera?.Id);
+            Assert.Equal("Closed", tile.Status);
+            Assert.True(tile.OpenCommand.CanExecute(null));
+        }
     }
 
     [Fact]
@@ -196,5 +273,13 @@ public sealed class CameraPanelUnitScopingTests
         }
 
         return directory?.FullName ?? throw new DirectoryNotFoundException("RobotCommand.sln was not found.");
+    }
+
+    private static async Task EventuallyAsync(Func<bool> condition)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
+        while (!condition() && DateTimeOffset.UtcNow < deadline)
+            await Task.Delay(10);
+        Assert.True(condition());
     }
 }

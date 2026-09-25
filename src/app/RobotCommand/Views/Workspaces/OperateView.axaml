@@ -475,6 +475,97 @@
           </Border>
         </ScrollViewer>
 
+        <ScrollViewer Grid.Column="2"
+                      IsVisible="{Binding VideoGridVisible}"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="10" Margin="8">
+            <ItemsControl ItemsSource="{Binding VideoGrid.Tiles}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel ItemSpacing="8" LineSpacing="8" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:MultiUnitVideoTileViewModel">
+                  <Border Classes="panel" Padding="8">
+                    <StackPanel Spacing="6" Width="460">
+                      <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6">
+                        <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                Content="{Binding UnitName}" Command="{Binding FocusCommand}" />
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Status}" />
+                        <TextBlock Grid.Column="2" VerticalAlignment="Center" Classes="muted" Text="Focused" IsVisible="{Binding IsFocused}" />
+                        <Button Grid.Column="3" Content="Open" Command="{Binding OpenCommand}" />
+                        <Button Grid.Column="4" Content="Retry" Command="{Binding RetryCommand}" />
+                        <Button Grid.Column="5" Content="Close" Command="{Binding CloseCommand}" />
+                      </Grid>
+                      <Grid>
+                        <controls:NativeVideoSurface Source="{Binding Frames}" />
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3"
+                                    IsVisible="{Binding ShowPlaybackPlaceholder}">
+                          <TextBlock HorizontalAlignment="Center" FontSize="18" FontWeight="SemiBold" Text="{Binding EmptyMessage}" />
+                          <TextBlock HorizontalAlignment="Center" Classes="muted" Text="{Binding Detail}" />
+                        </StackPanel>
+                      </Grid>
+                      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6" IsVisible="{Binding HasSwapOptions}">
+                        <ComboBox ItemsSource="{Binding SwapOptions}" SelectedValueBinding="{Binding Id}"
+                                  SelectedValue="{Binding SelectedSwapUnitId, Mode=TwoWay}"
+                                  >
+                          <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:VideoGridUnitOption">
+                              <TextBlock Text="{Binding Name}" />
+                            </DataTemplate>
+                          </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <Button Grid.Column="1" Grid.ColumnSpan="2" Content="Swap" Command="{Binding SwapCommand}" CommandParameter="{Binding}" />
+                      </Grid>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Classes="surfaceFooter" IsVisible="{Binding VideoGrid.HasFocusedTile}">
+              <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Classes="sectionTitle" Text="Focused camera" />
+                  <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding VideoGrid.FocusedTile.UnitName}" />
+                </StackPanel>
+                <WrapPanel Orientation="Horizontal" ItemSpacing="6" LineSpacing="6">
+                  <Button Content="Capture photo" Command="{Binding Controls.PrepareFocusedCapturePhotoCommand}" CommandParameter="{Binding VideoGrid.FocusedTile.UnitId}" />
+                  <Button Content="Start video" Command="{Binding Controls.PrepareFocusedStartVideoCommand}" CommandParameter="{Binding VideoGrid.FocusedTile.UnitId}" />
+                  <Button Content="Stop video" Command="{Binding Controls.PrepareFocusedStopVideoCommand}" CommandParameter="{Binding VideoGrid.FocusedTile.UnitId}" />
+                  <Button Content="Center gimbal" Command="{Binding Controls.PrepareFocusedCenterGimbalCommand}" CommandParameter="{Binding VideoGrid.FocusedTile.UnitId}" />
+                  <Button Content="Nadir gimbal" Command="{Binding Controls.PrepareFocusedNadirGimbalCommand}" CommandParameter="{Binding VideoGrid.FocusedTile.UnitId}" />
+                </WrapPanel>
+                <Grid ColumnDefinitions="Auto,96,Auto,96" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="5">
+                  <TextBlock VerticalAlignment="Center" Text="Pitch" />
+                  <TextBox Grid.Column="1" Width="96" Text="{Binding Controls.GimbalPitchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Roll" />
+                  <TextBox Grid.Column="3" Width="96" Text="{Binding Controls.GimbalRollText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="Yaw" />
+                  <TextBox Grid.Row="1" Grid.Column="1" Width="96" Text="{Binding Controls.GimbalYawText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                  <TextBlock Grid.Row="1" Grid.Column="2" VerticalAlignment="Center" Text="Zoom" />
+                  <TextBox Grid.Row="1" Grid.Column="3" Width="96" Text="{Binding Controls.GimbalZoomText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
+                <Button HorizontalAlignment="Left" Content="Apply gimbal settings" Command="{Binding Controls.PrepareFocusedSetGimbalCommand}" CommandParameter="{Binding VideoGrid.FocusedTile.UnitId}" />
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding VideoGrid.FocusedTile.IsGhost}">
+                  <TextBlock VerticalAlignment="Center" Text="Camera mode" />
+                  <ComboBox Width="105" ItemsSource="{Binding Controls.CameraModes}" SelectedItem="{Binding Controls.SelectedCameraMode, Mode=TwoWay}" />
+                  <TextBlock VerticalAlignment="Center" Text="Video resolution" />
+                  <ComboBox Width="175" ItemsSource="{Binding Controls.CameraVideoFormats}" SelectedItem="{Binding Controls.SelectedCameraVideoFormat, Mode=TwoWay}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="core:CameraVideoFormatSnapshot"><TextBlock Text="{Binding Label}" /></DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                  <Button Content="Apply camera settings" Command="{Binding Controls.PrepareFocusedSetCameraSettingsCommand}" CommandParameter="{Binding VideoGrid.FocusedTile.UnitId}" />
+                </StackPanel>
+                <TextBlock Classes="muted" Text="{Binding Controls.StatusMessage}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+
         <Border Grid.Column="0"
                 Grid.ColumnSpan="3"
                 Classes="panel"

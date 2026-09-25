@@ -209,6 +209,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IGStreamerRuntime, GStreamerRuntime>();
         services.AddSingleton<IGStreamerVideoPipeline, GStreamerVideoPipeline>();
         services.AddSingleton<IGStreamerVideoPipelineFactory, GStreamerVideoPipelineFactory>();
+        services.AddSingleton<IVideoPlaybackAdapterFactory, VideoPlaybackAdapterFactory>();
         services.AddSingleton<ICameraMediaSourceProvider, RtspCameraMediaSourceProvider>();
         services.AddSingleton<IGhostCameraStreamProvider, GhostCameraStreamProvider>();
         services.AddSingleton<ILocalVideoRecordingCatalog, LocalVideoRecordingCatalog>();

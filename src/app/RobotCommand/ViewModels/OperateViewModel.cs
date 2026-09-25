@@ -78,7 +78,8 @@ public sealed class OperateViewModel : ObservableObject
         IUnitDefinitionService? reconciliation = null,
         IUnitSettingsService? unitSettings = null,
         MyTeamViewModel? myTeam = null,
-        ILocalizationService? localization = null)
+        ILocalizationService? localization = null,
+        MultiUnitVideoGridViewModel? videoGrid = null)
     {
         _selection = selection;
         _vehicles = vehicles;
@@ -91,7 +92,9 @@ public sealed class OperateViewModel : ObservableObject
         _localization = localization;
         Map = map;
         Camera = camera;
+        VideoGrid = videoGrid;
         Camera.PropertyChanged += OnCameraPropertyChanged;
+        if (VideoGrid is not null) VideoGrid.PropertyChanged += OnCameraPropertyChanged;
         Controls = controls;
         Units = units;
         _selection.Changed += OnSelectionChanged;
@@ -115,7 +118,11 @@ public sealed class OperateViewModel : ObservableObject
 
     public CameraPanelViewModel Camera { get; }
 
-    public bool CameraPaneVisible => VideoVisible && Camera.HasSelectedUnit;
+    public MultiUnitVideoGridViewModel? VideoGrid { get; }
+
+    public bool CameraPaneVisible => VideoVisible && Camera.HasSelectedUnit && VideoGrid?.IsVisible != true;
+
+    public bool VideoGridVisible => VideoVisible && VideoGrid?.IsVisible == true;
 
     public OperatorControlsViewModel Controls { get; }
 
@@ -136,6 +143,11 @@ public sealed class OperateViewModel : ObservableObject
     {
         if (e.PropertyName == nameof(CameraPanelViewModel.HasSelectedUnit))
         {
+            OnPropertyChanged(nameof(CameraPaneVisible));
+        }
+        if (e.PropertyName == nameof(MultiUnitVideoGridViewModel.IsVisible))
+        {
+            OnPropertyChanged(nameof(VideoGridVisible));
             OnPropertyChanged(nameof(CameraPaneVisible));
         }
     }
@@ -290,6 +302,7 @@ public sealed class OperateViewModel : ObservableObject
         Map.SetMapVisible(MapVisible);
         OnPropertyChanged(nameof(LayoutLabel));
         OnPropertyChanged(nameof(CameraPaneVisible));
+        OnPropertyChanged(nameof(VideoGridVisible));
     }
 
     private void ApplySelection()

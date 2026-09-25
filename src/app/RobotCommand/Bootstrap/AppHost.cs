@@ -179,6 +179,7 @@ internal static class AppHost
         services.AddSingleton<IGStreamerRuntime, GStreamerRuntime>();
         services.AddSingleton<IGStreamerVideoPipeline, GStreamerVideoPipeline>();
         services.AddSingleton<IGStreamerVideoPipelineFactory, GStreamerVideoPipelineFactory>();
+        services.AddSingleton<IVideoPlaybackAdapterFactory, VideoPlaybackAdapterFactory>();
         services.AddSingleton<ILocalVideoRecordingCatalog, LocalVideoRecordingCatalog>();
         services.AddSingleton<ILocalVideoRecordingService, LocalVideoRecordingService>();
         services.AddSingleton<IRemoteVideoRecordingCatalog, MediaMtxRemoteVideoRecordingCatalog>();
@@ -308,6 +309,7 @@ internal static class AppHost
         services.AddSingleton<FormationAuthoringViewModel>();
         services.AddSingleton<AutonomyWorkspaceViewModel>();
         services.AddSingleton<CameraPanelViewModel>();
+        services.AddSingleton<MultiUnitVideoGridViewModel>();
         services.AddSingleton<OperatorControlsViewModel>(serviceProvider =>
             new OperatorControlsViewModel(
                 serviceProvider.GetRequiredService<IOperatorCommandWorkflow>(),
