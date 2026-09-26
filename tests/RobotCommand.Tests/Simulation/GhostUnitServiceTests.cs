@@ -1,3 +1,4 @@
+using System.Reflection;
 using RobotCommand.Core;
 using RobotCommand.Infrastructure;
 using RobotCommand.Models;
@@ -6,7 +7,6 @@ using RobotCommand.Services.Operations;
 using RobotCommand.Services.Simulation;
 using RobotCommand.State;
 using Xunit;
-using System.Reflection;
 
 namespace RobotCommand.Tests;
 

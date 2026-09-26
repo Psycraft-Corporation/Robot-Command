@@ -2,8 +2,8 @@ using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using RobotCommand.Bootstrap;
 using RobotCommand.Core;
-using RobotCommand.Services.Mavlink;
 using RobotCommand.Models;
+using RobotCommand.Services.Mavlink;
 using RobotCommand.State;
 
 namespace RobotCommand.Cli;
