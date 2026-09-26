@@ -75,7 +75,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Cache verified GStreamer runtime
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: artifacts/cache/gstreamer
           key: gstreamer-win-x64-1.26.11
