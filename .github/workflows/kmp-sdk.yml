@@ -26,7 +26,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with:
           # The action's v3 default requests the removed `tools` SDK package.
           # Install platform-tools explicitly; Android 36 is installed below.
