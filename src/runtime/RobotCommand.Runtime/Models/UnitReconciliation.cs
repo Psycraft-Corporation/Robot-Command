@@ -21,4 +21,6 @@ public sealed record ManualUnitDefinition(
     string DiagnosticsAuthorityConnectionId,
     DateTimeOffset UpdatedAt,
     IReadOnlyList<UnitCameraSourceBinding>? CameraSources = null,
-    IReadOnlyList<string>? ConnectionIds = null);
+    IReadOnlyList<string>? ConnectionIds = null,
+    IReadOnlyList<UnitCameraDeviceBinding>? Cameras = null,
+    IReadOnlyList<UnitRouteCandidate>? Routes = null);

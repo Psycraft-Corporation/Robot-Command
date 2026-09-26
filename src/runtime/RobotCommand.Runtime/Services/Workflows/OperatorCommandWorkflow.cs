@@ -41,13 +41,25 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
     public OperatorCommandWorkflowStatus Status => new(_controls.GatewayStatus.Available, _controls.GatewayStatus.Message);
 
     public IReadOnlyList<OperatorCommandQueueSnapshot> Commands
-        => _queued.Values.Concat(_active.Values).Select(ToSnapshot).OrderBy(item => item.CreatedAt).ToArray();
+    {
+        get
+        {
+            RemoveTerminalActiveEntries();
+            return _queued.Values.Concat(_active.Values).Select(ToSnapshot).OrderBy(item => item.CreatedAt).ToArray();
+        }
+    }
 
     public IReadOnlyList<OperatorCommandQueueSnapshot> QueuedCommands
         => _queued.Values.Select(ToSnapshot).OrderBy(item => item.CreatedAt).ToArray();
 
     public IReadOnlyList<OperatorCommandQueueSnapshot> ActiveCommands
-        => _active.Values.Select(ToSnapshot).OrderBy(item => item.CreatedAt).ToArray();
+    {
+        get
+        {
+            RemoveTerminalActiveEntries();
+            return _active.Values.Select(ToSnapshot).OrderBy(item => item.CreatedAt).ToArray();
+        }
+    }
 
     public bool TryGet(string queueOrCommandId, out OperatorCommandQueueSnapshot? command)
     {
@@ -115,7 +127,7 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
                 {
                     _queued.Remove(entry.QueueId);
                     if (result.State is OperationalCommandState.Submitting or OperationalCommandState.Accepted or OperationalCommandState.InProgress)
-                        _active[executable.Plan.Target.VehicleId] = executable;
+                        _active[executable.QueueId] = executable;
                 }
             }
 
@@ -168,7 +180,7 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
             var results = new List<OperatorCommandExecutionSnapshot>();
             foreach (var entry in active)
             {
-                _cancelling.Add(entry.Plan.Target.VehicleId);
+                _cancelling.Add(entry.QueueId);
                 try
                 {
                     var result = await CancelActiveEntryAsync(entry, cancellationToken);
@@ -176,7 +188,7 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
                 }
                 finally
                 {
-                    _cancelling.Remove(entry.Plan.Target.VehicleId);
+                    _cancelling.Remove(entry.QueueId);
                 }
             }
             RaiseChanged();
@@ -210,7 +222,7 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
                     ? "Hold is already the vehicle's safe stationary state."
                     : $"{command} cancellation recorded; no Hold action is applicable.",
                 cancellationToken);
-            _active.Remove(entry.Plan.Target.VehicleId);
+            _active.Remove(entry.QueueId);
             return new(entry.QueueId, entry.Plan.CommandId, entry.RequestUnitId, true,
                 OperatorWorkflowState.Cancelled,
                 command == OperatorCommandKind.Hold
@@ -223,7 +235,7 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
         {
             await _controls.CancelAsync(entry.Plan,
                 "Cancelled by operator; the vehicle is disarmed.", cancellationToken);
-            _active.Remove(entry.Plan.Target.VehicleId);
+            _active.Remove(entry.QueueId);
             return new(entry.QueueId, entry.Plan.CommandId, entry.RequestUnitId, true,
                 OperatorWorkflowState.Cancelled,
                 $"{OperatorCommandLabel(command)} cancelled; the vehicle is disarmed.");
@@ -260,7 +272,7 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
 
         await _controls.CancelAsync(entry.Plan,
             $"Cancelled by operator; Hold confirmed after {OperatorCommandLabel(command)}.", cancellationToken);
-        _active.Remove(entry.Plan.Target.VehicleId);
+        _active.Remove(entry.QueueId);
         return ToExecution(entry, confirmedHold with
         {
             Message = $"Hold confirmed; {OperatorCommandLabel(command)} cancelled."
@@ -345,12 +357,19 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
 
     private void OnCommandsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        var terminal = _active.Where(pair => !_cancelling.Contains(pair.Key) &&
-            _commands.TryGet(pair.Value.Plan.CommandId, out var command) && command is not null &&
-            command.State is OperationalCommandState.Succeeded or OperationalCommandState.Cancelled or OperationalCommandState.Rejected or OperationalCommandState.Failed or OperationalCommandState.TimedOut)
-            .Select(pair => pair.Key).ToArray();
-        foreach (var vehicleId in terminal) _active.Remove(vehicleId);
+        RemoveTerminalActiveEntries();
         RaiseChanged();
+    }
+
+    private void RemoveTerminalActiveEntries()
+    {
+        var terminal = _active.Where(pair => !_cancelling.Contains(pair.Key) &&
+            _commands.Items.FirstOrDefault(item =>
+                string.Equals(item.Id, pair.Value.Plan.CommandId, StringComparison.Ordinal))?.State is
+                OperationalCommandState.Succeeded or OperationalCommandState.Cancelled or
+                OperationalCommandState.Rejected or OperationalCommandState.Failed or OperationalCommandState.TimedOut)
+            .Select(pair => pair.Key).ToArray();
+        foreach (var queueId in terminal) _active.Remove(queueId);
     }
 
     private IReadOnlyList<QueueEntry> FindQueued(string queueOrBatchId)
@@ -371,7 +390,7 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
     private OperatorCommandQueueSnapshot ToSnapshot(QueueEntry entry)
     {
         var assessment = entry.Assessment ?? entry.Plan;
-        var state = _active.ContainsKey(entry.Plan.Target.VehicleId) &&
+        var state = _active.ContainsKey(entry.QueueId) &&
                     _commands.TryGet(entry.Plan.CommandId, out var activeRecord) && activeRecord is not null
             ? ToWorkflow(activeRecord.State)
             : OperatorWorkflowState.Queued;
@@ -451,7 +470,8 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
         value.HeadingTargetKind is null ? null : (OperatorHeadingTargetKind)value.HeadingTargetKind.Value,
         value.HeadingDegrees, value.RelativeYawDegrees, value.AirborneDisarmConfirmed,
         value.GimbalPitchDegrees, value.GimbalYawDegrees, value.GimbalRollDegrees,
-        value.GimbalZoomPercent, value.GimbalEarthFrame);
+        value.GimbalZoomPercent, value.GimbalEarthFrame,
+        value.CameraMode, value.CameraResolutionWidth, value.CameraResolutionHeight);
 
     private static OperatorWorkflowParameters ToCore(OperatorCommandParameters value) => new(
         value.TakeoffAltitudeAglMetres,
@@ -463,7 +483,8 @@ public sealed class OperatorCommandWorkflow : IOperatorCommandWorkflow, IDisposa
         value.HeadingTargetKind is null ? null : (OperatorWorkflowHeadingTargetKind)value.HeadingTargetKind.Value,
         value.HeadingDegrees, value.RelativeYawDegrees, value.AirborneDisarmConfirmed,
         value.GimbalPitchDegrees, value.GimbalYawDegrees, value.GimbalRollDegrees,
-        value.GimbalZoomPercent, value.GimbalEarthFrame);
+        value.GimbalZoomPercent, value.GimbalEarthFrame,
+        value.CameraMode, value.CameraResolutionWidth, value.CameraResolutionHeight);
 
     private static string DisplayName(OperatorWorkflowCommandKind command) => command switch
     {

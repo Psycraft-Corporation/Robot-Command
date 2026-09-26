@@ -28,7 +28,7 @@
                       <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
                       <TextBlock IsVisible="{Binding IsGhost}" Classes="tag" Text="GHOST" />
                     </StackPanel>
-                    <TextBlock Classes="muted" FontSize="11" Text="{Binding Target}" />
+                    <TextBlock Classes="muted" FontSize="11" Text="{Binding TargetSummary}" />
                     <TextBlock Classes="muted" FontSize="11" Text="{Binding Mode}" />
                   </StackPanel>
                   <TextBlock Grid.Column="1" Classes="muted" Text="{Binding State}" />
@@ -49,6 +49,7 @@
               <TextBox Text="{Binding Name}" />
               <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionTarget}" />
               <TextBox Text="{Binding Target}" />
+              <TextBlock IsVisible="{Binding IsMediaConnection}" Classes="muted" Text="Unauthenticated RTSP URL. Credentials in URLs are not supported." TextWrapping="Wrap" />
               <TextBlock Classes="muted" Text="{loc:Loc Key=ConnectionType}" />
               <ComboBox ItemsSource="{Binding Modes}" SelectedItem="{Binding Mode}" />
 
@@ -130,12 +131,28 @@
             </StackPanel>
           </Border>
 
+          <Border Classes="panel" IsVisible="{Binding IsMavlinkConnection}">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="sectionTitle" Text="Discovered camera devices" />
+              <ItemsControl ItemsSource="{Binding CameraDevices}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Spacing="2">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
+                      <TextBlock Classes="muted" FontSize="11" Text="{Binding Health}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
           <Border Classes="panel" IsVisible="{Binding ShowConnectionControls}">
             <StackPanel Spacing="8">
               <TextBlock Classes="sectionTitle" Text="{loc:Loc Key=ConnectionControls}" />
               <Grid ColumnDefinitions="*,*" ColumnSpacing="7">
                 <Button Classes="primary" Content="{Binding ActionButtonText}" Command="{Binding ToggleConnectionCommand}" />
-                <Button Grid.Column="1" Content="{loc:Loc Key=MapRefresh}" Command="{Binding RefreshCommand}" />
+                <Button Grid.Column="1" Content="{Binding RefreshButtonText}" Command="{Binding RefreshCommand}" />
               </Grid>
             </StackPanel>
           </Border>

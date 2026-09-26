@@ -13,10 +13,10 @@ internal static class OperatorCommands
     {
         var options = CliArguments.Parse(arguments);
         if (options.Error is not null) { Console.Error.WriteLine(options.Error); return 2; }
-        var dataDirectory = options.Get("data-dir") ?? AppContext.BaseDirectory;
+        var dataDirectory = options.Get("data-dir") ?? RobotCommandDataDirectory.GetDefaultPath();
         var reporter = new ConsoleReporter(options.Has("json"));
         using var stopping = ConsoleCancellation.Create();
-        using var host = RobotCommandRuntimeHost.Build(dataDirectory, RobotCommandRuntimeMode.Cli);
+        using var host = RobotCommandRuntimeHost.Build(AppContext.BaseDirectory, RobotCommandRuntimeMode.Cli, dataDirectory: dataDirectory);
         var workflow = host.Services.GetRequiredService<IOperatorCommandWorkflow>();
         var units = host.Services.GetRequiredService<IUnitObservationWorkflow>();
         var targetScope = host.Services.GetRequiredService<IOperatorTargetScopeWorkflow>();

@@ -1,7 +1,9 @@
+using System.Reflection;
 using RobotCommand.Core;
 using RobotCommand.Infrastructure;
 using RobotCommand.Models;
 using RobotCommand.Services;
+using RobotCommand.Services.Operations;
 using RobotCommand.Services.Simulation;
 using RobotCommand.State;
 using Xunit;
@@ -104,9 +106,206 @@ public sealed class GhostUnitServiceTests
         Assert.True(stores.Connections.Items.Single(item => item.Id == "ghost-connection-1").IsGhost);
         Assert.Equal(1d, stores.Links.Items.Single(item => item.ConnectionId == "ghost-connection-1").Quality);
         Assert.Equal(0d, stores.Links.Items.Single(item => item.ConnectionId == "ghost-connection-1").PacketLoss);
-        Assert.Equal("Simulated horizon", stores.CameraSources.Items.Single(item => item.ConnectionId == "ghost-connection-1").Kind);
-        Assert.Equal(960u, stores.CameraSources.Items.Single(item => item.ConnectionId == "ghost-connection-1").Width);
+        var camera = stores.CameraSources.Items.Single(item => item.ConnectionId == "ghost-connection-1");
+        Assert.Equal("Simulated horizon", camera.Kind);
+        Assert.Equal(960u, camera.Width);
+        Assert.True(camera.SupportsPhoto);
+        Assert.True(camera.SupportsVideo);
+        Assert.True(camera.SupportsGimbal);
+        Assert.NotNull(camera.DeviceState);
+        Assert.Equal(FlightMissionCameraMode.Video, camera.DeviceState.Mode);
+        Assert.Equal((960u, 540u, 30u), (camera.DeviceState.VideoWidth, camera.DeviceState.VideoHeight, camera.DeviceState.VideoFramesPerSecond));
+        Assert.Equal([(640u, 360u), (960u, 540u), (1280u, 720u)],
+            camera.DeviceState.SupportedVideoFormats.Select(format => (format.Width, format.Height)).ToArray());
+        Assert.Equal(1d, camera.DeviceState.ZoomMagnification);
+        Assert.Equal(10d, camera.DeviceState.MaximumZoomMagnification);
+        Assert.Equal(-90d, camera.DeviceState.Gimbal.MinimumPitchDegrees);
+        Assert.Equal(30d, camera.DeviceState.Gimbal.MaximumPitchDegrees);
+        Assert.Equal(180d, camera.DeviceState.Gimbal.MaximumYawDegrees);
+        Assert.Equal(45d, camera.DeviceState.Gimbal.MaximumRollDegrees);
+        Assert.Equal(60d, camera.DeviceState.Gimbal.SlewRateDegreesPerSecond);
         Assert.DoesNotContain(stores.Connections.Items, item => item.Mode == ConnectionMode.Direct);
+    }
+
+    [Fact]
+    public async Task CameraSettings_AreAppliedPerGhostAndUnsupportedFormatsAreRejected()
+    {
+        var stores = new Stores();
+        await using var service = stores.CreateService();
+        await service.StartAsync(CancellationToken.None);
+        var first = await service.CreateAsync();
+        var second = await service.CreateAsync();
+        var target = new OperatorCommandTarget("ghost-connection-1", first.Id, null, DateTimeOffset.UtcNow);
+        var request = new OperatorCommandRequest(
+            "camera-settings", "camera-settings-correlation", "camera-settings-idempotency",
+            OperatorCommandKind.SetCameraSettings, target, "test", false, DateTimeOffset.UtcNow,
+            Parameters: new OperatorCommandParameters(
+                CameraMode: FlightMissionCameraMode.Photo,
+                CameraResolutionWidth: 1280,
+                CameraResolutionHeight: 720));
+
+        var invalid = await service.PrepareAsync(request with
+        {
+            Parameters = request.Parameters! with { CameraResolutionWidth = 1920, CameraResolutionHeight = 1080 }
+        });
+        Assert.False(invalid.Accepted);
+
+        Assert.True((await service.ExecuteAsync(request)).Accepted);
+        await EventuallyAsync(() =>
+        {
+            var cameras = stores.CameraSources.Items.ToArray();
+            var firstCamera = cameras.SingleOrDefault(camera => camera.ConnectionId == "ghost-connection-1");
+            return firstCamera?.DeviceState is { Mode: FlightMissionCameraMode.Photo, VideoWidth: 1280, VideoHeight: 720 } &&
+                   cameras.SingleOrDefault(camera => camera.ConnectionId == "ghost-connection-2")?.DeviceState is
+                   { Mode: FlightMissionCameraMode.Video, VideoWidth: 960, VideoHeight: 540 };
+        });
+    }
+
+    [Fact]
+    public async Task RoutedOperatorGatewayExecutesGhostCameraActionsInSimulation()
+    {
+        var stores = new Stores();
+        await using var ghosts = stores.CreateService();
+        await ghosts.StartAsync(TestContext.Current.CancellationToken);
+        var ghost = await ghosts.CreateAsync();
+        var camera = Assert.Single(stores.CameraSources.Items);
+        var formation = DispatchProxy.Create<IFormationLockWorkflow, NoOpFormationLockWorkflow>();
+        var gateway = new RoutedOperatorCommandGateway(null!, null!, null!, ghosts, formation);
+        var target = new OperatorCommandTarget(
+            camera.ConnectionId, ghost.Id, null, DateTimeOffset.UtcNow, camera.CameraSourceId);
+
+        var mismatchedRequest = new OperatorCommandRequest(
+            "ghost-photo-mismatched", "correlation-mismatched", "idempotency-mismatched",
+            OperatorCommandKind.CapturePhoto, target with { CameraSourceId = "ghost-camera-other" },
+            "Mismatched camera test", false, DateTimeOffset.UtcNow);
+        var mismatchedPreparation = await gateway.PrepareAsync(mismatchedRequest, TestContext.Current.CancellationToken);
+        Assert.False(mismatchedPreparation.Accepted);
+        Assert.Contains(mismatchedPreparation.Findings, finding => finding.Code == "GHOST_CAMERA_IDENTITY_MISMATCH");
+
+        var photo = await ExecuteCameraCommandAsync(gateway, target, "ghost-photo", OperatorCommandKind.CapturePhoto);
+        Assert.True(photo.Accepted, photo.Message);
+        Assert.Equal(OperationalCommandState.Succeeded, photo.State);
+        await EventuallyAsync(() => stores.CameraSources.Items.Single().DeviceState?.PhotoCount == 1);
+
+        var start = await ExecuteCameraCommandAsync(gateway, target, "ghost-video-start", OperatorCommandKind.StartVideo);
+        Assert.True(start.Accepted, start.Message);
+        Assert.Equal(OperationalCommandState.Succeeded, start.State);
+        await EventuallyAsync(() => stores.CameraSources.Items.Single().DeviceState?.IsRecording == true);
+
+        var stop = await ExecuteCameraCommandAsync(gateway, target, "ghost-video-stop", OperatorCommandKind.StopVideo);
+        Assert.True(stop.Accepted, stop.Message);
+        Assert.Equal(OperationalCommandState.Succeeded, stop.State);
+        await EventuallyAsync(() => stores.CameraSources.Items.Single().DeviceState?.IsRecording == false);
+
+        var gimbal = await ExecuteCameraCommandAsync(gateway, target, "ghost-gimbal", OperatorCommandKind.SetGimbal,
+            new OperatorCommandParameters(GimbalPitchDegrees: -30, GimbalYawDegrees: 20,
+                GimbalRollDegrees: 5, GimbalZoomPercent: 50));
+        Assert.True(gimbal.Accepted, gimbal.Message);
+        Assert.Equal(OperationalCommandState.InProgress, gimbal.State);
+        await EventuallyAsync(() => stores.CameraSources.Items.Single().DeviceState is
+        { ZoomMagnification: 5.5, Gimbal.TargetPitchDegrees: -30, Gimbal.TargetYawDegrees: 20, Gimbal.TargetRollDegrees: 5 });
+
+        var settings = await ExecuteCameraCommandAsync(gateway, target, "ghost-camera-settings",
+            OperatorCommandKind.SetCameraSettings, new OperatorCommandParameters(
+                CameraMode: FlightMissionCameraMode.Photo,
+                CameraResolutionWidth: 1280,
+                CameraResolutionHeight: 720));
+        Assert.True(settings.Accepted, settings.Message);
+        Assert.Equal(OperationalCommandState.Succeeded, settings.State);
+        Assert.Contains(stores.CameraSources.Items, item => item.DeviceState is
+        { Mode: FlightMissionCameraMode.Photo, VideoWidth: 1280, VideoHeight: 720 });
+        Assert.Equal(0, ((NoOpFormationLockWorkflow)formation).IndependentOperationCalls);
+    }
+
+    private static async Task<OperatorCommandResult> ExecuteCameraCommandAsync(
+        RoutedOperatorCommandGateway gateway,
+        OperatorCommandTarget target,
+        string commandId,
+        OperatorCommandKind command,
+        OperatorCommandParameters? parameters = null)
+    {
+        var request = new OperatorCommandRequest(
+            commandId, $"correlation-{commandId}", $"idempotency-{commandId}", command,
+            target, "Ghost camera integration test", false, DateTimeOffset.UtcNow,
+            Parameters: parameters);
+        var preparation = await gateway.PrepareAsync(request, TestContext.Current.CancellationToken);
+        Assert.True(preparation.Accepted, preparation.Message);
+        return await gateway.ExecuteAsync(request with { Preparation = preparation.Preparation }, TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task GimbalTargetsSlewTowardTargetsWithinLimitsAtAdvertisedRate()
+    {
+        var stores = new Stores();
+        await using var service = stores.CreateService();
+        await service.StartAsync(CancellationToken.None);
+        var ghost = await service.CreateAsync();
+        var target = new OperatorCommandTarget("ghost-connection-1", ghost.Id, null, DateTimeOffset.UtcNow);
+        var request = new OperatorCommandRequest(
+            "gimbal-target", "gimbal-correlation", "gimbal-idempotency",
+            OperatorCommandKind.SetGimbal, target, "test", false, DateTimeOffset.UtcNow,
+            Parameters: new OperatorCommandParameters(GimbalPitchDegrees: 30));
+
+        var rejected = await service.PrepareAsync(request with
+        {
+            Parameters = request.Parameters! with { GimbalPitchDegrees = 31 }
+        });
+        Assert.False(rejected.Accepted);
+
+        Assert.True((await service.ExecuteAsync(request)).Accepted);
+        await EventuallyAsync(() =>
+        {
+            var latest = stores.CameraSources.Items.Single(camera => camera.ConnectionId == "ghost-connection-1").DeviceState!;
+            return latest.Gimbal.TargetPitchDegrees == 30 && latest.Gimbal.PitchDegrees > 0;
+        });
+        var state = stores.CameraSources.Items.Single(camera => camera.ConnectionId == "ghost-connection-1").DeviceState!;
+
+        Assert.Equal(30d, state.Gimbal.TargetPitchDegrees);
+        Assert.InRange(state.Gimbal.PitchDegrees, 0.001, 29.999);
+        Assert.Equal(60d, state.Gimbal.SlewRateDegreesPerSecond);
+    }
+
+    [Fact]
+    public async Task GimbalCommandsDoNotInterruptGhostTakeoffAndSlewStartsSmoothly()
+    {
+        var stores = new Stores();
+        await using var service = stores.CreateService();
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        var ghost = await service.CreateAsync();
+        var target = new OperatorCommandTarget("ghost-connection-1", ghost.Id, null, DateTimeOffset.UtcNow);
+        var takeoff = new OperatorCommandRequest(
+            "takeoff-with-gimbal", "takeoff-correlation", "takeoff-idempotency",
+            OperatorCommandKind.Takeoff, target, "test", false, DateTimeOffset.UtcNow,
+            Parameters: new OperatorCommandParameters(TakeoffAltitudeAglMetres: 3));
+        var gimbal = new OperatorCommandRequest(
+            "gimbal-during-takeoff", "gimbal-during-correlation", "gimbal-during-idempotency",
+            OperatorCommandKind.SetGimbal, target, "test", false, DateTimeOffset.UtcNow,
+            Parameters: new OperatorCommandParameters(GimbalPitchDegrees: 20));
+
+        Assert.True((await service.ExecuteAsync(takeoff)).Accepted);
+        Assert.True((await service.ExecuteAsync(gimbal)).Accepted);
+
+        await Task.Delay(150, TestContext.Current.CancellationToken);
+        var earlyState = Assert.Single(stores.CameraSources.Items).DeviceState!;
+        Assert.InRange(earlyState.Gimbal.PitchDegrees, 0.01, 2.5);
+
+        await EventuallyAsync(() =>
+            stores.Telemetry.Items.Single(item => item.VehicleId == ghost.Id).AltitudeAglMetres >= 2.9 &&
+            stores.CameraSources.Items.Single().DeviceState?.Gimbal.PitchDegrees == 20);
+        var finalAltitude = stores.Telemetry.Items.Single(item => item.VehicleId == ghost.Id).AltitudeAglMetres;
+        Assert.NotNull(finalAltitude);
+        Assert.InRange(finalAltitude.Value, 2.95, 3.05);
+    }
+
+    private static async Task EventuallyAsync(Func<bool> condition)
+    {
+        for (var attempt = 0; attempt < 400; attempt++)
+        {
+            if (condition()) return;
+            await Task.Delay(25);
+        }
+
+        Assert.True(condition(), "The simulated camera state did not reach the expected value.");
     }
 
     [Fact]
@@ -500,6 +699,18 @@ public sealed class GhostUnitServiceTests
             cancellationToken.ThrowIfCancellationRequested();
             action();
             return Task.CompletedTask;
+        }
+    }
+
+    public class NoOpFormationLockWorkflow : DispatchProxy
+    {
+        public int IndependentOperationCalls { get; private set; }
+
+        protected override object? Invoke(System.Reflection.MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name == nameof(IFormationLockWorkflow.HandleIndependentOperationAsync))
+                IndependentOperationCalls++;
+            return targetMethod?.ReturnType == typeof(Task) ? Task.CompletedTask : null;
         }
     }
 }

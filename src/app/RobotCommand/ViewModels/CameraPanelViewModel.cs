@@ -9,9 +9,9 @@ using RobotCommand.Models;
 using RobotCommand.Services;
 using RobotCommand.Services.Connections;
 using RobotCommand.Services.Evidence;
-using RobotCommand.Services.Mavlink;
 using RobotCommand.Services.Media;
 using RobotCommand.Services.Operations;
+using RobotCommand.Services.Reconciliation;
 using RobotCommand.State;
 
 namespace RobotCommand.ViewModels;
@@ -40,10 +40,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _uiDispatcher;
     private readonly IMediaWorkflow? _mediaWorkflow;
     private readonly ILocalizationService? _localization;
-    private readonly IMavlinkCameraControlService? _cameraControl;
-    private readonly VideoFrameBuffer _ghostFrameBuffer = new();
+    private readonly IUnitAssociationWorkflow? _unitAssociations;
+    private readonly IUnitRoutingWorkflow? _routing;
     private readonly SwitchableVideoFrameSource _frameSource = new();
-    private CancellationTokenSource? _ghostVideoCancellation;
+    private readonly IGhostCameraStreamProvider? _ghostStreams;
     private readonly AsyncRelayCommand _openStreamCommand;
     private readonly AsyncRelayCommand _closeStreamCommand;
     private readonly AsyncRelayCommand _startTestPatternCommand;
@@ -61,26 +61,22 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private readonly AsyncRelayCommand _captureDisplayedFrameCommand;
     private readonly AsyncRelayCommand _captureSourceImageCommand;
     private readonly AsyncRelayCommand _exportTimelineClipCommand;
-    private readonly AsyncRelayCommand _capturePhotoCommand;
-    private readonly AsyncRelayCommand _startRemoteVideoCommand;
-    private readonly AsyncRelayCommand _stopRemoteVideoCommand;
-    private readonly AsyncRelayCommand _centerGimbalCommand;
     private CameraSourceRecord? _selectedCamera;
     private CameraStreamRecord? _activeStream;
+    private string? _activeStreamUnitId;
     private VideoProtocolPreference _selectedProtocol = VideoProtocolPreference.Automatic;
     private VideoOverlayScene _overlayScene = VideoOverlayScene.Empty;
-    private string _cameraStatus = "No camera source available";
     private string _streamStatus = "No stream";
     private string _playbackSummary = VideoPlaybackStatus.Detached.Summary;
     private string _playbackDetail = VideoPlaybackStatus.Detached.Detail;
     private string _streamEndpoint = "-";
-    private string _trackSummary = "No perception tracks";
     private string _gStreamerStatus = GStreamerRuntimeDiagnostics.Unknown.Summary;
     private string _gStreamerDetail = GStreamerRuntimeDiagnostics.Unknown.Detail;
     private string _nativeVideoStatus = NativeVideoPipelineStatus.Stopped.Summary;
     private string _nativeVideoDetail = NativeVideoPipelineStatus.Stopped.Detail;
     private string _nativeVideoMetrics = "No decoded frame";
     private bool _hasNativeFrame;
+    private bool _hasSelectedUnit;
     private string _fallbackStatus = "Automatic fallback has not been used.";
     private string _protocolPlanText = "No protocol plan";
     private string _activeProtocolText = "No active protocol";
@@ -94,14 +90,12 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private string _localRecordingStatus = LocalVideoRecorderStatus.Stopped.Summary;
     private string _localRecordingDetail = LocalVideoRecorderStatus.Stopped.Detail;
     private string _timelineRangeText = "No console or vehicle recordings";
-    private string _recordingStorageText = "0 B console video · 0 B vehicle cache";
     private string _remoteRecordingStatus = RemoteVideoRecordingStatus.NotConfigured.Summary;
     private string _remoteRecordingDetail = RemoteVideoRecordingStatus.NotConfigured.Detail;
     private bool _captureIncludeOverlays = true;
     private string _evidenceStatus = "No evidence captured in this session.";
     private string _cameraDefinitionSummary = string.Empty;
     private bool _hasCameraDefinition;
-    private string _cameraControlStatus = string.Empty;
 
     public CameraPanelViewModel(
         ISelectionService selection,
@@ -126,7 +120,9 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         IMediaSettingsService? mediaSettings = null,
         ILocalizationService? localization = null,
         IEntityStore<string, MavlinkCameraDefinitionRecord>? cameraDefinitions = null,
-        IMavlinkCameraControlService? cameraControl = null)
+        IUnitAssociationWorkflow? unitAssociations = null,
+        IUnitRoutingWorkflow? routing = null,
+        IGhostCameraStreamProvider? ghostStreams = null)
     {
         _selection = selection;
         _vehicles = vehicles;
@@ -149,15 +145,16 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _uiDispatcher = uiDispatcher;
         _mediaWorkflow = mediaWorkflow;
         _localization = localization;
-        _cameraControl = cameraControl;
+        _unitAssociations = unitAssociations;
+        _routing = routing;
+        _ghostStreams = ghostStreams;
         if (_localization is not null)
         {
             _localization.PropertyChanged += OnLocalizationChanged;
         }
         _selectedProtocol = mediaSettings?.Current.DefaultProtocol ?? VideoProtocolPreference.Automatic;
         _frameSource.SetSource(_localVideo.PresentationFrames);
-        if (_mediaWorkflow is not null)
-            _mediaWorkflow.Changed += (_, _) => _ = _uiDispatcher.InvokeAsync(RefreshPresentation);
+        if (_mediaWorkflow is not null) _mediaWorkflow.Changed += OnMediaWorkflowChanged;
 
         Cameras = [];
         Protocols =
@@ -185,10 +182,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _captureDisplayedFrameCommand = new AsyncRelayCommand(CaptureDisplayedFrameAsync, CanCaptureDisplayedFrame);
         _captureSourceImageCommand = new AsyncRelayCommand(CaptureSourceImageAsync, CanCaptureSourceImage);
         _exportTimelineClipCommand = new AsyncRelayCommand(ExportTimelineClipAsync, CanExportTimelineClip);
-        _capturePhotoCommand = new AsyncRelayCommand(CapturePhotoAsync, CanCapturePhoto);
-        _startRemoteVideoCommand = new AsyncRelayCommand(StartRemoteVideoAsync, CanStartRemoteVideo);
-        _stopRemoteVideoCommand = new AsyncRelayCommand(StopRemoteVideoAsync, CanStopRemoteVideo);
-        _centerGimbalCommand = new AsyncRelayCommand(CenterGimbalAsync, CanCenterGimbal);
         OpenStreamCommand = _openStreamCommand;
         CloseStreamCommand = _closeStreamCommand;
         StartTestPatternCommand = _startTestPatternCommand;
@@ -206,12 +199,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         CaptureDisplayedFrameCommand = _captureDisplayedFrameCommand;
         CaptureSourceImageCommand = _captureSourceImageCommand;
         ExportTimelineClipCommand = _exportTimelineClipCommand;
-        CapturePhotoCommand = _capturePhotoCommand;
-        StartRemoteVideoCommand = _startRemoteVideoCommand;
-        StopRemoteVideoCommand = _stopRemoteVideoCommand;
-        CenterGimbalCommand = _centerGimbalCommand;
 
         _selection.Changed += OnSelectionChanged;
+        if (_unitAssociations is not null) _unitAssociations.Changed += OnUnitAssociationsChanged;
+        if (_routing is not null) _routing.Changed += OnRoutingChanged;
         _playback.Changed += OnPlaybackChanged;
         _nativePipeline.Changed += OnNativePipelineChanged;
         _localVideo.Changed += OnLocalVideoChanged;
@@ -277,11 +268,19 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         get => _selectedCamera;
         set
         {
+            var previous = _selectedCamera;
             if (!SetProperty(ref _selectedCamera, value))
             {
                 return;
             }
 
+            OnPropertyChanged(nameof(PlaybackEmptyMessage));
+            // Camera source snapshots can briefly disappear while providers
+            // reconcile their stores. Keep an open stream attached during that
+            // transient gap; selection/association changes close it explicitly.
+            if (_activeStream is not null && value is not null && previous?.Id != value.Id &&
+                _activeStream.CameraSourceId != value.CameraSourceId)
+                _ = CloseForCameraChangeAsync();
             RefreshPresentation();
         }
     }
@@ -312,12 +311,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     public IVideoFrameSource NativeFrameSource => _frameSource;
 
-    public string CameraStatus
-    {
-        get => _cameraStatus;
-        private set => SetProperty(ref _cameraStatus, value);
-    }
-
     public string StreamStatus
     {
         get => _streamStatus;
@@ -327,7 +320,10 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     public string PlaybackSummary
     {
         get => _playbackSummary;
-        private set => SetProperty(ref _playbackSummary, value);
+        private set
+        {
+            if (SetProperty(ref _playbackSummary, value)) OnPropertyChanged(nameof(PlaybackEmptyMessage));
+        }
     }
 
     public string PlaybackDetail
@@ -340,12 +336,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     {
         get => _streamEndpoint;
         private set => SetProperty(ref _streamEndpoint, value);
-    }
-
-    public string TrackSummary
-    {
-        get => _trackSummary;
-        private set => SetProperty(ref _trackSummary, value);
     }
 
     public string GStreamerStatus
@@ -391,6 +381,19 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     }
 
     public bool ShowPlaybackPlaceholder => !HasNativeFrame;
+
+    public string PlaybackEmptyMessage => HasSelectedUnit && SelectedCamera is null
+        ? "No video source is configured for this unit."
+        : PlaybackSummary;
+
+    public bool HasSelectedUnit
+    {
+        get => _hasSelectedUnit;
+        private set
+        {
+            if (SetProperty(ref _hasSelectedUnit, value)) OnPropertyChanged(nameof(PlaybackEmptyMessage));
+        }
+    }
 
     public bool HasConfiguredTestFile =>
         !string.IsNullOrWhiteSpace(_configuration.GStreamerTestFilePath) &&
@@ -438,10 +441,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     public string GoLiveTooltip => Text("VideoLive", "Go live");
     public string CaptureFrameTooltip => Text("VideoCaptureFrame", "Capture frame");
     public string CaptureSourceTooltip => Text("VideoCaptureSource", "Capture source image");
-    public string CapturePhotoTooltip => Text("CameraCapturePhoto", "Capture photo");
-    public string StartRemoteVideoTooltip => Text("CameraStartVideo", "Start camera video");
-    public string StopRemoteVideoTooltip => Text("CameraStopVideo", "Stop camera video");
-    public string CenterGimbalTooltip => Text("CameraCenterGimbal", "Center gimbal");
 
     public ICommand OpenStreamCommand { get; }
 
@@ -477,16 +476,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     public ICommand ExportTimelineClipCommand { get; }
 
-    public ICommand CapturePhotoCommand { get; }
-    public ICommand StartRemoteVideoCommand { get; }
-    public ICommand StopRemoteVideoCommand { get; }
-    public ICommand CenterGimbalCommand { get; }
-
-    public string CameraControlStatus
-    {
-        get => _cameraControlStatus;
-        private set => SetProperty(ref _cameraControlStatus, value);
-    }
 
     public bool CaptureIncludeOverlays
     {
@@ -536,12 +525,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _timelineRangeText, value);
     }
 
-    public string RecordingStorageText
-    {
-        get => _recordingStorageText;
-        private set => SetProperty(ref _recordingStorageText, value);
-    }
-
     public string RemoteRecordingStatus
     {
         get => _remoteRecordingStatus;
@@ -554,22 +537,79 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _remoteRecordingDetail, value);
     }
 
-    public bool IsTimelineLive => VideoTimeline.Mode == LocalVideoTimelineMode.Live;
-
-    public string TimelineModeText => VideoTimeline.Mode switch
-    {
-        LocalVideoTimelineMode.Live => "LIVE EDGE",
-        LocalVideoTimelineMode.Playback => "TIMELINE PLAYBACK",
-        _ => "PAUSED FRAME"
-    };
-
     private void Subscribe(System.Collections.IEnumerable collection)
         => ((INotifyCollectionChanged)collection).CollectionChanged += OnDataChanged;
 
+    private void Unsubscribe(System.Collections.IEnumerable collection)
+        => ((INotifyCollectionChanged)collection).CollectionChanged -= OnDataChanged;
+
     private void OnSelectionChanged(object? sender, EventArgs e)
-        => _ = ResetForSelectionAsync();
+    {
+        if (_activeStreamUnitId is not null &&
+            !ShouldCloseStreamForSelection(_activeStreamUnitId, _selection.SelectedUnitIds))
+        {
+            Refresh();
+            return;
+        }
+
+        _ = ResetForSelectionAsync();
+    }
+
+    internal static bool ShouldCloseStreamForSelection(string activeUnitId, IReadOnlyList<string> selectedUnitIds)
+        => selectedUnitIds.Count != 1 || !string.Equals(activeUnitId, selectedUnitIds[0], StringComparison.Ordinal);
 
     private void OnDataChanged(object? sender, NotifyCollectionChangedEventArgs e) => Refresh();
+
+    private void OnMediaWorkflowChanged(object? sender, EventArgs e)
+        => _ = _uiDispatcher.InvokeAsync(RefreshPresentation);
+
+    private void OnUnitAssociationsChanged(object? sender, EventArgs e)
+        => _ = HandleUnitAssociationsChangedAsync();
+
+    private async Task HandleUnitAssociationsChangedAsync()
+    {
+        await _uiDispatcher.InvokeAsync(Refresh);
+        if (_activeStream is null || Cameras.Any(camera =>
+                camera.ConnectionId == _activeStream.ConnectionId && camera.CameraSourceId == _activeStream.CameraSourceId))
+        {
+            return;
+        }
+
+        await _streamGate.WaitAsync();
+        try
+        {
+            await CloseActiveStreamCoreAsync(suppressErrors: true, CancellationToken.None);
+            await _uiDispatcher.InvokeAsync(Refresh);
+        }
+        finally
+        {
+            _streamGate.Release();
+        }
+    }
+
+    private void OnRoutingChanged(object? sender, EventArgs e)
+        => _ = HandleRoutingChangedAsync();
+
+    private async Task HandleRoutingChangedAsync()
+    {
+        await _uiDispatcher.InvokeAsync(Refresh);
+        var unit = GetSelectedUnit();
+        var activeSource = unit is null
+            ? null
+            : _routing?.ForUnit(unit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Video)?.Active?.MediaSourceId;
+        if (_activeStream is null || !_activeStream.ConnectionId.StartsWith("media:", StringComparison.Ordinal) ||
+            string.Equals(_activeStream.CameraSourceId, activeSource, StringComparison.Ordinal) || SelectedCamera is null)
+            return;
+
+        await _streamGate.WaitAsync();
+        try
+        {
+            await CloseActiveStreamCoreAsync(suppressErrors: true, CancellationToken.None);
+            Refresh();
+        }
+        finally { _streamGate.Release(); }
+        if (CanOpenStream()) await OpenStreamAsync(CancellationToken.None);
+    }
 
     private void OnPlaybackChanged(object? sender, EventArgs e)
         => _ = HandlePlaybackChangedAsync();
@@ -615,18 +655,28 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         Refresh();
     }
 
+    private async Task CloseForCameraChangeAsync()
+    {
+        await _streamGate.WaitAsync();
+        try
+        {
+            _closingStream = true;
+            try { await CloseActiveStreamCoreAsync(suppressErrors: true, CancellationToken.None); }
+            finally { _closingStream = false; }
+        }
+        finally { _streamGate.Release(); }
+        await _uiDispatcher.InvokeAsync(RefreshPresentation);
+    }
+
     private void Refresh()
     {
-        var selectedVehicle = GetSelectedVehicle();
-        var allowedConnections = selectedVehicle is null
+        var vehicle = GetSelectedVehicle();
+        var unit = GetSelectedUnit();
+        HasSelectedUnit = vehicle is not null && _selection.SelectedUnitIds.Count <= 1;
+        var available = BuildUnitCameraOptions(_cameraSources.Items, unit, vehicle).ToList();
+        var activeVideoSourceId = unit is null
             ? null
-            : new HashSet<string>(selectedVehicle.ConnectionIds, StringComparer.Ordinal);
-        var available = _cameraSources.Items
-            .Where(item => allowedConnections is null || allowedConnections.Contains(item.ConnectionId))
-            .OrderByDescending(item => item.Active)
-            .ThenByDescending(item => item.Fresh)
-            .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+            : _routing?.ForUnit(unit.Id).FirstOrDefault(item => item.Role == UnitRouteRole.Video)?.Active?.MediaSourceId;
 
         var selectedId = SelectedCamera?.Id;
         Cameras.Clear();
@@ -635,9 +685,15 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             Cameras.Add(camera);
         }
 
-        SelectedCamera = Cameras.FirstOrDefault(item => item.Id == selectedId)
+        SelectedCamera = Cameras.FirstOrDefault(item => item.CameraSourceId == activeVideoSourceId)
+                         ?? Cameras.FirstOrDefault(item => item.Id == selectedId)
                          ?? Cameras.FirstOrDefault(item => item.Active)
                          ?? Cameras.FirstOrDefault();
+        if (HasSelectedUnit && SelectedCamera is null)
+        {
+            _frameSource.SetSource(null);
+            HasNativeFrame = false;
+        }
 
         if (_activeStream is not null)
         {
@@ -656,6 +712,85 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         }
 
         RefreshPresentation();
+        if (HasSelectedUnit && SelectedCamera is null)
+        {
+            PlaybackSummary = "No video source is configured for this unit.";
+            PlaybackDetail = string.Empty;
+        }
+        RaiseCommandStates();
+    }
+
+    internal static IReadOnlyList<CameraSourceRecord> BuildUnitCameraOptions(
+        IEnumerable<CameraSourceRecord> cameraSources,
+        UnitDefinitionSnapshot? unit,
+        VehicleRecord? selectedVehicle = null)
+    {
+        var sourceRecords = cameraSources.ToArray();
+        var available = new Dictionary<string, CameraSourceRecord>(StringComparer.Ordinal);
+        if (unit is not null)
+        {
+            foreach (var binding in unit.CameraSources)
+            {
+                var logicalMediaBinding = (unit.Cameras ?? []).Any(camera =>
+                    camera.ControlConnectionId == binding.ConnectionId &&
+                    camera.ControlCameraSourceId == binding.CameraSourceId &&
+                    (!string.IsNullOrWhiteSpace(camera.MediaSourceId) || (camera.StandbyMediaSourceIds?.Count ?? 0) > 0));
+                if (logicalMediaBinding) continue;
+                var camera = sourceRecords.FirstOrDefault(item =>
+                    item.ConnectionId == binding.ConnectionId && item.CameraSourceId == binding.CameraSourceId);
+                if (camera is not null) available.TryAdd(camera.Id, camera);
+            }
+        }
+
+        foreach (var binding in unit?.Cameras ?? [])
+        {
+            var controlCamera = binding.ControlConnectionId is null || binding.ControlCameraSourceId is null
+                ? null
+                : sourceRecords.FirstOrDefault(item =>
+                    item.ConnectionId == binding.ControlConnectionId && item.CameraSourceId == binding.ControlCameraSourceId);
+            var mediaSourceIds = new[] { binding.MediaSourceId }
+                .Concat(binding.StandbyMediaSourceIds ?? [])
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+            var foundMedia = false;
+            foreach (var sourceId in mediaSourceIds)
+            {
+                var mediaCamera = sourceRecords.FirstOrDefault(item =>
+                    item.ConnectionId == $"media:{sourceId}" && item.CameraSourceId == sourceId);
+                if (mediaCamera is null)
+                {
+                    continue;
+                }
+
+                foundMedia = true;
+                available.TryAdd(mediaCamera.Id, mediaCamera with
+                {
+                    Name = binding.Name,
+                    SupportsGimbal = controlCamera?.SupportsGimbal == true,
+                    SupportsPhoto = controlCamera?.SupportsPhoto == true
+                });
+            }
+
+            if (!foundMedia && controlCamera is not null)
+            {
+                available.TryAdd(controlCamera.Id, controlCamera);
+            }
+        }
+
+        if (selectedVehicle?.IsGhost == true)
+        {
+            foreach (var camera in sourceRecords.Where(item => selectedVehicle.ConnectionIds.Contains(item.ConnectionId, StringComparer.Ordinal) &&
+                                                               item.ConnectionId.StartsWith("ghost-connection-", StringComparison.Ordinal)))
+                available.TryAdd(camera.Id, camera);
+        }
+
+        return available.Values
+            .OrderByDescending(item => item.Active)
+            .ThenByDescending(item => item.Fresh)
+            .ThenBy(item => item.Name, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
     private void RefreshPresentation()
@@ -663,16 +798,13 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         var camera = SelectedCamera;
         if (camera is null)
         {
-            CameraStatus = Text("VideoNoCameraSource", "No camera source available");
             OverlayScene = VideoOverlayScene.Empty;
-            TrackSummary = Text("VideoNoPerceptionTracks", "No perception tracks");
             CameraSettings.Clear();
             HasCameraDefinition = false;
             CameraDefinitionSummary = string.Empty;
         }
         else
         {
-            CameraStatus = $"{camera.State} · {camera.Health} · {(camera.Fresh ? "fresh" : "stale")} · {camera.FrameRateHz:0.0} fps";
             var definition = _cameraDefinitions?.Items.FirstOrDefault(item => item.Id == camera.Id);
             CameraSettings.Clear();
             if (definition is not null)
@@ -712,13 +844,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
                 camera.Width,
                 camera.Height,
                 relevantTracks);
-            TrackSummary = relevantTracks.Length == 0
-                ? Text("VideoNoPerceptionTracks", "No perception tracks")
-                : Text("VideoTracksOverlayed", "{0} track(s) overlaid")
-                    .Replace(
-                        "{0}",
-                        relevantTracks.Length.ToString(CultureInfo.InvariantCulture),
-                        StringComparison.Ordinal);
         }
 
         if (_activeStream is null)
@@ -728,15 +853,29 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         }
         else
         {
-            StreamStatus = $"{_activeStream.Protocol} · {_activeStream.State} · {_activeStream.Width}×{_activeStream.Height} · {_activeStream.FrameRateHz:0.0} fps";
-            StreamEndpoint = string.IsNullOrWhiteSpace(_activeStream.StreamUrl)
+            StreamStatus = FormatStreamStatus(_activeStream);
+            StreamEndpoint = _activeStream.Protocol == "Ghost3D"
+                ? "Simulated world scene"
+                : string.IsNullOrWhiteSpace(_activeStream.StreamUrl)
                 ? "Negotiation payload only"
                 : GStreamerPipelineArguments.RedactEndpoint(_activeStream.StreamUrl);
         }
 
         ApplyPlaybackStatus();
+        if (HasSelectedUnit && SelectedCamera is null)
+        {
+            PlaybackSummary = "No video source is configured for this unit.";
+            PlaybackDetail = string.Empty;
+        }
         RaiseCommandStates();
     }
+
+    private static string FormatStreamStatus(CameraStreamRecord stream)
+        => string.Equals(stream.State, "Playing", StringComparison.OrdinalIgnoreCase)
+            ? $"{stream.Width}×{stream.Height} · {stream.FrameRateHz:0.#} fps"
+            : string.Equals(stream.State, "Faulted", StringComparison.OrdinalIgnoreCase)
+                ? $"Stream faulted: {stream.Message}"
+                : stream.State;
 
     private async Task RefreshGStreamerAsync(
         bool force,
@@ -813,6 +952,18 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     private async Task OpenStreamAsync(CancellationToken cancellationToken)
     {
+        if (!CanOpenStream())
+        {
+            return;
+        }
+
+        // Give the operator immediate feedback. Opening the media connection and
+        // attaching the native decoder can both take long enough that otherwise
+        // the video surface appears to ignore the play action.
+        PlaybackSummary = Text("VideoOpeningStream", "Opening stream…");
+        PlaybackDetail = Text("VideoConnectingToCamera", "Connecting to the selected camera source.");
+        FallbackStatus = Text("VideoOpeningStream", "Opening stream…");
+
         await _streamGate.WaitAsync(cancellationToken);
         try
         {
@@ -840,6 +991,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             _activeStream = null;
+            _activeStreamUnitId = null;
             ActiveProtocolText = "No active protocol";
             PlaybackSummary = "Camera stream failed";
             PlaybackDetail = GStreamerPipelineArguments.RedactText(ex.Message);
@@ -882,6 +1034,13 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     private async Task BuildProtocolPlanAsync(CameraSourceRecord camera, CancellationToken cancellationToken)
     {
+        if (_connections.TryGetDefinition(camera.ConnectionId, out var mediaDefinition) && mediaDefinition?.Mode == ConnectionMode.Media)
+        {
+            _protocolPlan = [VideoProtocolPreference.Rtsp];
+            _automaticFallback = false;
+            ProtocolPlanText = "RTSP";
+            return;
+        }
         var diagnostics = await _gStreamerRuntime.InspectAsync(cancellationToken: cancellationToken);
         _connections.TryGetDefinition(camera.ConnectionId, out var connection);
         _protocolPlan = _protocolPolicy.BuildPlan(connection, SelectedProtocol, diagnostics);
@@ -926,7 +1085,14 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
                 }
 
                 _activeStream = stream;
+                _activeStreamUnitId = GetSelectedVehicle()?.Id;
                 ActiveProtocolText = NativeVideoProtocolResolver.DisplayName(nativeProtocol);
+                StreamStatus = FormatStreamStatus(stream);
+                StreamEndpoint = string.IsNullOrWhiteSpace(stream.StreamUrl)
+                    ? "Negotiation payload only"
+                    : GStreamerPipelineArguments.RedactEndpoint(stream.StreamUrl);
+                PlaybackSummary = Text("VideoStartingPlayback", "Starting video playback…");
+                PlaybackDetail = Text("VideoWaitingForFrames", "Stream opened; waiting for decoded frames.");
                 await _playback.AttachAsync(stream, cancellationToken);
                 var state = _playback.Status.State;
                 if (state is not (VideoPlaybackState.Faulted or VideoPlaybackState.Unsupported or VideoPlaybackState.Offline))
@@ -1062,7 +1228,9 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
         try
         {
-            if (!string.Equals(stream.Protocol, "Synthetic", StringComparison.OrdinalIgnoreCase))
+            if (_connections.TryGetDefinition(stream.ConnectionId, out var definition) && definition?.Mode == ConnectionMode.Media)
+                await _connections.CloseCameraStreamAsync(stream.ConnectionId, stream.StreamId, cancellationToken);
+            else if (!string.Equals(stream.Protocol, "Ghost3D", StringComparison.OrdinalIgnoreCase))
                 await _connections.CloseCameraStreamAsync(stream.ConnectionId, stream.StreamId, cancellationToken);
         }
         catch (Exception ex) when (suppressErrors && ex is not OperationCanceledException)
@@ -1078,6 +1246,7 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         }
 
         _activeStream = null;
+        _activeStreamUnitId = null;
         ActiveProtocolText = "No active protocol";
         await _playback.DetachAsync(cancellationToken);
         if (resetPlan)
@@ -1126,55 +1295,9 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     }
 
     private bool CanOpenStream()
-        => SelectedCamera is not null &&
+        => HasSelectedUnit && SelectedCamera is not null &&
            SelectedCamera.State is not (AvailabilityState.Offline or AvailabilityState.Faulted) &&
            _activeStream is null;
-
-    private bool CanCapturePhoto()
-        => _cameraControl is not null && GetSelectedVehicle() is not null &&
-           SelectedCamera is { SupportsPhoto: true, State: not (AvailabilityState.Offline or AvailabilityState.Faulted) };
-
-    private bool CanStartRemoteVideo()
-        => _cameraControl is not null && GetSelectedVehicle() is not null &&
-           SelectedCamera is { SupportsVideo: true, State: not (AvailabilityState.Offline or AvailabilityState.Faulted) };
-
-    private bool CanStopRemoteVideo() => CanStartRemoteVideo();
-
-    private bool CanCenterGimbal()
-        => _cameraControl is not null && GetSelectedVehicle() is not null &&
-           SelectedCamera is { SupportsGimbal: true, State: not (AvailabilityState.Offline or AvailabilityState.Faulted) };
-
-    private Task CapturePhotoAsync(CancellationToken cancellationToken)
-        => ExecuteCameraActionAsync(FlightMissionCameraAction.PhotoOnce(), cancellationToken);
-
-    private Task StartRemoteVideoAsync(CancellationToken cancellationToken)
-        => ExecuteCameraActionAsync(FlightMissionCameraAction.StartVideo(), cancellationToken);
-
-    private Task StopRemoteVideoAsync(CancellationToken cancellationToken)
-        => ExecuteCameraActionAsync(FlightMissionCameraAction.StopVideo(), cancellationToken);
-
-    private Task CenterGimbalAsync(CancellationToken cancellationToken)
-        => ExecuteCameraActionAsync(FlightMissionCameraAction.SetGimbal(0, 0), cancellationToken);
-
-    private async Task ExecuteCameraActionAsync(
-        FlightMissionCameraAction action,
-        CancellationToken cancellationToken)
-    {
-        var vehicle = GetSelectedVehicle();
-        var camera = SelectedCamera;
-        if (_cameraControl is null || vehicle is null || camera is null)
-        {
-            return;
-        }
-
-        var result = await _cameraControl.ExecuteAsync(
-            camera.ConnectionId,
-            vehicle.Id,
-            camera.CameraSourceId,
-            action,
-            cancellationToken);
-        CameraControlStatus = result.Message;
-    }
 
     private bool CanCloseStream() => _activeStream is not null;
 
@@ -1184,107 +1307,30 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private async Task OpenGhostStreamAsync(CameraSourceRecord camera, CancellationToken cancellationToken)
     {
         await StopGhostVideoAsync(cancellationToken);
-        _frameSource.SetSource(_ghostFrameBuffer);
-        var now = DateTimeOffset.UtcNow;
-        _activeStream = new CameraStreamRecord(
-            $"ghost-stream-{camera.CameraSourceId}",
-            $"ghost-stream-{camera.CameraSourceId}",
-            camera.CameraSourceId,
-            camera.ConnectionId,
-            camera.LogosInstanceId,
-            "Synthetic",
-            "Playing",
-            string.Empty,
-            string.Empty,
-            "BGRA",
-            camera.Width,
-            camera.Height,
-            30,
-            0,
-            now,
-            null,
-            "SIMULATED_VIDEO",
-            "Dark simulated sky/ground horizon",
-            now);
-        ActiveProtocolText = "Synthetic horizon";
-        StreamStatus = "Synthetic Â· Playing Â· 960Ã—540 Â· 30.0 fps";
-        StreamEndpoint = "In-app Ghost camera";
-        PlaybackSummary = "Ghost video playing";
-        PlaybackDetail = "Dark simulated sky/ground horizon; no HUD.";
-        NativeVideoStatus = "Synthetic video playing";
-        NativeVideoDetail = "In-app Ghost camera source.";
-        _ghostVideoCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var width = (int)(camera.Width == 0 ? 960 : camera.Width);
-        var height = (int)(camera.Height == 0 ? 540 : camera.Height);
-        var firstFrame = new byte[checked(width * height * 4)];
-        RenderGhostHorizon(firstFrame, width, height, 0);
-        _ghostFrameBuffer.Publish(firstFrame, width, height, width * 4, now);
-        _ = RunGhostVideoAsync(camera, _ghostVideoCancellation.Token);
+        if (_ghostStreams is null) throw new InvalidOperationException("The simulated Ghost video provider is not available.");
+        var session = await _ghostStreams.OpenAsync(camera, cancellationToken);
+        _activeStream = session.Stream;
+        _activeStreamUnitId = GetSelectedVehicle()?.Id;
+        _frameSource.SetSource(session.Frames);
+        ActiveProtocolText = "Ghost 3D scene";
+        StreamEndpoint = "Simulated world scene";
+        PlaybackSummary = "Ghost camera playing";
+        PlaybackDetail = "Live view from the Ghost camera pose.";
+        NativeVideoStatus = "Simulated video playing";
+        NativeVideoDetail = "Rendered from the shared 3D world scene.";
+        ApplyNativeStatus();
         RefreshPresentation();
-    }
-
-    private async Task RunGhostVideoAsync(CameraSourceRecord camera, CancellationToken cancellationToken)
-    {
-        var width = (int)(camera.Width == 0 ? 960 : camera.Width);
-        var height = (int)(camera.Height == 0 ? 540 : camera.Height);
-        var pixels = new byte[checked(width * height * 4)];
-        var frame = 0;
-        try
-        {
-            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(33));
-            do
-            {
-                RenderGhostHorizon(pixels, width, height, frame++);
-                _ghostFrameBuffer.Publish(pixels, width, height, width * 4, DateTimeOffset.UtcNow);
-            }
-            while (await timer.WaitForNextTickAsync(cancellationToken));
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
     }
 
     private async Task StopGhostVideoAsync(CancellationToken cancellationToken)
     {
-        var cancellation = Interlocked.Exchange(ref _ghostVideoCancellation, null);
-        if (cancellation is null) return;
-        cancellation.Cancel();
-        cancellation.Dispose();
-        _ghostFrameBuffer.Clear();
+        if (_activeStream is { Protocol: "Ghost3D" } stream && _ghostStreams is not null)
+            await _ghostStreams.CloseAsync(stream, cancellationToken);
         _frameSource.SetSource(_localVideo.PresentationFrames);
-        await Task.CompletedTask;
-    }
-
-    private static void RenderGhostHorizon(byte[] pixels, int width, int height, int frame)
-    {
-        var horizon = (int)(height * 0.53);
-        for (var y = 0; y < height; y++)
-        {
-            var ground = y >= horizon;
-            var t = ground ? (y - horizon) / (double)Math.Max(1, height - horizon) : y / (double)Math.Max(1, horizon);
-            var r = ground ? (byte)(42 + 18 * t) : (byte)(18 + 20 * t);
-            var g = ground ? (byte)(52 + 22 * t) : (byte)(35 + 28 * t);
-            var b = ground ? (byte)(20 + 7 * t) : (byte)(52 + 36 * t);
-            var row = y * width * 4;
-            for (var x = 0; x < width; x++)
-            {
-                var offset = row + x * 4;
-                pixels[offset] = b;
-                pixels[offset + 1] = g;
-                pixels[offset + 2] = r;
-                pixels[offset + 3] = 255;
-            }
-        }
-
-        var lineOffset = horizon * width * 4;
-        for (var x = 0; x < width; x++)
-        {
-            pixels[lineOffset + x * 4] = 55;
-            pixels[lineOffset + x * 4 + 1] = 86;
-            pixels[lineOffset + x * 4 + 2] = 112;
-        }
     }
 
     private bool CanRetryStream()
-        => SelectedCamera is not null &&
+        => HasSelectedUnit && SelectedCamera is not null &&
            (_playback.Status.State is VideoPlaybackState.Faulted or VideoPlaybackState.Unsupported or VideoPlaybackState.Offline ||
             (_activeStream is null && _protocolPlan.Count > 0 && _protocolPlanIndex >= _protocolPlan.Count));
 
@@ -1317,8 +1363,27 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             : null;
     }
 
+    private UnitDefinitionSnapshot? GetSelectedUnit()
+    {
+        if (_selection.SelectedUnitIds.Count > 1)
+        {
+            return null;
+        }
+
+        var vehicle = GetSelectedVehicle();
+        return vehicle is null ? null : _unitAssociations?.FindByVehicle(vehicle.Id);
+    }
+
     private void ApplyPlaybackStatus()
     {
+        if (_activeStream is { Protocol: "Ghost3D" } ghostStream)
+        {
+            PlaybackSummary = ghostStream.State == "Faulted" ? "Ghost camera stream faulted" : "Ghost camera playing";
+            PlaybackDetail = ghostStream.State == "Faulted" ? ghostStream.Message : "Live view from the Ghost camera pose.";
+            _retryStreamCommand.RaiseCanExecuteChanged();
+            RaiseTimelineCommandStates();
+            return;
+        }
         var status = _playback.Status;
         PlaybackSummary = LocalizeVideoText(status.Summary);
         PlaybackDetail = LocalizeVideoText(status.Detail);
@@ -1343,6 +1408,18 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
     private void ApplyNativeStatus()
     {
         ApplyRuntimeDiagnostics(_gStreamerRuntime.Diagnostics);
+        if (_activeStream is { Protocol: "Ghost3D" } ghostStream)
+        {
+            NativeVideoStatus = ghostStream.State == "Faulted" ? "Simulated video faulted" : "Simulated video playing";
+            NativeVideoDetail = ghostStream.State == "Faulted" ? ghostStream.Message : "Rendered from the shared 3D world scene.";
+            var ghostInfo = _frameSource.LatestInfo;
+            HasNativeFrame = ghostInfo is not null;
+            NativeVideoMetrics = ghostInfo is null
+                ? Text("VideoNoDecodedFrame", "No decoded frame")
+                : $"{ghostInfo.Width}×{ghostInfo.Height} · BGRA · frame {ghostInfo.Sequence} · {ghostInfo.Timestamp.ToLocalTime():HH:mm:ss.fff}";
+            RaiseCommandStates();
+            return;
+        }
         var status = _nativePipeline.Status;
         NativeVideoStatus = LocalizeVideoText(status.Summary);
         NativeVideoDetail = LocalizeVideoText(status.Detail);
@@ -1652,8 +1729,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         RemoteRecordingStatus = remoteStatus.Summary;
         RemoteRecordingDetail = remoteStatus.Detail;
         OnPropertyChanged(nameof(VideoTimeline));
-        OnPropertyChanged(nameof(IsTimelineLive));
-        OnPropertyChanged(nameof(TimelineModeText));
         if (timeline.Mode == LocalVideoTimelineMode.Live)
         {
             _timelinePosition = 1;
@@ -1662,7 +1737,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         TimelineRangeText = timeline.RangeStart is null || timeline.RangeEnd is null
             ? Text("VideoNoRecordings", "No recordings")
             : $"{timeline.RangeStart.Value.ToLocalTime():HH:mm:ss} – {timeline.RangeEnd.Value.ToLocalTime():HH:mm:ss} · {timeline.Items.Count} item(s)";
-        RecordingStorageText = $"{FormatBytes(timeline.ConsoleBytes)} console video · {FormatBytes(timeline.CachedVehicleBytes)} vehicle cache";
         ApplyNativeStatus();
         RaiseTimelineCommandStates();
     }
@@ -1678,20 +1752,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _exportTimelineClipCommand.RaiseCanExecuteChanged();
     }
 
-    private static string FormatBytes(long bytes)
-    {
-        string[] units = ["B", "KB", "MB", "GB", "TB"];
-        var value = Math.Max(0, bytes);
-        var unit = 0;
-        var display = (double)value;
-        while (display >= 1024 && unit < units.Length - 1)
-        {
-            display /= 1024;
-            unit++;
-        }
-        return $"{display:0.#} {units[unit]}";
-    }
-
     private void RaiseCommandStates()
     {
         _openStreamCommand.RaiseCanExecuteChanged();
@@ -1703,10 +1763,6 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
         _captureDisplayedFrameCommand.RaiseCanExecuteChanged();
         _captureSourceImageCommand.RaiseCanExecuteChanged();
         _exportTimelineClipCommand.RaiseCanExecuteChanged();
-        _capturePhotoCommand.RaiseCanExecuteChanged();
-        _startRemoteVideoCommand.RaiseCanExecuteChanged();
-        _stopRemoteVideoCommand.RaiseCanExecuteChanged();
-        _centerGimbalCommand.RaiseCanExecuteChanged();
     }
 
     private void OnLocalizationChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -1717,8 +1773,8 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
             nameof(RefreshTimelineTooltip), nameof(PlayTimelineTooltip), nameof(PauseTimelineTooltip),
             nameof(ResumeTimelineTooltip), nameof(CacheTimelineTooltip), nameof(RetainTimelineTooltip),
             nameof(ExportTimelineTooltip), nameof(GoLiveTooltip), nameof(CaptureFrameTooltip),
-            nameof(CaptureSourceTooltip), nameof(OpenStreamLabel), nameof(CameraStatus),
-            nameof(TrackSummary), nameof(ProtocolOptions), nameof(SelectedProtocolDisplay)
+            nameof(CaptureSourceTooltip), nameof(OpenStreamLabel),
+            nameof(ProtocolOptions), nameof(SelectedProtocolDisplay)
         })
         {
             OnPropertyChanged(name);
@@ -1769,9 +1825,23 @@ public sealed class CameraPanelViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
-        _ghostVideoCancellation?.Cancel();
-        _ghostVideoCancellation?.Dispose();
-        _ghostVideoCancellation = null;
+        _selection.Changed -= OnSelectionChanged;
+        if (_unitAssociations is not null) _unitAssociations.Changed -= OnUnitAssociationsChanged;
+        if (_routing is not null) _routing.Changed -= OnRoutingChanged;
+        if (_mediaWorkflow is not null) _mediaWorkflow.Changed -= OnMediaWorkflowChanged;
+        if (_localization is not null) _localization.PropertyChanged -= OnLocalizationChanged;
+        _playback.Changed -= OnPlaybackChanged;
+        _nativePipeline.Changed -= OnNativePipelineChanged;
+        _localVideo.Changed -= OnLocalVideoChanged;
+        _frameSource.FrameAvailable -= OnNativeFrameAvailable;
+        Unsubscribe(_vehicles.Items);
+        Unsubscribe(_telemetry.Items);
+        Unsubscribe(_missions.Items);
+        Unsubscribe(_tasks.Items);
+        Unsubscribe(_cameraSources.Items);
+        if (_cameraDefinitions is not null) Unsubscribe(_cameraDefinitions.Items);
+        Unsubscribe(_cameraStreams.Items);
+        Unsubscribe(_tracks.Items);
         _streamGate.Dispose();
         GC.SuppressFinalize(this);
     }

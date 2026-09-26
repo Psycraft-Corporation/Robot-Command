@@ -12,6 +12,7 @@ public sealed class NativeVideoPlaybackAdapter : IVideoPlaybackAdapter, IAsyncDi
     private readonly IGStreamerVideoPipeline _pipeline;
     private readonly AppConfiguration _configuration;
     private readonly ILogger<NativeVideoPlaybackAdapter> _logger;
+    private readonly bool _ownsPipeline;
     private CameraStreamRecord? _activeStream;
     private NativeVideoProtocol _activeProtocol;
     private CancellationTokenSource? _sessionCancellation;
@@ -23,11 +24,13 @@ public sealed class NativeVideoPlaybackAdapter : IVideoPlaybackAdapter, IAsyncDi
     public NativeVideoPlaybackAdapter(
         IGStreamerVideoPipeline pipeline,
         AppConfiguration configuration,
-        ILogger<NativeVideoPlaybackAdapter> logger)
+        ILogger<NativeVideoPlaybackAdapter> logger,
+        bool ownsPipeline = false)
     {
         _pipeline = pipeline;
         _configuration = configuration;
         _logger = logger;
+        _ownsPipeline = ownsPipeline;
         _pipeline.Changed += OnPipelineChanged;
     }
 
@@ -183,6 +186,10 @@ public sealed class NativeVideoPlaybackAdapter : IVideoPlaybackAdapter, IAsyncDi
             _gate.Dispose();
         }
         await IgnoreCancellationAsync(reconnectTask);
+        if (_ownsPipeline)
+        {
+            await _pipeline.DisposeAsync();
+        }
     }
 
     private async Task StartPipelineCoreAsync(

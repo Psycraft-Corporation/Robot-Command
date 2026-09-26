@@ -12,6 +12,7 @@ public interface IUnitDefinitionService : IUnitAssociationWorkflow
     string ResolveCommandSource(string sourceVehicleId);
     string ResolveTelemetrySource(string sourceVehicleId);
     string ResolveDiagnosticsSource(string sourceVehicleId);
+    string ResolveAuthorityConnection(string sourceVehicleId, UnitRouteRole role);
     string DisplayNameFor(string sourceVehicleId, string fallback);
     IReadOnlyList<VehicleRecord> ProjectVehicles(IReadOnlyList<VehicleRecord> vehicles);
     IReadOnlyList<RuntimeRecord> ProjectRuntimes(

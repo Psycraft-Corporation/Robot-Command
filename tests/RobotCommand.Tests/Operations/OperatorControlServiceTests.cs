@@ -1,7 +1,9 @@
+using RobotCommand.Core;
 using RobotCommand.Models;
 using RobotCommand.Services;
 using RobotCommand.Services.Connections;
 using RobotCommand.Services.Operations;
+using RobotCommand.Services.Reconciliation;
 using RobotCommand.State;
 using Xunit;
 
@@ -198,6 +200,104 @@ public sealed class OperatorControlServiceTests
     }
 
     [Fact]
+    public async Task CameraCommandsUseGimbalRouteAndRevalidateItsCameraIdentity()
+    {
+        var fixture = new Fixture(new RecordingGateway(available: true));
+        var directory = Path.Combine(Path.GetTempPath(), $"robot-command-operator-routes-{Guid.NewGuid():N}");
+        try
+        {
+            var cameras = new EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal);
+            var primaryCamera = Camera("camera-link-1", "zr10:1:100");
+            var standbyCamera = Camera("camera-link-2", "zr10:1:101");
+            cameras.Upsert(primaryCamera);
+            cameras.Upsert(standbyCamera);
+            fixture.Connections.Upsert(new ConnectionRecord("camera-link-1", "Camera link 1", "serial://camera-1",
+                ConnectionMode.Mavlink, AvailabilityState.Online, false, LastSeen: DateTimeOffset.UtcNow));
+            fixture.Connections.Upsert(new ConnectionRecord("camera-link-2", "Camera link 2", "serial://camera-2",
+                ConnectionMode.Mavlink, AvailabilityState.Online, false, LastSeen: DateTimeOffset.UtcNow));
+            Assert.True(fixture.Vehicles.TryGet("vehicle-1", out var vehicle));
+            fixture.Vehicles.Upsert(vehicle! with { ConnectionIds = ["connection-1", "camera-link-1", "camera-link-2"] });
+
+            var units = new UnitDefinitionService(directory, fixture.Vehicles, cameras);
+            var unit = await units.SaveAsync("dracula-unit", new UnitDefinitionRequest(
+                "Dracula",
+                [new("connection-1", "vehicle-1"), new("camera-link-1", "vehicle-1"), new("camera-link-2", "vehicle-1")],
+                ConnectionIds: ["connection-1", "camera-link-1", "camera-link-2"],
+                Cameras:
+                [
+                    new("zr10-primary", "ZR10 primary", "camera-link-1", primaryCamera.CameraSourceId),
+                    new("zr10-standby", "ZR10 standby", "camera-link-2", standbyCamera.CameraSourceId)
+                ]));
+            using var routing = new UnitRouteFailoverService(
+                units, fixture.Connections, fixture.Telemetry,
+                new EntityStore<string, VehicleDiagnosticsSnapshot>(item => item.VehicleId, StringComparer.Ordinal),
+                cameras, new AppConfiguration());
+            fixture.AttachUnitRouting(units, routing);
+
+            var flightPlan = await fixture.Service.PrepareAsync("vehicle-1", OperatorCommandKind.Arm, "Flight command");
+            Assert.Equal("connection-1", flightPlan.Target.ConnectionId);
+            Assert.Null(flightPlan.Target.CameraSourceId);
+
+            var cameraPlan = await fixture.Service.PrepareAsync(
+                "vehicle-1", OperatorCommandKind.CapturePhoto, "Take a photo", OperatorCommandParameters.None);
+            Assert.Equal("camera-link-1", cameraPlan.Target.ConnectionId);
+            Assert.Equal(primaryCamera.CameraSourceId, cameraPlan.Target.CameraSourceId);
+            Assert.True((await fixture.Service.ExecuteAsync(cameraPlan)).Accepted);
+            Assert.Equal(primaryCamera.CameraSourceId, fixture.Gateway.LastRequest?.Target.CameraSourceId);
+
+            var stalePlan = await fixture.Service.PrepareAsync(
+                "vehicle-1", OperatorCommandKind.SetGimbal, "Move camera",
+                new OperatorCommandParameters(GimbalPitchDegrees: -25, GimbalYawDegrees: 15, GimbalRollDegrees: 2, GimbalZoomPercent: 45));
+            await routing.SelectAsync(unit.Id, UnitRouteRole.Gimbal, 1, confirmControlSwitch: true);
+
+            var rejected = await fixture.Service.ExecuteAsync(stalePlan);
+            Assert.False(rejected.Accepted);
+            Assert.Contains("route or camera identity changed", rejected.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(1, fixture.Gateway.ExecutionCount);
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task CameraCommandIsBlockedWhenGimbalRouteIsUnhealthy()
+    {
+        var fixture = new Fixture(new RecordingGateway(available: true));
+        var directory = Path.Combine(Path.GetTempPath(), $"robot-command-operator-routes-{Guid.NewGuid():N}");
+        try
+        {
+            var cameras = new EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal);
+            cameras.Upsert(Camera("camera-link", "zr10:1:100") with { State = AvailabilityState.Offline, Fresh = false });
+            fixture.Connections.Upsert(new ConnectionRecord("camera-link", "Camera link", "serial://camera",
+                ConnectionMode.Mavlink, AvailabilityState.Online, false, LastSeen: DateTimeOffset.UtcNow));
+            Assert.True(fixture.Vehicles.TryGet("vehicle-1", out var vehicle));
+            fixture.Vehicles.Upsert(vehicle! with { ConnectionIds = ["connection-1", "camera-link"] });
+            var units = new UnitDefinitionService(directory, fixture.Vehicles, cameras);
+            await units.SaveAsync("dracula-unit", new UnitDefinitionRequest(
+                "Dracula",
+                [new("connection-1", "vehicle-1"), new("camera-link", "vehicle-1")],
+                ConnectionIds: ["connection-1", "camera-link"],
+                Cameras: [new("zr10", "ZR10", "camera-link", "zr10:1:100")]));
+            using var routing = new UnitRouteFailoverService(
+                units, fixture.Connections, fixture.Telemetry,
+                new EntityStore<string, VehicleDiagnosticsSnapshot>(item => item.VehicleId, StringComparer.Ordinal),
+                cameras, new AppConfiguration());
+            fixture.AttachUnitRouting(units, routing);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Service.PrepareAsync(
+                "vehicle-1", OperatorCommandKind.CapturePhoto, "Take a photo"));
+            Assert.Contains("camera/gimbal route is unavailable", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, fixture.Gateway.ExecutionCount);
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task CancellingPreparedCommand_UsesCancelledState()
     {
         var fixture = new Fixture();
@@ -335,7 +435,11 @@ public sealed class OperatorControlServiceTests
                 string.Empty,
                 DateTimeOffset.UtcNow));
 
-            Service = new OperatorControlService(
+            AttachUnitRouting(null, null);
+        }
+
+        public void AttachUnitRouting(IUnitDefinitionService? reconciliation, IUnitRoutingWorkflow? routing)
+            => Service = new OperatorControlService(
                 new AppConfiguration
                 {
                     Connections = [],
@@ -346,15 +450,16 @@ public sealed class OperatorControlServiceTests
                 Connections,
                 Vehicles,
                 Telemetry,
-                Commands);
-        }
+                Commands,
+                reconciliation: reconciliation,
+                routing: routing);
 
         public RecordingGateway Gateway { get; }
         public EntityStore<string, ConnectionRecord> Connections { get; } = new(item => item.Id, StringComparer.Ordinal);
         public EntityStore<string, VehicleRecord> Vehicles { get; } = new(item => item.Id, StringComparer.Ordinal);
         public EntityStore<string, VehicleTelemetryRecord> Telemetry { get; } = new(item => item.Id, StringComparer.Ordinal);
         public EntityStore<string, OperationalCommandRecord> Commands { get; } = new(item => item.Id, StringComparer.Ordinal);
-        public OperatorControlService Service { get; }
+        public OperatorControlService Service { get; private set; } = null!;
     }
 
     private sealed class RecordingGateway(bool available, bool rejectPreparation = false) : IOperatorCommandGateway
@@ -365,6 +470,7 @@ public sealed class OperatorControlServiceTests
 
         public OperatorCommandRequest? LastPreparedRequest { get; private set; }
         public OperatorCommandRequest? LastRequest { get; private set; }
+        public int ExecutionCount { get; private set; }
 
         public Task<OperatorCommandPreparationResult> PrepareAsync(
             OperatorCommandRequest request,
@@ -415,12 +521,18 @@ public sealed class OperatorControlServiceTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             LastRequest = request;
+            ExecutionCount++;
             return Task.FromResult(new OperatorCommandResult(
                 true,
                 OperationalCommandState.Accepted,
                 "Accepted by test gateway"));
         }
     }
+
+    private static CameraSourceRecord Camera(string connectionId, string cameraSourceId)
+        => new($"{connectionId}:{cameraSourceId}", cameraSourceId, connectionId, "logos-1", "ZR10", "MAVLink camera",
+            AvailabilityState.Online, "Healthy", "Ready", true, true, false, 0, 0, 1920, 1080, "camera", "OK", "Online",
+            DateTimeOffset.UtcNow, SupportsPhoto: true, SupportsVideo: true, SupportsGimbal: true);
 
     private sealed class PolicyAllowingConnectionManager : ILogosConnectionManager
     {

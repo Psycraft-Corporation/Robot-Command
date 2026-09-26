@@ -2,7 +2,9 @@ using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using RobotCommand.Bootstrap;
 using RobotCommand.Core;
+using RobotCommand.Models;
 using RobotCommand.Services.Mavlink;
+using RobotCommand.State;
 
 namespace RobotCommand.Cli;
 
@@ -20,13 +22,16 @@ internal static class CameraCommands
 
         var actionName = parsed.Positionals.FirstOrDefault()?.ToLowerInvariant();
         var connectionId = parsed.Get("connection") ?? throw new ArgumentException("--connection is required.");
-        var vehicleId = parsed.Get("unit") ?? throw new ArgumentException("--unit is required.");
-        var action = ParseAction(actionName, parsed);
+        var vehicleId = parsed.Get("unit");
+        var isList = actionName == "list";
+        if (!isList && string.IsNullOrWhiteSpace(vehicleId)) throw new ArgumentException("--unit is required.");
+        var action = isList ? null : ParseAction(actionName, parsed);
         var reporter = new ConsoleReporter(parsed.Has("json"));
         using var stopping = ConsoleCancellation.Create();
         using var host = RobotCommandRuntimeHost.Build(
-            parsed.Get("data-dir") ?? AppContext.BaseDirectory,
-            RobotCommandRuntimeMode.Cli);
+            AppContext.BaseDirectory,
+            RobotCommandRuntimeMode.Cli,
+            dataDirectory: parsed.Get("data-dir") ?? RobotCommandDataDirectory.GetDefaultPath());
         var connections = host.Services.GetRequiredService<IConnectionManagementWorkflow>();
         var lifecycle = host.Services.GetRequiredService<IConnectionRuntimeLifecycle>();
         var control = host.Services.GetRequiredService<IMavlinkCameraControlService>();
@@ -36,11 +41,29 @@ internal static class CameraCommands
             await connections.ConnectAsync(connectionId, null, stopping.Token);
             await lifecycle.StartAsync(false, connectionId, stopping.Token);
             await WaitForComponentDiscoveryAsync(stopping.Token);
+            if (isList)
+            {
+                var sources = host.Services.GetRequiredService<IEntityStore<string, CameraSourceRecord>>().Items
+                    .Where(item => item.ConnectionId == connectionId)
+                    .Select(item => new
+                    {
+                        item.CameraSourceId,
+                        item.Name,
+                        item.State,
+                        item.SupportsPhoto,
+                        item.SupportsVideo,
+                        item.SupportsGimbal,
+                        item.Fresh,
+                        item.Health
+                    }).ToArray();
+                reporter.Event("camera.list", sources);
+                return sources.Length > 0 ? 0 : 1;
+            }
             var result = await control.ExecuteAsync(
                 connectionId,
-                vehicleId,
+                vehicleId!,
                 parsed.Get("camera"),
-                action,
+                action!,
                 stopping.Token);
             reporter.Event("camera.command", result);
             return result.Accepted ? 0 : 1;
@@ -90,7 +113,7 @@ internal static class CameraCommands
                     ? FlightMissionGimbalFrame.Earth
                     : FlightMissionGimbalFrame.Vehicle),
             _ => throw new ArgumentException(
-                "Camera action must be photo, photo-by-time, photo-by-distance, stop-photos, start-video, stop-video, mode-photo, mode-video, center-gimbal, or gimbal.")
+                "Camera action must be list, photo, photo-by-time, photo-by-distance, stop-photos, start-video, stop-video, mode-photo, mode-video, center-gimbal, or gimbal.")
         };
 
     private static double? Number(CliArguments args, string name)

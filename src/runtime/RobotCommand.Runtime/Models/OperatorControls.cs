@@ -1,3 +1,5 @@
+using RobotCommand.Core;
+
 namespace RobotCommand.Models;
 
 public enum OperatorCommandKind
@@ -16,7 +18,8 @@ public enum OperatorCommandKind
     StopVideo,
     CenterGimbal,
     NadirGimbal,
-    SetGimbal
+    SetGimbal,
+    SetCameraSettings
 }
 
 public enum OperatorCommandSafety
@@ -79,7 +82,8 @@ public sealed record OperatorCommandTarget(
     string ConnectionId,
     string VehicleId,
     string? LogosInstanceId,
-    DateTimeOffset CapturedAt);
+    DateTimeOffset CapturedAt,
+    string? CameraSourceId = null);
 
 public enum OperatorGoToTargetKind
 {
@@ -127,7 +131,10 @@ public sealed record OperatorCommandParameters(
     double? GimbalYawDegrees = null,
     double? GimbalRollDegrees = null,
     double? GimbalZoomPercent = null,
-    bool GimbalEarthFrame = false)
+    bool GimbalEarthFrame = false,
+    FlightMissionCameraMode? CameraMode = null,
+    uint? CameraResolutionWidth = null,
+    uint? CameraResolutionHeight = null)
 {
     public static OperatorCommandParameters None { get; } = new();
 

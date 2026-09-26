@@ -17,7 +17,8 @@ public enum OperatorWorkflowCommandKind
     StopVideo,
     CenterGimbal,
     NadirGimbal,
-    SetGimbal
+    SetGimbal,
+    SetCameraSettings
 }
 
 public enum OperatorWorkflowAvailability { Ready, Warning, Blocked, Unavailable }
@@ -51,7 +52,10 @@ public sealed record OperatorWorkflowParameters(
     double? GimbalYawDegrees = null,
     double? GimbalRollDegrees = null,
     double? GimbalZoomPercent = null,
-    bool GimbalEarthFrame = false)
+    bool GimbalEarthFrame = false,
+    FlightMissionCameraMode? CameraMode = null,
+    uint? CameraResolutionWidth = null,
+    uint? CameraResolutionHeight = null)
 {
     public static OperatorWorkflowParameters None { get; } = new();
 }

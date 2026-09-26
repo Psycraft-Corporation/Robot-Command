@@ -85,6 +85,33 @@ public sealed class UnitAssociationWorkflowTests : IDisposable
     }
 
     [Fact]
+    public async Task PersistsLogicalCameraWithIndependentControlAndPrimaryAndStandbyVideoSources()
+    {
+        var service = new UnitDefinitionService(_directory);
+        var camera = new UnitCameraDeviceBinding("zr10", "ZR10", "sik-link", "camera-100", "hm30-rtsp",
+            ["backup-rtsp"]);
+        var saved = await service.SaveAsync(null, new UnitDefinitionRequest("Dracula", [],
+            ConnectionIds: ["sik-link"], Cameras: [camera]));
+
+        Assert.Contains("sik-link", saved.ConnectionIds!);
+        Assert.Contains("media:hm30-rtsp", saved.ConnectionIds!);
+        Assert.Contains("media:backup-rtsp", saved.ConnectionIds!);
+        var persistedCamera = Assert.Single(saved.Cameras!);
+        Assert.Equal(camera.Id, persistedCamera.Id);
+        Assert.Equal(camera.ControlConnectionId, persistedCamera.ControlConnectionId);
+        Assert.Equal(camera.ControlCameraSourceId, persistedCamera.ControlCameraSourceId);
+        Assert.Equal(camera.MediaSourceId, persistedCamera.MediaSourceId);
+        Assert.Equal(camera.StandbyMediaSourceIds, persistedCamera.StandbyMediaSourceIds);
+        Assert.Contains(saved.Routes!, item => item.Role == UnitRouteRole.Gimbal && item.ConnectionId == "sik-link");
+        Assert.Equal(new[] { "hm30-rtsp", "backup-rtsp" }, saved.Routes!.Where(item => item.Role == UnitRouteRole.Video).Select(item => item.MediaSourceId));
+
+        var reloaded = new UnitDefinitionService(_directory);
+        var loadedCamera = Assert.Single(reloaded.Units.Single().Cameras!);
+        Assert.Equal(camera.Id, loadedCamera.Id);
+        Assert.Equal(camera.StandbyMediaSourceIds, loadedCamera.StandbyMediaSourceIds);
+    }
+
+    [Fact]
     public async Task RenamePreservesIdAndDeleteDoesNotTouchConnections()
     {
         var service = new UnitDefinitionService(_directory);

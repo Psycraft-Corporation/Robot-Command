@@ -12,6 +12,40 @@ namespace RobotCommand.Tests.ViewModels;
 public sealed class UnitsPanelViewModelTests
 {
     [Fact]
+    public void UnitEditorAssignsSeparateControlAndVideoConnectionsToOneLogicalCamera()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"robot-command-logical-camera-{Guid.NewGuid():N}");
+        try
+        {
+            var connections = new EntityStore<string, ConnectionRecord>(item => item.Id, StringComparer.Ordinal);
+            var vehicles = new EntityStore<string, VehicleRecord>(item => item.Id, StringComparer.Ordinal);
+            var cameras = new EntityStore<string, CameraSourceRecord>(item => item.Id, StringComparer.Ordinal);
+            cameras.Upsert(new CameraSourceRecord("zr10-source", "camera-100", "sik-link", null, "ZR10", "MAVLink",
+                AvailabilityState.Online, "Ready", "Ready", true, true, false, 0, 0, 0, 0, string.Empty, "READY", "Ready",
+                DateTimeOffset.UtcNow, SupportsPhoto: true, SupportsVideo: false, SupportsGimbal: true));
+            var definitions = new UnitDefinitionService(directory);
+            var settings = new ApplicationSettingsService(AppConfiguration.Load(directory), new ApplicationSettingsPersistence(directory));
+            connections.Upsert(new ConnectionRecord("media:hm30-video", "HM30 Video", "rtsp://127.0.0.1/live", ConnectionMode.Media, AvailabilityState.Online, true));
+            var library = new UnitsLibraryViewModel(definitions, connections, vehicles, cameras, new LocalizationService(settings));
+
+            library.NewUnitCommand.Execute(null);
+            library.LogicalCameraName = "ZR10";
+            library.SelectedControlCamera = cameras.Items.Single();
+            library.SelectedMediaConnection = library.MediaConnectionOptions.Single();
+            library.AddLogicalCameraCommand.Execute(null);
+
+            var binding = Assert.Single(library.LogicalCameras);
+            Assert.Equal("sik-link", binding.ControlConnectionId);
+            Assert.Equal("camera-100", binding.ControlCameraSourceId);
+            Assert.Equal("hm30-video", binding.MediaSourceId);
+        }
+        finally
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void NewUnitShowsSavedConnectionsWhenNoVehicleHasBeenDiscovered()
     {
         var directory = Path.Combine(Path.GetTempPath(), $"robot-command-unit-connections-{Guid.NewGuid():N}");
@@ -421,4 +455,5 @@ public sealed class UnitsPanelViewModelTests
 
         public Task ClearAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
+
 }

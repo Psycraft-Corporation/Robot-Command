@@ -346,10 +346,7 @@ public sealed class OperationalMapSceneBuilder(
 
     private MapCameraConeVisual? CameraConeFor(VehicleRecord vehicle)
     {
-        if (vehicle.IsGhost ||
-            (!vehicle.ProfileKey.Contains("px4", StringComparison.OrdinalIgnoreCase) &&
-             !vehicle.ProfileKey.Contains("ardupilot", StringComparison.OrdinalIgnoreCase)) ||
-            !vehicle.VehicleClass.Contains("multicopter", StringComparison.OrdinalIgnoreCase))
+        if (!vehicle.VehicleClass.Contains("multicopter", StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }

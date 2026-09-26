@@ -22,6 +22,7 @@ public sealed class OperatorControlsViewModel : ObservableObject
     private readonly IEntityStore<string, VehicleRecord> _vehicles;
     private readonly IEntityStore<string, VehicleTelemetryRecord> _telemetry;
     private readonly IEntityStore<string, ConnectionRecord> _connections;
+    private readonly IEntityStore<string, CameraSourceRecord>? _cameraSources;
     private readonly IReadOnlyList<IFormationProvider> _formationProviders;
     private readonly AsyncRelayCommand _executePendingCommand;
     private readonly AsyncRelayCommand _cancelExecutingCommandsCommand;
@@ -47,6 +48,10 @@ public sealed class OperatorControlsViewModel : ObservableObject
     private string _rejectedCommandMessage = string.Empty;
     private string _commandOutcomeTitle = "Command rejected";
     private bool _isRejectedCommandExpanded;
+    private FlightMissionCameraMode _selectedCameraMode = FlightMissionCameraMode.Video;
+    private CameraVideoFormatSnapshot _selectedCameraVideoFormat = GhostCameraDefaults.SupportedVideoFormats[1];
+    private bool _cameraSettingsDirty;
+    private bool _refreshingCameraSettings;
     private readonly IUnitSettingsService? _unitSettings;
     private readonly IUiDispatcher? _dispatcher;
     private readonly ITerrainElevationService? _terrain;
@@ -62,7 +67,8 @@ public sealed class OperatorControlsViewModel : ObservableObject
         IUnitSettingsService? unitSettings = null,
         IUiDispatcher? dispatcher = null,
         IOperatorTargetScopeWorkflow? targetScope = null,
-        ITerrainElevationService? terrain = null)
+        ITerrainElevationService? terrain = null,
+        IEntityStore<string, CameraSourceRecord>? cameraSources = null)
     {
         _workflow = workflow;
         _selection = selection;
@@ -70,6 +76,7 @@ public sealed class OperatorControlsViewModel : ObservableObject
         _vehicles = vehicles;
         _telemetry = telemetry;
         _connections = connections;
+        _cameraSources = cameraSources;
         _formationProviders = (formationProviders ?? []).ToArray();
         _unitSettings = unitSettings;
         _dispatcher = dispatcher;
@@ -89,6 +96,7 @@ public sealed class OperatorControlsViewModel : ObservableObject
         Subscribe(_vehicles.Items);
         Subscribe(_telemetry.Items);
         Subscribe(_connections.Items);
+        if (_cameraSources is not null) Subscribe(_cameraSources.Items);
         ((INotifyCollectionChanged)CommandHistory).CollectionChanged += OnCommandHistoryChanged;
         _workflow.Changed += OnWorkflowChanged;
 
@@ -107,6 +115,14 @@ public sealed class OperatorControlsViewModel : ObservableObject
         PrepareCenterGimbalCommand = CreatePrepareCommand(OperatorCommandKind.CenterGimbal);
         PrepareNadirGimbalCommand = CreatePrepareCommand(OperatorCommandKind.NadirGimbal);
         PrepareSetGimbalCommand = CreatePrepareCommand(OperatorCommandKind.SetGimbal);
+        PrepareSetCameraSettingsCommand = CreatePrepareCommand(OperatorCommandKind.SetCameraSettings);
+        PrepareFocusedCapturePhotoCommand = CreateFocusedCameraCommand(OperatorCommandKind.CapturePhoto);
+        PrepareFocusedStartVideoCommand = CreateFocusedCameraCommand(OperatorCommandKind.StartVideo);
+        PrepareFocusedStopVideoCommand = CreateFocusedCameraCommand(OperatorCommandKind.StopVideo);
+        PrepareFocusedCenterGimbalCommand = CreateFocusedCameraCommand(OperatorCommandKind.CenterGimbal);
+        PrepareFocusedNadirGimbalCommand = CreateFocusedCameraCommand(OperatorCommandKind.NadirGimbal);
+        PrepareFocusedSetGimbalCommand = CreateFocusedCameraCommand(OperatorCommandKind.SetGimbal);
+        PrepareFocusedSetCameraSettingsCommand = CreateFocusedCameraCommand(OperatorCommandKind.SetCameraSettings);
         ToggleVideoCommand = new AsyncRelayCommand(ToggleVideoAsync, () => CanPrepareCommand(IsVideoRecording ? OperatorCommandKind.StopVideo : OperatorCommandKind.StartVideo));
         PrepareMapGoToCommand = new RelayCommand(
             parameter => _ = PrepareMapCommandAsync(OperatorCommandKind.GoTo, parameter),
@@ -168,6 +184,14 @@ public sealed class OperatorControlsViewModel : ObservableObject
     public ICommand PrepareCenterGimbalCommand { get; }
     public ICommand PrepareNadirGimbalCommand { get; }
     public ICommand PrepareSetGimbalCommand { get; }
+    public ICommand PrepareSetCameraSettingsCommand { get; }
+    public ICommand PrepareFocusedCapturePhotoCommand { get; }
+    public ICommand PrepareFocusedStartVideoCommand { get; }
+    public ICommand PrepareFocusedStopVideoCommand { get; }
+    public ICommand PrepareFocusedCenterGimbalCommand { get; }
+    public ICommand PrepareFocusedNadirGimbalCommand { get; }
+    public ICommand PrepareFocusedSetGimbalCommand { get; }
+    public ICommand PrepareFocusedSetCameraSettingsCommand { get; }
     public ICommand ToggleVideoCommand { get; }
     public ICommand PrepareMapGoToCommand { get; }
     public ICommand PrepareMapSetHeadingCommand { get; }
@@ -413,6 +437,37 @@ public sealed class OperatorControlsViewModel : ObservableObject
 
     public bool HasGimbalCameraSelection => GimbalCameraSupportedCount > 0;
 
+    public bool HasGhostCameraSettingsSelection
+        => SelectedCommandTargetCount == 1 && _selectedVehicleId is not null &&
+           _vehicles.TryGet(_selectedVehicleId, out var selectedVehicle) && selectedVehicle?.IsGhost == true;
+
+    public IReadOnlyList<FlightMissionCameraMode> CameraModes { get; } =
+        [FlightMissionCameraMode.Photo, FlightMissionCameraMode.Video];
+
+    private readonly IReadOnlyList<CameraVideoFormatSnapshot> _cameraVideoFormats = GhostCameraDefaults.SupportedVideoFormats;
+
+    public IReadOnlyList<CameraVideoFormatSnapshot> CameraVideoFormats => _cameraVideoFormats;
+
+    public FlightMissionCameraMode SelectedCameraMode
+    {
+        get => _selectedCameraMode;
+        set
+        {
+            if (SetProperty(ref _selectedCameraMode, value) && !_refreshingCameraSettings)
+                _cameraSettingsDirty = true;
+        }
+    }
+
+    public CameraVideoFormatSnapshot SelectedCameraVideoFormat
+    {
+        get => _selectedCameraVideoFormat;
+        set
+        {
+            if (SetProperty(ref _selectedCameraVideoFormat, value) && !_refreshingCameraSettings)
+                _cameraSettingsDirty = true;
+        }
+    }
+
     public string GimbalCameraSupportedSummary
         => HasMultiUnitSelection
             ? string.Format(
@@ -462,11 +517,19 @@ public sealed class OperatorControlsViewModel : ObservableObject
         => value is { } angle && double.IsFinite(angle) ? $"{angle:0.#}°" : "—";
 
     private bool IsGimbalCameraSupported(string vehicleId)
-        => _vehicles.TryGet(vehicleId, out var vehicle) && vehicle is not null &&
-           (vehicle.CapabilityKeys ?? []).Any(key =>
-               key.Equals("gimbal", StringComparison.OrdinalIgnoreCase) ||
-               key.StartsWith("camera_", StringComparison.OrdinalIgnoreCase) ||
-               key.Equals("camera", StringComparison.OrdinalIgnoreCase));
+    {
+        if (!_vehicles.TryGet(vehicleId, out var vehicle) || vehicle is null)
+            return false;
+
+        var capabilityReported = (vehicle.CapabilityKeys ?? []).Any(key =>
+            key.Equals("gimbal", StringComparison.OrdinalIgnoreCase) ||
+            key.StartsWith("camera_", StringComparison.OrdinalIgnoreCase) ||
+            key.Equals("camera", StringComparison.OrdinalIgnoreCase));
+        var cameraReported = _cameraSources?.Items.Any(source =>
+            vehicle.ConnectionIds.Contains(source.ConnectionId, StringComparer.Ordinal) &&
+            source.SupportsGimbal) == true;
+        return capabilityReported || cameraReported;
+    }
 
     private double _takeoffAltitudeAglMetres = 5;
     public double TakeoffAltitudeAglMetres
@@ -836,6 +899,38 @@ public sealed class OperatorControlsViewModel : ObservableObject
     private AsyncRelayCommand CreatePrepareCommand(OperatorCommandKind command)
         => new(token => QueueFromFormAsync(command, token), () => CanPrepareCommand(command));
 
+    private RelayCommand CreateFocusedCameraCommand(OperatorCommandKind command)
+        => new(parameter => _ = PrepareFocusedCameraAsync(command, parameter),
+            parameter => CanPrepareFocusedCamera(command, parameter));
+
+    private bool CanPrepareFocusedCamera(OperatorCommandKind command, object? parameter)
+    {
+        if (parameter is not string unitId || !_selection.SelectedUnitIds.Contains(unitId, StringComparer.Ordinal))
+            return false;
+        if (command == OperatorCommandKind.SetCameraSettings)
+            return _vehicles.TryGet(unitId, out var vehicle) && vehicle?.IsGhost == true;
+        return IsCameraCommand(command) && IsGimbalCameraSupported(unitId);
+    }
+
+    private async Task PrepareFocusedCameraAsync(OperatorCommandKind command, object? parameter)
+    {
+        if (parameter is not string unitId || !CanPrepareFocusedCamera(command, unitId)) return;
+        if (TryGetFormCommandError(command, out var error))
+        {
+            ParameterValidationMessage = error;
+            StatusMessage = error;
+            return;
+        }
+
+        await QueueAsync(command,
+            new Dictionary<string, OperatorCommandParameters>(StringComparer.Ordinal)
+            {
+                [unitId] = ParametersFor(command)
+            },
+            null,
+            CancellationToken.None);
+    }
+
     private Task QueueFromFormAsync(OperatorCommandKind command, CancellationToken cancellationToken)
     {
         if (TryGetFormCommandError(command, out var error))
@@ -1047,10 +1142,12 @@ public sealed class OperatorControlsViewModel : ObservableObject
     private static bool IsCameraCommand(OperatorCommandKind command)
         => command is OperatorCommandKind.CapturePhoto or OperatorCommandKind.StartVideo or
             OperatorCommandKind.StopVideo or OperatorCommandKind.CenterGimbal or
-            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal;
+            OperatorCommandKind.NadirGimbal or OperatorCommandKind.SetGimbal or OperatorCommandKind.SetCameraSettings;
 
     private bool CanPrepareCommand(OperatorCommandKind command)
-        => HasCommandSelection && (!IsCameraCommand(command) || HasGimbalCameraSelection) &&
+        => HasCommandSelection && (command == OperatorCommandKind.SetCameraSettings
+                ? HasGhostCameraSettingsSelection
+                : !IsCameraCommand(command) || HasGimbalCameraSelection) &&
            (SelectedCommandTargetCount == 1 || SupportsMultiUnitCommand(command));
 
     private OperatorCommandParameters ParametersFor(OperatorCommandKind command)
@@ -1073,6 +1170,10 @@ public sealed class OperatorControlsViewModel : ObservableObject
                 GimbalYawDegrees: ParseOptional(GimbalYawText),
                 GimbalRollDegrees: ParseOptional(GimbalRollText),
                 GimbalZoomPercent: ParseOptional(GimbalZoomText)),
+            OperatorCommandKind.SetCameraSettings => new OperatorCommandParameters(
+                CameraMode: SelectedCameraMode,
+                CameraResolutionWidth: SelectedCameraVideoFormat.Width,
+                CameraResolutionHeight: SelectedCameraVideoFormat.Height),
             _ => OperatorCommandParameters.None
         };
 
@@ -1269,6 +1370,8 @@ public sealed class OperatorControlsViewModel : ObservableObject
         var ids = TargetUnitIds.Count > 0
             ? TargetUnitIds
             : _selectedVehicleId is null ? [] : [_selectedVehicleId];
+        if (command == OperatorCommandKind.SetCameraSettings)
+            return HasGhostCameraSettingsSelection ? ids : [];
         return IsCameraCommand(command) ? ids.Where(IsGimbalCameraSupported).ToArray() : ids;
     }
 
@@ -1598,6 +1701,7 @@ public sealed class OperatorControlsViewModel : ObservableObject
         // The selected-unit list is authoritative. Current is retained for
         // compatibility with older selection surfaces, but can briefly lag
         // while a unit row is being refreshed or reordered.
+        var previousVehicleId = _selectedVehicleId;
         var newVehicleId = TargetUnitIds.Count > 0 ? TargetUnitIds[0] : null;
         if (newVehicleId is null && _selection.Current.Kind == SelectionKind.Vehicle)
             newVehicleId = _selection.Current.Id;
@@ -1619,6 +1723,8 @@ public sealed class OperatorControlsViewModel : ObservableObject
             _selectedVehicleId = null;
             SelectedVehicleText = "No vehicle selected";
         }
+        if (!string.Equals(previousVehicleId, _selectedVehicleId, StringComparison.Ordinal))
+            _cameraSettingsDirty = false;
 
         OnPropertyChanged(nameof(HasVehicleSelection));
         OnPropertyChanged(nameof(HasMultiUnitSelection));
@@ -1626,10 +1732,12 @@ public sealed class OperatorControlsViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedUnitText));
         OnPropertyChanged(nameof(GimbalCameraSupportedCount));
         OnPropertyChanged(nameof(HasGimbalCameraSelection));
+        OnPropertyChanged(nameof(HasGhostCameraSettingsSelection));
         OnPropertyChanged(nameof(GimbalCameraSupportedSummary));
         OnPropertyChanged(nameof(GimbalCameraSupportedTooltip));
         OnPropertyChanged(nameof(GimbalTelemetrySummary));
         OnPropertyChanged(nameof(VideoToggleText));
+        RefreshGhostCameraSettingsSelection();
         OnPropertyChanged(nameof(SelectedQueuedAction));
         OnPropertyChanged(nameof(SelectedQueuedAvailability));
         RefreshSelectedQueueProjection();
@@ -1639,6 +1747,45 @@ public sealed class OperatorControlsViewModel : ObservableObject
 
     private void Subscribe(System.Collections.IEnumerable collection)
         => ((INotifyCollectionChanged)collection).CollectionChanged += OnDataChanged;
+
+    private void RefreshGhostCameraSettingsSelection()
+    {
+        if (!HasGhostCameraSettingsSelection || _cameraSources is null || _selectedVehicleId is null ||
+            !_vehicles.TryGet(_selectedVehicleId, out var vehicle) || vehicle is null)
+        {
+            ApplyReportedCameraSettings(FlightMissionCameraMode.Video, GhostCameraDefaults.SupportedVideoFormats[1]);
+            return;
+        }
+
+        var camera = _cameraSources.Items.FirstOrDefault(source =>
+            vehicle.ConnectionIds.Contains(source.ConnectionId, StringComparer.Ordinal) && source.DeviceState is not null);
+        if (camera?.DeviceState is not { } state) return;
+        var reportedFormat = state.SupportedVideoFormats.FirstOrDefault(format =>
+            format.Width == state.VideoWidth && format.Height == state.VideoHeight) ?? GhostCameraDefaults.SupportedVideoFormats[1];
+        if (_cameraSettingsDirty)
+        {
+            if (_selectedCameraMode == state.Mode && _selectedCameraVideoFormat == reportedFormat)
+                _cameraSettingsDirty = false;
+            else
+                return;
+        }
+
+        ApplyReportedCameraSettings(state.Mode, reportedFormat);
+    }
+
+    private void ApplyReportedCameraSettings(FlightMissionCameraMode mode, CameraVideoFormatSnapshot format)
+    {
+        _refreshingCameraSettings = true;
+        try
+        {
+            SelectedCameraMode = mode;
+            SelectedCameraVideoFormat = format;
+        }
+        finally
+        {
+            _refreshingCameraSettings = false;
+        }
+    }
 
     private void ReplaceFindings(IEnumerable<OperatorWorkflowFinding> findings)
     {
@@ -1731,7 +1878,8 @@ public sealed class OperatorControlsViewModel : ObservableObject
         parameters.HeadingTargetKind is null ? null : (OperatorWorkflowHeadingTargetKind)parameters.HeadingTargetKind.Value,
         parameters.HeadingDegrees, parameters.RelativeYawDegrees, parameters.AirborneDisarmConfirmed,
         parameters.GimbalPitchDegrees, parameters.GimbalYawDegrees, parameters.GimbalRollDegrees,
-        parameters.GimbalZoomPercent, parameters.GimbalEarthFrame);
+        parameters.GimbalZoomPercent, parameters.GimbalEarthFrame,
+        parameters.CameraMode, parameters.CameraResolutionWidth, parameters.CameraResolutionHeight);
 
     private static OperatorCommandParameters FromWorkflow(OperatorWorkflowParameters parameters) => new(
         parameters.TakeoffAltitudeAglMetres,
@@ -1744,7 +1892,8 @@ public sealed class OperatorControlsViewModel : ObservableObject
         parameters.HeadingTargetKind is null ? null : (OperatorHeadingTargetKind)parameters.HeadingTargetKind.Value,
         parameters.HeadingDegrees, parameters.RelativeYawDegrees, parameters.AirborneDisarmConfirmed,
         parameters.GimbalPitchDegrees, parameters.GimbalYawDegrees, parameters.GimbalRollDegrees,
-        parameters.GimbalZoomPercent, parameters.GimbalEarthFrame);
+        parameters.GimbalZoomPercent, parameters.GimbalEarthFrame,
+        parameters.CameraMode, parameters.CameraResolutionWidth, parameters.CameraResolutionHeight);
 
     private void RaiseCommandStates()
     {
@@ -1770,6 +1919,7 @@ public sealed class OperatorControlsViewModel : ObservableObject
             PrepareCenterGimbalCommand,
             PrepareNadirGimbalCommand,
             PrepareSetGimbalCommand,
+            PrepareSetCameraSettingsCommand,
             ToggleVideoCommand,
             PrepareMapGoToCommand,
             PrepareMapSetHeadingCommand,

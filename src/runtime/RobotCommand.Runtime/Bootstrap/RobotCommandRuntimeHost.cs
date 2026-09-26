@@ -32,13 +32,14 @@ public enum RobotCommandRuntimeMode { Gui, Headless, Cli }
 
 public static class RobotCommandRuntimeHost
 {
-    public static IHost Build(string baseDirectory, RobotCommandRuntimeMode mode, Action<HostApplicationBuilder>? configure = null)
+    public static IHost Build(string baseDirectory, RobotCommandRuntimeMode mode, Action<HostApplicationBuilder>? configure = null, string? dataDirectory = null)
     {
         CrashDiagnostics.Install();
-        // A headless caller may deliberately choose a fresh --data-dir. Host
-        // configuration requires the content root to exist before services can
-        // create their normal data/configuration files beneath it.
+        var resolvedDataDirectory = dataDirectory ?? baseDirectory;
+        // Host configuration uses the application root, while writable state
+        // lives in the shared per-user directory (or an explicit --data-dir).
         Directory.CreateDirectory(baseDirectory);
+        Directory.CreateDirectory(resolvedDataDirectory);
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
         {
             ApplicationName = "RobotCommand",
@@ -49,35 +50,40 @@ public static class RobotCommandRuntimeHost
         builder.Logging.ClearProviders();
         builder.Logging.SetMinimumLevel(LogLevel.Information);
         builder.Logging.AddProvider(new FileLoggerProvider());
-        AddServices(builder.Services, baseDirectory, mode);
+        AddServices(builder.Services, baseDirectory, resolvedDataDirectory, mode);
         configure?.Invoke(builder);
         return builder.Build();
     }
 
     public static void AddServices(IServiceCollection services, string baseDirectory, RobotCommandRuntimeMode mode)
+        => AddServices(services, baseDirectory, baseDirectory, mode);
+
+    public static void AddServices(IServiceCollection services, string baseDirectory, string dataDirectory, RobotCommandRuntimeMode mode)
     {
-        services.AddSingleton(_ => AppConfiguration.Load(baseDirectory));
-        services.AddSingleton<IConnectionPersistence>(_ => new ConnectionPersistence(baseDirectory));
-        services.AddSingleton<IApplicationSettingsPersistence>(_ => new ApplicationSettingsPersistence(baseDirectory));
+        services.AddSingleton(_ => AppConfiguration.Load(baseDirectory, dataDirectory));
+        services.AddSingleton<IConnectionPersistence>(_ => new ConnectionPersistence(dataDirectory));
+        services.AddSingleton<IApplicationSettingsPersistence>(_ => new ApplicationSettingsPersistence(dataDirectory));
         services.AddSingleton<IApplicationSettingsService>(provider => new ApplicationSettingsService(
             provider.GetRequiredService<AppConfiguration>(), provider.GetRequiredService<IApplicationSettingsPersistence>()));
         services.AddSingleton<IMediaSettingsService>(provider => new MediaSettingsService(
-            provider.GetRequiredService<AppConfiguration>(), baseDirectory));
+            provider.GetRequiredService<AppConfiguration>(), dataDirectory));
         services.AddSingleton<IMediaMtxRuntime, MediaMtxRuntime>();
         services.AddSingleton<IUnitSettingsService, UnitSettingsService>();
         services.AddSingleton<IApplicationPreferencesWorkflow, ApplicationPreferencesWorkflow>();
         services.AddSingleton<UnitDefinitionService>(provider => new UnitDefinitionService(
-            baseDirectory,
+            dataDirectory,
             provider.GetRequiredService<IEntityStore<string, VehicleRecord>>(),
             provider.GetRequiredService<IEntityStore<string, CameraSourceRecord>>()));
         services.AddSingleton<IUnitDefinitionService>(provider => provider.GetRequiredService<UnitDefinitionService>());
         services.AddSingleton<IUnitAssociationWorkflow>(provider => provider.GetRequiredService<UnitDefinitionService>());
+        services.AddSingleton<UnitRouteFailoverService>();
+        services.AddSingleton<IUnitRoutingWorkflow>(provider => provider.GetRequiredService<UnitRouteFailoverService>());
         services.TryAddSingleton<IUiDispatcher, InlineUiDispatcher>();
         services.AddSingleton<IStorePublicationGate, StorePublicationGate>();
 
         AddState(services);
-        AddConnections(services, baseDirectory, mode);
-        AddTeam(services, baseDirectory, mode);
+        AddConnections(services, dataDirectory, mode);
+        AddTeam(services, dataDirectory, mode);
     }
 
     private static void AddTeam(IServiceCollection services, string baseDirectory, RobotCommandRuntimeMode mode)
@@ -145,7 +151,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton(provider => new Px4FenceLibraryStore(baseDirectory));
         services.AddSingleton(provider => new FenceLibraryStore(baseDirectory));
         services.AddSingleton<IPx4ParameterFileCodec, Px4ParameterFileCodec>();
-        services.AddSingleton<IPx4ParameterProfileStore>(provider => new Px4ParameterProfileStore(AppContext.BaseDirectory, provider.GetRequiredService<IPx4ParameterFileCodec>(), provider.GetRequiredService<ILogger<Px4ParameterProfileStore>>()));
+        services.AddSingleton<IPx4ParameterProfileStore>(provider => new Px4ParameterProfileStore(baseDirectory, provider.GetRequiredService<IPx4ParameterFileCodec>(), provider.GetRequiredService<ILogger<Px4ParameterProfileStore>>()));
         services.AddSingleton<IPx4ParameterService, Px4ParameterService>();
         services.AddSingleton<IPx4ParameterProfileWorkflow, Px4ParameterProfileWorkflow>();
         services.AddSingleton<ISikRadioWorkflow, SikRadioWorkflow>();
@@ -159,6 +165,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IConnectionProvider, DirectLogosConnectionFactory>();
         services.AddSingleton<IConnectionProvider, LinkdConnectionProvider>();
         services.AddSingleton<IConnectionProvider, MavlinkConnectionProvider>();
+        services.AddSingleton<IConnectionProvider, RtspConnectionProvider>();
         services.AddSingleton<ILogosConnectionFactory, ManagedConnectionFactory>();
         services.AddSingleton<ILogosOperationalSessionFactory, LogosOperationalSessionFactory>();
         services.AddSingleton<ILogosOperationalSessionRegistry, LogosOperationalSessionRegistry>();
@@ -202,6 +209,9 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<IGStreamerRuntime, GStreamerRuntime>();
         services.AddSingleton<IGStreamerVideoPipeline, GStreamerVideoPipeline>();
         services.AddSingleton<IGStreamerVideoPipelineFactory, GStreamerVideoPipelineFactory>();
+        services.AddSingleton<IVideoPlaybackAdapterFactory, VideoPlaybackAdapterFactory>();
+        services.AddSingleton<ICameraMediaSourceProvider, RtspCameraMediaSourceProvider>();
+        services.AddSingleton<IGhostCameraStreamProvider, GhostCameraStreamProvider>();
         services.AddSingleton<ILocalVideoRecordingCatalog, LocalVideoRecordingCatalog>();
         services.AddSingleton<ILocalVideoRecordingService, LocalVideoRecordingService>();
         services.AddSingleton<IRemoteVideoRecordingCatalog, MediaMtxRemoteVideoRecordingCatalog>();
@@ -243,7 +253,7 @@ public static class RobotCommandRuntimeHost
         services.AddSingleton<WindowsGamepadInputDeviceProvider>();
         services.AddSingleton<WindowsRawJoystickInputDeviceProvider>();
         services.AddSingleton<IManualInputDeviceProvider, CompositeManualInputDeviceProvider>();
-        services.AddSingleton<ManualControlProfileStore>();
+        services.AddSingleton(_ => new ManualControlProfileStore(baseDirectory));
         services.AddSingleton<ManualControlService>();
         services.AddSingleton<IManualControlService>(provider => provider.GetRequiredService<ManualControlService>());
         services.AddSingleton<IManualControlWorkflow, ManualControlWorkflow>();

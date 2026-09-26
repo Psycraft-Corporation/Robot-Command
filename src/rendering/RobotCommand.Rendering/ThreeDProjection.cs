@@ -126,6 +126,10 @@ public static class ThreeDProjection
         var z = translated.X * Math.Sin(yaw) + translated.Z * Math.Cos(yaw);
         var y = translated.Y * Math.Cos(pitch) - z * Math.Sin(pitch);
         z = translated.Y * Math.Sin(pitch) + z * Math.Cos(pitch);
+        var roll = -camera.RollDegrees * Math.PI / 180d;
+        var rolledX = x * Math.Cos(roll) - y * Math.Sin(roll);
+        y = x * Math.Sin(roll) + y * Math.Cos(roll);
+        x = rolledX;
         return new(x, y, z);
     }
 
@@ -136,6 +140,10 @@ public static class ThreeDProjection
         var cameraY = -(y - height / 2d) / focal;
         var cameraZ = 1d;
 
+        var roll = camera.RollDegrees * Math.PI / 180d;
+        var rolledX = cameraX * Math.Cos(roll) - cameraY * Math.Sin(roll);
+        cameraY = cameraX * Math.Sin(roll) + cameraY * Math.Cos(roll);
+        cameraX = rolledX;
         var pitch = camera.PitchDegrees * Math.PI / 180d;
         var yaw = camera.YawDegrees * Math.PI / 180d;
         var firstY = cameraY * Math.Cos(pitch) - cameraZ * Math.Sin(pitch);

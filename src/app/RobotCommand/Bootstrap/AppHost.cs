@@ -50,7 +50,7 @@ internal static class AppHost
                     DataContext = services.GetRequiredService<ShellViewModel>()
                 };
             });
-        });
+        }, RobotCommandDataDirectory.GetDefaultPath());
     }
 
     private static void RegisterTeamServer(IServiceCollection services, string baseDirectory)
@@ -179,6 +179,7 @@ internal static class AppHost
         services.AddSingleton<IGStreamerRuntime, GStreamerRuntime>();
         services.AddSingleton<IGStreamerVideoPipeline, GStreamerVideoPipeline>();
         services.AddSingleton<IGStreamerVideoPipelineFactory, GStreamerVideoPipelineFactory>();
+        services.AddSingleton<IVideoPlaybackAdapterFactory, VideoPlaybackAdapterFactory>();
         services.AddSingleton<ILocalVideoRecordingCatalog, LocalVideoRecordingCatalog>();
         services.AddSingleton<ILocalVideoRecordingService, LocalVideoRecordingService>();
         services.AddSingleton<IRemoteVideoRecordingCatalog, MediaMtxRemoteVideoRecordingCatalog>();
@@ -308,6 +309,7 @@ internal static class AppHost
         services.AddSingleton<FormationAuthoringViewModel>();
         services.AddSingleton<AutonomyWorkspaceViewModel>();
         services.AddSingleton<CameraPanelViewModel>();
+        services.AddSingleton<MultiUnitVideoGridViewModel>();
         services.AddSingleton<OperatorControlsViewModel>(serviceProvider =>
             new OperatorControlsViewModel(
                 serviceProvider.GetRequiredService<IOperatorCommandWorkflow>(),
@@ -320,7 +322,8 @@ internal static class AppHost
                 serviceProvider.GetRequiredService<IUnitSettingsService>(),
                 serviceProvider.GetRequiredService<IUiDispatcher>(),
                 serviceProvider.GetRequiredService<IOperatorTargetScopeWorkflow>(),
-                serviceProvider.GetRequiredService<ITerrainElevationService>()));
+                serviceProvider.GetRequiredService<ITerrainElevationService>(),
+                serviceProvider.GetRequiredService<IEntityStore<string, CameraSourceRecord>>()));
         services.AddSingleton<ManualControlViewModel>();
         services.AddSingleton<OperateViewModel>();
         services.AddSingleton<EventsViewModel>();
@@ -339,7 +342,8 @@ internal static class AppHost
                 serviceProvider.GetRequiredService<ILocalizationService>(),
                 serviceProvider.GetRequiredService<IConnectionManagementWorkflow>(),
                 serviceProvider.GetRequiredService<IPx4ParameterService>(),
-                serviceProvider.GetRequiredService<IPx4ParameterProfileStore>()));
+                serviceProvider.GetRequiredService<IPx4ParameterProfileStore>(),
+                serviceProvider.GetRequiredService<IUnitRoutingWorkflow>()));
         services.AddSingleton<UnitsWorkspaceViewModel>();
         services.AddSingleton<EmbeddedTerminalViewModel>();
         services.AddSingleton<ShellViewModel>();

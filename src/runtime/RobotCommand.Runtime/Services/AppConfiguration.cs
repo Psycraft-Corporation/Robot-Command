@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using RobotCommand.Models;
 using RobotCommand.Services.Behaviours;
 using RobotCommand.Services.Terrain;
@@ -134,10 +135,15 @@ public sealed class AppConfiguration
     public TerrainOptions Terrain { get; init; } = new();
 
     public static AppConfiguration Load(string baseDirectory)
+        => Load(baseDirectory, baseDirectory);
+
+    public static AppConfiguration Load(string applicationDirectory, string dataDirectory)
     {
+        var baseDirectory = dataDirectory;
+        ImportLegacyMediaConnections(applicationDirectory, dataDirectory);
         var config = new MutableConfiguration();
-        Merge(config, Path.Combine(baseDirectory, "appsettings.json"));
-        Merge(config, Path.Combine(baseDirectory, "appsettings.local.json"));
+        Merge(config, Path.Combine(applicationDirectory, "appsettings.json"));
+        Merge(config, Path.Combine(dataDirectory, "appsettings.local.json"));
 
         var validProfiles = config.Connections
             .Where(profile => Uri.TryCreate(profile.Target, UriKind.Absolute, out _))
@@ -367,6 +373,78 @@ public sealed class AppConfiguration
                 ResolveTerrainCachePath(baseDirectory, config.TerrainCachePath)).Normalize()
         };
     }
+
+    private static void ImportLegacyMediaConnections(string applicationDirectory, string dataDirectory)
+    {
+        var legacyPaths = new[] { applicationDirectory, dataDirectory }
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(directory => Path.Combine(directory, "data", "media-sources.json"))
+            .Where(File.Exists)
+            .ToArray();
+        var localPath = Path.Combine(dataDirectory, "appsettings.local.json");
+        if (legacyPaths.Length == 0) return;
+        try
+        {
+            var root = File.Exists(localPath)
+                ? JsonNode.Parse(File.ReadAllText(localPath)) as JsonObject ?? []
+                : new JsonObject();
+            var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+            var connections = root["connections"] as JsonArray;
+            if (connections is null)
+            {
+                connections = root["profiles"] is JsonArray legacyProfiles
+                    ? (JsonArray)legacyProfiles.DeepClone()
+                    : [];
+                root.Remove("profiles");
+                root["connections"] = connections;
+            }
+            var added = false;
+            foreach (var path in legacyPaths)
+            {
+                var legacy = JsonSerializer.Deserialize<LegacyMediaDocument>(File.ReadAllText(path), options);
+                if (legacy?.Sources is not { Count: > 0 }) continue;
+                foreach (var source in legacy.Sources)
+                {
+                    if (string.IsNullOrWhiteSpace(source.Id) || string.IsNullOrWhiteSpace(source.Name) ||
+                        string.IsNullOrWhiteSpace(source.Endpoint) || !Uri.TryCreate(source.Endpoint, UriKind.Absolute, out var uri) ||
+                        !uri.Scheme.Equals("rtsp", StringComparison.OrdinalIgnoreCase) || uri.UserInfo.Length > 0 ||
+                        !string.Equals(source.Provider, "rtsp", StringComparison.OrdinalIgnoreCase))
+                        throw new JsonException("The legacy media source file contains an invalid or unsupported source; migration was not completed.");
+                    var connectionId = $"media:{source.Id}";
+                    var existing = connections.OfType<JsonObject>().FirstOrDefault(item =>
+                        string.Equals((string?)item["id"] ?? (string?)item["Id"], connectionId, StringComparison.Ordinal));
+                    if (existing is not null)
+                    {
+                        var existingMode = (string?)existing["mode"] ?? (string?)existing["Mode"];
+                        var isMedia = string.Equals(existingMode, nameof(ConnectionMode.Media), StringComparison.OrdinalIgnoreCase) ||
+                            int.TryParse(existingMode, out var numericMode) && numericMode == (int)ConnectionMode.Media;
+                        if (!isMedia)
+                            throw new JsonException($"Connection ID '{connectionId}' is already used by a non-media connection.");
+                        continue;
+                    }
+                    var profile = new ConnectionProfile(source.Name.Trim(), source.Endpoint.Trim(), "Imported RTSP camera source",
+                        connectionId, ConnectionMode.Media, AutoConnect: false, AutoReconnect: true);
+                    connections.Add(JsonSerializer.SerializeToNode(profile, options));
+                    added = true;
+                }
+            }
+            if (added)
+            {
+                Directory.CreateDirectory(dataDirectory);
+                var temporaryPath = localPath + ".migration.tmp";
+                File.WriteAllText(temporaryPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+                File.Move(temporaryPath, localPath, true);
+            }
+            foreach (var path in legacyPaths) File.Delete(path);
+        }
+        catch (Exception exception) when (exception is IOException or JsonException or UnauthorizedAccessException)
+        {
+            // Do not remove legacy state unless every source was validated and durably imported.
+        }
+    }
+
+    private sealed record LegacyMediaDocument(string Schema, IReadOnlyList<LegacyMediaSource>? Sources);
+    private sealed record LegacyMediaSource(string Id, string Name, string Provider, string Endpoint);
 
     private static void Merge(MutableConfiguration config, string path)
     {

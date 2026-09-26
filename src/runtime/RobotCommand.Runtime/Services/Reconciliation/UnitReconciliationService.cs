@@ -89,8 +89,17 @@ public sealed class UnitDefinitionService : IUnitDefinitionService
             .Where(item => !string.IsNullOrWhiteSpace(item.ConnectionId) && !string.IsNullOrWhiteSpace(item.CameraSourceId))
             .Distinct()
             .ToArray();
+        var logicalCameras = (request.Cameras ?? [])
+            .Where(item => !string.IsNullOrWhiteSpace(item.Id) && !string.IsNullOrWhiteSpace(item.Name) &&
+                           ((!string.IsNullOrWhiteSpace(item.ControlConnectionId) && !string.IsNullOrWhiteSpace(item.ControlCameraSourceId)) ||
+                            (!string.IsNullOrWhiteSpace(item.MediaSourceId)) || (item.StandbyMediaSourceIds?.Count ?? 0) > 0))
+            .Distinct()
+            .ToArray();
+        var routes = (request.Routes ?? []).Distinct().ToArray();
         var connectionIds = (request.ConnectionIds ?? [])
             .Concat(bindings.Select(item => item.ConnectionId))
+            .Concat(cameras.Select(item => item.ConnectionId))
+            .Concat(logicalCameras.Where(item => !string.IsNullOrWhiteSpace(item.ControlConnectionId)).Select(item => item.ControlConnectionId!))
             .Where(item => !string.IsNullOrWhiteSpace(item))
             .Distinct(StringComparer.Ordinal)
             .OrderBy(item => item, StringComparer.Ordinal)
@@ -98,15 +107,57 @@ public sealed class UnitDefinitionService : IUnitDefinitionService
         if (string.IsNullOrWhiteSpace(request.DisplayName)) throw new InvalidOperationException("Enter a unit name.");
         if (request.DisplayName.Trim().Length > 120) throw new InvalidOperationException("Unit names cannot exceed 120 characters.");
         if (connectionIds.Length == 0) throw new InvalidOperationException("Select at least one connection.");
-        if (bindings.Length != request.VehicleSources.Count || cameras.Length != (request.CameraSources?.Count ?? 0))
+        if (bindings.Length != request.VehicleSources.Count || cameras.Length != (request.CameraSources?.Count ?? 0) ||
+            logicalCameras.Length != (request.Cameras?.Count ?? 0) || routes.Length != (request.Routes?.Count ?? 0))
             throw new InvalidOperationException("A unit cannot contain duplicate or empty sources.");
-
-        var command = request.CommandAuthorityConnectionId ?? connectionIds[0];
-        var telemetry = request.TelemetryAuthorityConnectionId ?? connectionIds[0];
-        var diagnostics = request.DiagnosticsAuthorityConnectionId ?? connectionIds[0];
+        if (request.Cameras?.Any(item =>
+                string.IsNullOrWhiteSpace(item.Id) || string.IsNullOrWhiteSpace(item.Name) ||
+                (string.IsNullOrWhiteSpace(item.ControlConnectionId) != string.IsNullOrWhiteSpace(item.ControlCameraSourceId)) ||
+                (string.IsNullOrWhiteSpace(item.ControlConnectionId) && string.IsNullOrWhiteSpace(item.MediaSourceId) && (item.StandbyMediaSourceIds?.Count ?? 0) == 0)) == true)
+            throw new InvalidOperationException("Each camera needs a name and at least one control or media source; control connection and camera ID must be set together.");
+        var configuredMediaIds = logicalCameras.SelectMany(item => new[] { item.MediaSourceId }.Concat(item.StandbyMediaSourceIds ?? []))
+            .Where(item => !string.IsNullOrWhiteSpace(item)).ToArray();
+        if (configuredMediaIds.Distinct(StringComparer.Ordinal).Count() != configuredMediaIds.Length)
+            throw new InvalidOperationException("A media source can only be assigned once within a unit's camera routes.");
+        var primaryVehicleConnection = bindings.FirstOrDefault()?.ConnectionId ?? connectionIds[0];
+        var command = request.CommandAuthorityConnectionId ?? routes.FirstOrDefault(item => item.Role == UnitRouteRole.Command)?.ConnectionId ?? primaryVehicleConnection;
+        var telemetry = request.TelemetryAuthorityConnectionId ?? routes.FirstOrDefault(item => item.Role == UnitRouteRole.Telemetry)?.ConnectionId ?? primaryVehicleConnection;
+        var diagnostics = request.DiagnosticsAuthorityConnectionId ?? routes.FirstOrDefault(item => item.Role == UnitRouteRole.Diagnostics)?.ConnectionId ?? primaryVehicleConnection;
         ValidateAuthority("command", command, connectionIds);
         ValidateAuthority("telemetry", telemetry, connectionIds);
         ValidateAuthority("diagnostics", diagnostics, connectionIds);
+        if (request.Routes is null)
+        {
+            routes = new[]
+                {
+                    BindingRoute(UnitRouteRole.Command, command, bindings),
+                    BindingRoute(UnitRouteRole.Telemetry, telemetry, bindings),
+                    BindingRoute(UnitRouteRole.Diagnostics, diagnostics, bindings)
+                }
+                .Where(item => item is not null).Cast<UnitRouteCandidate>()
+                .Concat(logicalCameras.Where(item => item.ControlConnectionId is not null && item.ControlCameraSourceId is not null)
+                    .Select(item => new UnitRouteCandidate(UnitRouteRole.Gimbal, item.ControlConnectionId,
+                        bindings.FirstOrDefault(binding => binding.ConnectionId == item.ControlConnectionId)?.VehicleId,
+                        item.ControlCameraSourceId)))
+                .Concat(logicalCameras.SelectMany(item => new[] { item.MediaSourceId }.Concat(item.StandbyMediaSourceIds ?? [])
+                    .Where(sourceId => !string.IsNullOrWhiteSpace(sourceId))
+                    .Select(sourceId => new UnitRouteCandidate(UnitRouteRole.Video, MediaSourceId: sourceId))))
+                .ToArray();
+        }
+        else
+        {
+            routes = routes
+                .Concat(logicalCameras.Where(item => item.ControlConnectionId is not null && item.ControlCameraSourceId is not null)
+                    .Select(item => new UnitRouteCandidate(UnitRouteRole.Gimbal, item.ControlConnectionId,
+                        bindings.FirstOrDefault(binding => binding.ConnectionId == item.ControlConnectionId)?.VehicleId,
+                        item.ControlCameraSourceId)))
+                .Concat(logicalCameras.SelectMany(item => new[] { item.MediaSourceId }.Concat(item.StandbyMediaSourceIds ?? [])
+                    .Where(sourceId => !string.IsNullOrWhiteSpace(sourceId))
+                    .Select(sourceId => new UnitRouteCandidate(UnitRouteRole.Video, MediaSourceId: sourceId))))
+                .Distinct()
+                .ToArray();
+        }
+        ValidateRouteCandidates(routes, bindings, logicalCameras);
 
         ManualUnitDefinition saved;
         IReadOnlyList<ManualUnitDefinition> next;
@@ -116,14 +167,16 @@ public sealed class UnitDefinitionService : IUnitDefinitionService
             var conflict = _definitions.FirstOrDefault(existing =>
                 !string.Equals(existing.Id, id, StringComparison.Ordinal) &&
                 (DeclaredConnectionIds(existing).Intersect(connectionIds, StringComparer.Ordinal).Any() ||
-                 (existing.CameraSources ?? []).Any(binding => cameras.Contains(binding))));
+                 (existing.CameraSources ?? []).Any(binding => cameras.Contains(binding)) ||
+                 (existing.Cameras ?? []).Any(binding => logicalCameras.Any(candidate => candidate.Id == binding.Id)) ||
+                 CameraMediaIds(existing.Cameras ?? []).Intersect(CameraMediaIds(logicalCameras), StringComparer.Ordinal).Any()));
             if (conflict is not null)
                 throw new InvalidOperationException($"One of these sources is already associated with '{conflict.DisplayName}'. Remove it there first.");
 
             saved = new ManualUnitDefinition(id, request.DisplayName.Trim(),
                 bindings.Select(item => new UnitConnectionBinding(item.ConnectionId, item.VehicleId))
                     .OrderBy(item => item.ConnectionId, StringComparer.Ordinal).ThenBy(item => item.VehicleId, StringComparer.Ordinal).ToArray(),
-                command, telemetry, diagnostics, DateTimeOffset.UtcNow, cameras, connectionIds);
+                command, telemetry, diagnostics, DateTimeOffset.UtcNow, cameras, connectionIds, logicalCameras, routes);
             next = _definitions.Where(item => item.Id != saved.Id).Append(saved).ToArray();
         }
 
@@ -162,6 +215,21 @@ public sealed class UnitDefinitionService : IUnitDefinitionService
 
     public string ResolveDiagnosticsSource(string sourceVehicleId)
         => Resolve(sourceVehicleId, item => VehicleForConnection(EffectiveBindings(item), item.DiagnosticsAuthorityConnectionId));
+
+    public string ResolveAuthorityConnection(string sourceVehicleId, UnitRouteRole role)
+    {
+        var definition = FindBySource(sourceVehicleId);
+        if (definition is null) return string.Empty;
+        var preferred = role switch
+        {
+            UnitRouteRole.Command => definition.CommandAuthorityConnectionId,
+            UnitRouteRole.Telemetry => definition.TelemetryAuthorityConnectionId,
+            UnitRouteRole.Diagnostics => definition.DiagnosticsAuthorityConnectionId,
+            UnitRouteRole.Gimbal => definition.Routes?.FirstOrDefault(item => item.Role == role)?.ConnectionId ?? string.Empty,
+            _ => string.Empty
+        };
+        return preferred;
+    }
 
     public string DisplayNameFor(string sourceVehicleId, string fallback)
         => FindBySource(sourceVehicleId)?.DisplayName is { Length: > 0 } name ? name : fallback;
@@ -325,10 +393,23 @@ public sealed class UnitDefinitionService : IUnitDefinitionService
     private static string[] DeclaredConnectionIds(ManualUnitDefinition definition)
         => (definition.ConnectionIds ?? [])
             .Concat(definition.Connections.Select(item => item.ConnectionId))
+            .Concat((definition.Cameras ?? []).SelectMany(camera =>
+                new[] { camera.ControlConnectionId, MediaConnectionId(camera.MediaSourceId) }
+                    .Concat((camera.StandbyMediaSourceIds ?? []).Select(MediaConnectionId))))
+            .Concat((definition.Routes ?? []).SelectMany(route => new[]
+            {
+                route.ConnectionId,
+                route.Role == UnitRouteRole.Video ? MediaConnectionId(route.MediaSourceId) : null
+            }))
             .Where(item => !string.IsNullOrWhiteSpace(item))
             .Distinct(StringComparer.Ordinal)
             .OrderBy(item => item, StringComparer.Ordinal)
             .ToArray();
+
+    private static string? MediaConnectionId(string? sourceId)
+        => string.IsNullOrWhiteSpace(sourceId) ? null
+            : sourceId.StartsWith("media:", StringComparison.Ordinal) ? sourceId
+            : $"media:{sourceId}";
 
     private IReadOnlyList<UnitConnectionBinding> EffectiveBindings(
         ManualUnitDefinition definition,
@@ -373,8 +454,45 @@ public sealed class UnitDefinitionService : IUnitDefinitionService
         return new UnitDefinitionSnapshot(definition.Id, definition.DisplayName, vehicleSources, cameraSources,
             definition.CommandAuthorityConnectionId, definition.TelemetryAuthorityConnectionId,
             definition.DiagnosticsAuthorityConnectionId, definition.UpdatedAt, statuses,
-            DeclaredConnectionIds(definition));
+            DeclaredConnectionIds(definition), definition.Cameras ?? [], definition.Routes ?? []);
     }
+
+    private void ValidateRouteCandidates(
+        IReadOnlyList<UnitRouteCandidate> routes,
+        IReadOnlyList<UnitVehicleSourceBinding> vehicles,
+        IReadOnlyList<UnitCameraDeviceBinding> cameras)
+    {
+        foreach (var route in routes)
+        {
+            var valid = route.Role switch
+            {
+                UnitRouteRole.Command or UnitRouteRole.Telemetry or UnitRouteRole.Diagnostics =>
+                    !string.IsNullOrWhiteSpace(route.ConnectionId) && !string.IsNullOrWhiteSpace(route.VehicleId) &&
+                    vehicles.Contains(new UnitVehicleSourceBinding(route.ConnectionId, route.VehicleId)),
+                UnitRouteRole.Gimbal => !string.IsNullOrWhiteSpace(route.ConnectionId) && !string.IsNullOrWhiteSpace(route.CameraSourceId) &&
+                    cameras.Any(item => item.ControlConnectionId == route.ConnectionId && item.ControlCameraSourceId == route.CameraSourceId) &&
+                    (_cameraSources is null || _cameraSources.Items.Any(item => item.ConnectionId == route.ConnectionId && item.CameraSourceId == route.CameraSourceId && item.SupportsGimbal)),
+                UnitRouteRole.Video => !string.IsNullOrWhiteSpace(route.MediaSourceId) && cameras.Any(item =>
+                    item.MediaSourceId == route.MediaSourceId || (item.StandbyMediaSourceIds ?? []).Contains(route.MediaSourceId, StringComparer.Ordinal)) &&
+                    (_cameraSources is null || _cameraSources.Items.Any(item => item.CameraSourceId == route.MediaSourceId && item.ConnectionId.StartsWith("media:", StringComparison.Ordinal))),
+                _ => false
+            };
+            if (!valid) throw new InvalidOperationException($"The {route.Role} route must reference a matching unit source with that capability.");
+        }
+    }
+
+    private static UnitRouteCandidate? BindingRoute(
+        UnitRouteRole role,
+        string connectionId,
+        IReadOnlyList<UnitVehicleSourceBinding> bindings)
+    {
+        var source = bindings.FirstOrDefault(item => item.ConnectionId == connectionId);
+        return source is null ? null : new UnitRouteCandidate(role, source.ConnectionId, source.VehicleId);
+    }
+
+    private static HashSet<string> CameraMediaIds(IEnumerable<UnitCameraDeviceBinding> cameras)
+        => cameras.SelectMany(item => new[] { item.MediaSourceId }.Concat(item.StandbyMediaSourceIds ?? []))
+            .Where(item => !string.IsNullOrWhiteSpace(item)).Cast<string>().ToHashSet(StringComparer.Ordinal);
 
     private async Task PersistAsync(IReadOnlyList<ManualUnitDefinition> definitions, CancellationToken cancellationToken)
     {

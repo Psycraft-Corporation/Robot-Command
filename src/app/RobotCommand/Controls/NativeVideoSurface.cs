@@ -35,6 +35,21 @@ public sealed class NativeVideoSurface : Control
         set => SetValue(SourceProperty, value);
     }
 
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        var width = double.IsFinite(availableSize.Width) ? availableSize.Width : Bounds.Width;
+        if (width <= 0)
+        {
+            return base.MeasureOverride(availableSize);
+        }
+
+        var frame = Source?.LatestInfo;
+        var aspectRatio = frame is { Width: > 0, Height: > 0 }
+            ? frame.Width / (double)frame.Height
+            : 16d / 9d;
+        return new Size(width, width / aspectRatio);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -96,15 +111,7 @@ public sealed class NativeVideoSurface : Control
                 return;
             }
 
-            var scale = Math.Min(Bounds.Width / sourceWidth, Bounds.Height / sourceHeight);
-            var width = sourceWidth * scale;
-            var height = sourceHeight * scale;
-            var destination = new Rect(
-                (Bounds.Width - width) / 2,
-                (Bounds.Height - height) / 2,
-                width,
-                height);
-
+            var destination = CalculateFullWidthDestination(Bounds.Size, bitmap.PixelSize);
             context.DrawImage(
                 bitmap,
                 new Rect(0, 0, sourceWidth, sourceHeight),
@@ -114,6 +121,19 @@ public sealed class NativeVideoSurface : Control
         {
             _rendering = false;
         }
+    }
+
+    internal static Rect CalculateFullWidthDestination(Size viewport, PixelSize source)
+    {
+        if (viewport.Width <= 0 || source.Width <= 0 || source.Height <= 0)
+        {
+            return new Rect();
+        }
+
+        // Scale to the full available width without cropping or distortion. The
+        // surface measures itself to this height; its parent scrolls if needed.
+        var height = viewport.Width * source.Height / source.Width;
+        return new Rect(0, 0, viewport.Width, height);
     }
 
     private void OnSourceChanged()
@@ -196,8 +216,13 @@ public sealed class NativeVideoSurface : Control
                 new Vector(96, 96),
                 copiedInfo.Stride);
             var previousBitmap = _bitmap;
+            var frameSizeChanged = previousBitmap is null || previousBitmap.PixelSize != nextBitmap.PixelSize;
             _bitmap = nextBitmap;
             previousBitmap?.Dispose();
+            if (frameSizeChanged)
+            {
+                InvalidateMeasure();
+            }
         }
         finally
         {

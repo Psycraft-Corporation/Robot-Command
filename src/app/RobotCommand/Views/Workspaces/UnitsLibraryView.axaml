@@ -31,6 +31,28 @@
           <StackPanel Spacing="6">
             <TextBlock Classes="sectionTitle" Text="{Binding SelectedUnit.DisplayName}" />
             <TextBlock Classes="muted" Text="{Binding SelectedConnectionSummary}" />
+            <TextBlock Classes="sectionTitle" Text="Routes" />
+            <ItemsControl ItemsSource="{Binding RouteStatuses}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Spacing="2" Margin="0,3">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Role}" />
+                      <TextBlock Text="{Binding Health}" />
+                    </StackPanel>
+                    <TextBlock Classes="muted" Text="{Binding Detail}" TextWrapping="Wrap" />
+                    <TextBlock Classes="muted" Text="{Binding Active.ConnectionId}" />
+                    <TextBlock Classes="muted" Text="{Binding Active.MediaSourceId}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ComboBox ItemsSource="{Binding RouteStatuses}" SelectedItem="{Binding SelectedRoute}">
+              <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Role}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <NumericUpDown Minimum="0" Maximum="16" Value="{Binding RouteCandidateIndex}" />
+            <CheckBox Content="Confirm command/gimbal route switch" IsChecked="{Binding ConfirmControlRouteSwitch}" />
+            <Button Content="Select route" Command="{Binding SelectRouteCommand}" />
           </StackPanel>
         </Border>
 
@@ -97,16 +119,26 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <TextBlock Classes="muted" Text="{loc:Loc Key=UnitsCameraSources}" />
-            <ItemsControl ItemsSource="{Binding AvailableCameras}">
+            <TextBlock Classes="sectionTitle" Text="Camera and video sources" />
+            <TextBox PlaceholderText="Logical camera name" Text="{Binding LogicalCameraName, Mode=TwoWay}" />
+            <ComboBox ItemsSource="{Binding ControlCameraOptions}" SelectedItem="{Binding SelectedControlCamera}">
+              <ComboBox.PlaceholderText>Optional MAVLink camera control</ComboBox.PlaceholderText>
+              <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <ComboBox ItemsSource="{Binding MediaConnectionOptions}" SelectedItem="{Binding SelectedMediaConnection}">
+              <ComboBox.PlaceholderText>Optional video connection</ComboBox.PlaceholderText>
+              <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" /></DataTemplate></ComboBox.ItemTemplate>
+            </ComboBox>
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Button Content="Add logical camera" Command="{Binding AddLogicalCameraCommand}" />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding LogicalCameras}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}">
-                    <StackPanel>
-                      <TextBlock Text="{Binding Label}" />
-                      <TextBlock Classes="muted" FontSize="11" Text="{Binding Detail}" />
-                    </StackPanel>
-                  </CheckBox>
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding Name}" />
+                    <Button Content="Remove binding" Command="{Binding $parent[ItemsControl].DataContext.RemoveLogicalCameraCommand}" CommandParameter="{Binding .}" />
+                  </StackPanel>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>

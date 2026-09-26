@@ -3398,9 +3398,7 @@ public sealed class MavlinkConnection : IManagedConnection, IMavlinkParameterCli
 
     private CameraSourceRecord ToCameraSource(MavlinkCameraState camera)
     {
-        var displayName = string.Join(" ", new[] { camera.VendorName, camera.ModelName }
-            .Where(item => !string.IsNullOrWhiteSpace(item))).Trim();
-        if (displayName.Length == 0) displayName = $"MAVLink camera {camera.SystemId}/{camera.ComponentId}";
+        var displayName = CameraDisplayNameFormatter.Format(camera.VendorName, camera.ModelName, camera.SystemId, camera.ComponentId);
         var sourceId = CameraSourceId(camera.SystemId, camera.ComponentId);
         var gimbal = _gimbals.Values
             .Where(item => item.SystemId == camera.SystemId)

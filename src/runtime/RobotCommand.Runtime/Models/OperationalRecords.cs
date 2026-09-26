@@ -7,7 +7,9 @@ public enum ConnectionMode
     Ghost,
     Mavlink,
     /// <summary>A read-only observation projected from another Robot Command.</summary>
-    TeamObserver
+    TeamObserver,
+    /// <summary>A media transport such as an RTSP camera stream.</summary>
+    Media
 }
 
 public enum AvailabilityState
@@ -36,7 +38,18 @@ public sealed record ConnectionRecord(
     DateTimeOffset? LastSeen = null,
     DateTimeOffset? LastAttempt = null,
     string? LastError = null,
-    bool IsGhost = false);
+    bool IsGhost = false)
+{
+    public string TargetSummary
+    {
+        get
+        {
+            if (Mode == ConnectionMode.Media && Uri.TryCreate(Target, UriKind.Absolute, out var uri))
+                return $"{uri.Host}:{uri.Port}{uri.AbsolutePath}";
+            return Target;
+        }
+    }
+}
 
 public sealed record RuntimeRecord(
     string Id,
